@@ -347,7 +347,7 @@ export const App = {
               <i data-lucide="sprout" class="h-5 w-5"></i>
             </div>
             <div>
-              <h1 class="text-sm font-black tracking-widest text-white leading-tight">KA FARM</h1>
+              <h1 class="text-sm font-black tracking-widest text-slate-800 dark:text-white leading-tight">KA FARM</h1>
               <p class="text-[10px] text-slate-500 dark:text-[#819888] font-bold">Maraîchage & Horticulture 🇸🇳</p>
             </div>
           </a>
@@ -478,7 +478,7 @@ export const App = {
         </div>
 
         <!-- Sidebar Footer User Panel -->
-        <div class="p-4 border-t border-slate-200 dark:border-[#143E23] space-y-3 bg-slate-50 dark:bg-[#051009]">
+        <div class="p-4 border-t border-slate-200 dark:border-[#143E23] space-y-3 bg-white dark:bg-[#051009]">
           <div class="flex items-center justify-between gap-1.5 px-1 text-left">
             <div class="flex items-center gap-2.5 min-w-0 flex-1">
               <div id="user-avatar" class="h-8 w-8 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xs border border-emerald-500/30 flex-shrink-0">${userInitials}</div>
