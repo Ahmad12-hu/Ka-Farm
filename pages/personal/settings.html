@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paramètres - KA Farm</title>
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/personal.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-6">
+        
+        <!-- Page Title & Header -->
+        <div class="text-left space-y-1">
+          <span class="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">Espace Personnel</span>
+          <h2 class="text-2xl font-black text-slate-850 dark:text-white flex items-center gap-2">
+            <i data-lucide="settings" class="h-6 w-6 text-emerald-500"></i> Paramètres Généraux
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+            Configurez les préférences géographiques et réinitialisez les données de votre exploitation familiale.
+          </p>
+        </div>
+
+        <!-- Preference Box -->
+        <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl space-y-5 text-left">
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Préférences d'Exploitation</h3>
+          
+          <div class="space-y-4">
+            <!-- Selector -->
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Zone Météorologique de Référence</label>
+              <select id="settings-zone-selector" class="w-full sm:max-w-md bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none text-xs font-semibold">
+                <option value="Dakar">Dakar (Zone maraîchère des Niayes) 🌊</option>
+                <option value="Diourbel">Diourbel (Zone du Baol / Centre-Ouest) 🌾</option>
+                <option value="Fatick">Fatick (Îles du Sine-Saloum) 🌊</option>
+                <option value="Kaffrine">Kaffrine (Bassin Arachidier Est) ☀️</option>
+                <option value="Kaolack">Kaolack (Zone Centre & Bassin Arachidier) ☀️</option>
+                <option value="Kédougou">Kédougou (Zone Minière & Sud-Est) ⛰️</option>
+                <option value="Kolda">Kolda (Haute Casamance Forestière) 🌳</option>
+                <option value="Louga">Louga (Zone Sylvo-Pastorale / Djolof) 🏜️</option>
+                <option value="Matam">Matam (Moyenne Vallée du Fleuve) 🔥</option>
+                <option value="Saint-Louis">Saint-Louis (Delta & Fleuve Sénégal) 🌾</option>
+                <option value="Sédhiou">Sédhiou (Moyenne Casamance Agricole) 🌱</option>
+                <option value="Tambacounda">Tambacounda (Sénégal Oriental Continental) ☀️</option>
+                <option value="Thiès">Thiès (Plateau maraîcher & Mbour) 🌶️</option>
+                <option value="Ziguinchor">Ziguinchor (Basse Casamance horticole) 🌴</option>
+              </select>
+              <p class="text-[10px] text-slate-400 mt-1 font-semibold">
+                Ajuste les prévisions météo locales et les alertes agro-écologiques associées.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sauvegarde & Synchronisation Box -->
+        <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl space-y-4 text-left">
+          <h3 class="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+            </svg>
+            Sauvegarde & Synchronisation
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+            Pour éviter toute perte de données (en cas de cache vidé ou de changement de navigateur) ou pour synchroniser votre exploitation KA Farm sur un autre appareil, utilisez les outils d'export et d'import ci-dessous.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-[#143E23]/20">
+            <!-- Export Section -->
+            <div class="p-4 bg-slate-50 dark:bg-[#061109]/40 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl flex flex-col justify-between space-y-3">
+              <div>
+                <p class="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5">
+                  <svg class="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                  </svg>
+                  Exporter mes données
+                </p>
+                <p class="text-[10px] text-slate-400 mt-1 leading-normal font-semibold">Téléchargez un fichier de sauvegarde au format JSON contenant toutes vos cultures, pépinières, finances et stocks.</p>
+              </div>
+              <button onclick="window.exportBackupData()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5">
+                Exporter en JSON
+              </button>
+            </div>
+
+            <!-- Import Section -->
+            <div class="p-4 bg-slate-50 dark:bg-[#061109]/40 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl flex flex-col justify-between space-y-3">
+              <div>
+                <p class="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5">
+                  <svg class="h-3.5 w-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                  </svg>
+                  Importer une sauvegarde
+                </p>
+                <p class="text-[10px] text-slate-400 mt-1 leading-normal font-semibold">Restaurez vos données d'exploitation à partir d'un fichier de sauvegarde JSON précédemment exporté.</p>
+              </div>
+              
+              <div class="relative w-full">
+                <input type="file" id="import-file-input" accept=".json" onchange="window.importBackupData(event)" class="hidden">
+                <button onclick="document.getElementById('import-file-input').click()" class="w-full py-2 bg-slate-200 dark:bg-[#0D2615] hover:bg-slate-300 dark:hover:bg-[#11321C] text-slate-700 dark:text-slate-200 font-black text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 border border-slate-300 dark:border-[#1A4525]">
+                  Importer un fichier
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Actions Box -->
+        <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl space-y-4 text-left">
+          <h3 class="text-xs font-black text-rose-500 uppercase tracking-wider">Zone de Danger</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Ces actions modifient définitivement le stockage local de votre application ou suppriment votre historique de production.
+          </p>
+
+          <div class="pt-2 border-t border-slate-100 dark:border-[#143E23]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p class="text-xs font-black text-slate-800 dark:text-white">Réinitialiser l'Exploitation</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">Restaure la base de données KA Farm avec les cultures de démonstration initiales.</p>
+            </div>
+            <button onclick="window.resetDatabase()" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs rounded-xl cursor-pointer shadow-md transition-all">
+              Réinitialiser les données
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Shared App & Personal Module Entry Points -->
+  <script type="module" src="/js/router.js"></script>
+  <script type="module" src="/js/app.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Sync initial selector
+      const zoneSelector = document.getElementById('settings-zone-selector');
+      const savedZone = localStorage.getItem('ka_farm_zone') || 'Dakar';
+      if (zoneSelector) {
+        zoneSelector.value = savedZone;
+        
+        // Listen to change
+        zoneSelector.addEventListener('change', (e) => {
+          localStorage.setItem('ka_farm_zone', e.target.value);
+          alert('Zone météorologique mise à jour !');
+        });
+      }
+
+      window.resetDatabase = () => {
+        if (confirm("Voulez-vous vraiment réinitialiser toutes les données ? Votre historique de cultures, tâches, arrosages et ventes sera perdu et remplacé par les données de démonstration de la famille KA.")) {
+          localStorage.removeItem('ka_farm_crops');
+          localStorage.removeItem('ka_farm_nurseries');
+          localStorage.removeItem('ka_farm_stocks');
+          localStorage.removeItem('ka_farm_tasks');
+          localStorage.removeItem('ka_farm_finances');
+          alert('Base de données réinitialisée avec succès ! L\'application va redémarrer.');
+          window.location.href = '/pages/shared/dashboard.html';
+        }
+      };
+
+      window.exportBackupData = () => {
+        const backup = {
+          crops: localStorage.getItem('ka_farm_crops'),
+          nurseries: localStorage.getItem('ka_farm_nurseries'),
+          stocks: localStorage.getItem('ka_farm_stocks'),
+          tasks: localStorage.getItem('ka_farm_tasks'),
+          finances: localStorage.getItem('ka_farm_finances'),
+          parcelles: localStorage.getItem('ka_farm_parcelles'),
+          employees: localStorage.getItem('ka_farm_employees'),
+          attendance: localStorage.getItem('ka_farm_attendance'),
+          employee_payments: localStorage.getItem('ka_farm_employee_payments'),
+          version: '1.0',
+          exportedAt: new Date().toISOString()
+        };
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `ka-farm-sauvegarde-${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        alert("Sauvegarde d'exploitation exportée avec succès ! Gardez ce fichier précieusement.");
+      };
+
+      window.importBackupData = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const backup = JSON.parse(e.target.result);
+            if (!backup.crops || !backup.tasks || !backup.stocks) {
+              alert("Erreur : Le fichier sélectionné n'est pas un fichier de sauvegarde KA Farm valide.");
+              return;
+            }
+
+            if (confirm("Attention ! L'importation de cette sauvegarde va écraser toutes vos données actuelles. Voulez-vous continuer ?")) {
+              if (backup.crops) localStorage.setItem('ka_farm_crops', backup.crops);
+              if (backup.nurseries) localStorage.setItem('ka_farm_nurseries', backup.nurseries);
+              if (backup.stocks) localStorage.setItem('ka_farm_stocks', backup.stocks);
+              if (backup.tasks) localStorage.setItem('ka_farm_tasks', backup.tasks);
+              if (backup.finances) localStorage.setItem('ka_farm_finances', backup.finances);
+              if (backup.parcelles) localStorage.setItem('ka_farm_parcelles', backup.parcelles);
+              if (backup.employees) localStorage.setItem('ka_farm_employees', backup.employees);
+              if (backup.attendance) localStorage.setItem('ka_farm_attendance', backup.attendance);
+              if (backup.employee_payments) localStorage.setItem('ka_farm_employee_payments', backup.employee_payments);
+
+              alert("Importation réussie ! Vos données d'exploitation ont été restaurées. L'application va s'actualiser.");
+              window.location.reload();
+            }
+          } catch (err) {
+            alert("Erreur lors de la lecture du fichier de sauvegarde : " + err.message);
+          }
+        };
+        reader.readAsText(file);
+      };
+    });
+  </script>
+</body>
+</html>
