@@ -7,6 +7,13 @@
   }
 }
 
+/* Fix sidebar disappearing on desktop after navigation */
+@media (min-width: 1024px) {
+  #sidebar {
+    transform: none !important;
+  }
+}
+
 /* Safe touch target padding for smaller displays */
 @media (max-width: 640px) {
   .btn-touch {
