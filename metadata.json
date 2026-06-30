@@ -1,6 +1,0 @@
-{
-  "name": "KA Farm",
-  "description": "Plateforme moderne de gestion agricole (cultures, élevage, stocks, budget) avec un conseiller agronomique IA expert d'Afrique de l'Ouest.",
-  "requestFramePermissions": ["camera"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
