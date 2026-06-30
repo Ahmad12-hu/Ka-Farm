@@ -194,6 +194,21 @@ app.post('/api/gemini', async (req, res) => {
   }
 });
 
+app.get('/api/health', async (req, res) => {
+  try {
+    const firebaseStatus = db ? 'initialized' : 'not initialized';
+    const geminiKey = process.env.GEMINI_API_KEY ? 'configured' : 'missing';
+    res.json({
+      status: 'ok',
+      firebase: firebaseStatus,
+      gemini: geminiKey,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', error: error.message });
+  }
+});
+
 app.get('/api/weather', async (req, res) => {
   try {
     const { lat, lon } = req.query;
