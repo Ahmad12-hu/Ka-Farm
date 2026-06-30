@@ -20,8 +20,26 @@ try {
   console.error("Failed to initialize Firebase in Vercel function:", e);
 }
 
+function apiAuth(req, res, next) {
+  const apiKey = req.headers['x-api-key'];
+  if (apiKey && apiKey === process.env.API_KEY) {
+    return next();
+  }
+  res.status(401).json({ error: 'Accès refusé' });
+}
+
+function sanitizeText(text) {
+  return String(text || '').replace(/<[^>]*>/g, '').trim();
+}
+
 const app = express();
 app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
 
 // In-memory fallback message store for brothers discussion
 let serverMessages = [
@@ -39,7 +57,7 @@ let serverStocks = [
   { id: 'S-305', name: 'Aliments Concentrés Bovins', category: 'Alimentation', quantity: 180, maxQuantity: 1000, unit: 'kg' }
 ];
 
-app.get('/api/messages', async (req, res) => {
+app.get('/api/messages', apiAuth, async (req, res) => {
   try {
     if (!db) throw new Error("Database not initialized");
     const docSnap = await getDoc(doc(db, "app_data", "messages"));
@@ -54,16 +72,17 @@ app.get('/api/messages', async (req, res) => {
   }
 });
 
-app.post('/api/messages', async (req, res) => {
+app.post('/api/messages', apiAuth, async (req, res) => {
   const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
+  const cleanText = sanitizeText(text);
   if (!senderEmail || !text) {
     return res.status(400).json({ error: 'Champs requis manquants' });
   }
   const newMsg = {
     id: id || 'msg-' + Date.now(),
-    senderEmail,
-    senderName: senderName || senderEmail,
-    text,
+    senderEmail: sanitizeText(senderEmail),
+    senderName: sanitizeText(senderName),
+    text: cleanText,
     timestamp: timestamp || new Date().toISOString(),
     isPrivate: !!isPrivate
   };
@@ -84,7 +103,7 @@ app.post('/api/messages', async (req, res) => {
   }
 });
 
-app.get('/api/stocks', async (req, res) => {
+app.get('/api/stocks', apiAuth, async (req, res) => {
   try {
     if (!db) throw new Error("Database not initialized");
     const docSnap = await getDoc(doc(db, "app_data", "stocks"));
@@ -99,7 +118,7 @@ app.get('/api/stocks', async (req, res) => {
   }
 });
 
-app.post('/api/stocks', async (req, res) => {
+app.post('/api/stocks', apiAuth, async (req, res) => {
   const { stocks } = req.body;
   if (stocks && Array.isArray(stocks)) {
     try {
@@ -115,7 +134,7 @@ app.post('/api/stocks', async (req, res) => {
   }
 });
 
-app.post('/api/gemini', async (req, res) => {
+app.post('/api/gemini', apiAuth, async (req, res) => {
   try {
     const { prompt, history } = req.body;
     if (!prompt) {
@@ -183,7 +202,7 @@ app.post('/api/gemini', async (req, res) => {
   }
 });
 
-app.get('/api/weather', async (req, res) => {
+app.get('/api/weather', apiAuth, async (req, res) => {
   try {
     const { lat, lon } = req.query;
     if (!lat || !lon) {

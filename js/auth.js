@@ -23,11 +23,7 @@ export const Auth = {
       // Let's create a new account for them automatically if they are logging in for the first time
       // with a secure message so they don't get stuck.
       const isPredefined = ['moussa@kafarm.sn', 'aly@kafarm.sn', 'amadoucoumbaka@gmail.com'].includes(email.toLowerCase());
-      if (isPredefined) {
-        alert("Mot de passe incorrect. Indices :\n- moussa@kafarm.sn -> moussa-village\n- aly@kafarm.sn -> aly-dakar\n- amadoucoumbaka@gmail.com -> password");
-      } else {
-        alert("Identifiants incorrects. Si vous n'avez pas de compte, veuillez vous inscrire via le lien d'inscription.");
-      }
+      alert("Identifiants incorrects. Si vous n'avez pas de compte, veuillez vous inscrire via le lien d'inscription.");
       return false;
     }
   },

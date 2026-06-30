@@ -14,9 +14,27 @@ const firebaseConfig = JSON.parse(fs.readFileSync(path.resolve('firebase-applet-
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
 
+function apiAuth(req, res, next) {
+  const apiKey = req.headers['x-api-key'];
+  if (apiKey && apiKey === process.env.API_KEY) {
+    return next();
+  }
+  res.status(401).json({ error: 'Accès refusé' });
+}
+
+function sanitizeText(text) {
+  return String(text || '').replace(/<[^>]*>/g, '').trim();
+}
+
 async function startServer() {
   const app = express();
   app.use(express.json());
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    next();
+  });
 
   // In-memory fallback message store for brothers discussion
   let serverMessages = [
@@ -26,7 +44,7 @@ async function startServer() {
     { id: 'msg-4', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'D\'accord, c\'est noté. Je passe la commande aujourd\'hui depuis le bureau de Dakar 💻.', timestamp: '2026-06-25T10:00:00.000Z', isPrivate: false }
   ];
 
-  app.get('/api/messages', async (req, res) => {
+  app.get('/api/messages', apiAuth, async (req, res) => {
     try {
       const docSnap = await getDoc(doc(db, "app_data", "messages"));
       if (docSnap.exists()) {
@@ -40,16 +58,17 @@ async function startServer() {
     }
   });
 
-  app.post('/api/messages', async (req, res) => {
+  app.post('/api/messages', apiAuth, async (req, res) => {
     const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
+    const cleanText = sanitizeText(text);
     if (!senderEmail || !text) {
       return res.status(400).json({ error: 'Champs requis manquants' });
     }
     const newMsg = {
       id: id || 'msg-' + Date.now(),
-      senderEmail,
-      senderName: senderName || senderEmail,
-      text,
+      senderEmail: sanitizeText(senderEmail),
+      senderName: sanitizeText(senderName),
+      text: cleanText,
       timestamp: timestamp || new Date().toISOString(),
       isPrivate: !!isPrivate
     };
@@ -78,7 +97,7 @@ async function startServer() {
     { id: 'S-305', name: 'Aliments Concentrés Bovins', category: 'Alimentation', quantity: 180, maxQuantity: 1000, unit: 'kg' }
   ];
 
-  app.get('/api/stocks', async (req, res) => {
+  app.get('/api/stocks', apiAuth, async (req, res) => {
     try {
       const docSnap = await getDoc(doc(db, "app_data", "stocks"));
       if (docSnap.exists()) {
@@ -92,7 +111,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/stocks', async (req, res) => {
+  app.post('/api/stocks', apiAuth, async (req, res) => {
     const { stocks } = req.body;
     if (stocks && Array.isArray(stocks)) {
       try {
@@ -109,7 +128,7 @@ async function startServer() {
   });
 
   // API router for Gemini
-  app.post('/api/gemini', async (req, res) => {
+  app.post('/api/gemini', apiAuth, async (req, res) => {
     try {
       const { prompt, history } = req.body;
       if (!prompt) {
@@ -182,7 +201,7 @@ async function startServer() {
   });
 
   // API router for real weather proxy
-  app.get('/api/weather', async (req, res) => {
+  app.get('/api/weather', apiAuth, async (req, res) => {
     try {
       const { lat, lon } = req.query;
       if (!lat || !lon) {
