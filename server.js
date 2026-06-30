@@ -44,7 +44,7 @@ async function startServer() {
     { id: 'msg-4', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'D\'accord, c\'est noté. Je passe la commande aujourd\'hui depuis le bureau de Dakar 💻.', timestamp: '2026-06-25T10:00:00.000Z', isPrivate: false }
   ];
 
-  app.get('/api/messages', apiAuth, async (req, res) => {
+  app.get('/api/messages', async (req, res) => {
     try {
       const docSnap = await getDoc(doc(db, "app_data", "messages"));
       if (docSnap.exists()) {
@@ -58,7 +58,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/messages', apiAuth, async (req, res) => {
+  app.post('/api/messages', async (req, res) => {
     const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
     const cleanText = sanitizeText(text);
     if (!senderEmail || !text) {
@@ -97,7 +97,7 @@ async function startServer() {
     { id: 'S-305', name: 'Aliments Concentrés Bovins', category: 'Alimentation', quantity: 180, maxQuantity: 1000, unit: 'kg' }
   ];
 
-  app.get('/api/stocks', apiAuth, async (req, res) => {
+  app.get('/api/stocks', async (req, res) => {
     try {
       const docSnap = await getDoc(doc(db, "app_data", "stocks"));
       if (docSnap.exists()) {
@@ -111,7 +111,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/stocks', apiAuth, async (req, res) => {
+  app.post('/api/stocks', async (req, res) => {
     const { stocks } = req.body;
     if (stocks && Array.isArray(stocks)) {
       try {
@@ -128,7 +128,7 @@ async function startServer() {
   });
 
   // API router for Gemini
-  app.post('/api/gemini', apiAuth, async (req, res) => {
+  app.post('/api/gemini', async (req, res) => {
     try {
       const { prompt, history } = req.body;
       if (!prompt) {
@@ -201,7 +201,7 @@ async function startServer() {
   });
 
   // API router for real weather proxy
-  app.get('/api/weather', apiAuth, async (req, res) => {
+  app.get('/api/weather', async (req, res) => {
     try {
       const { lat, lon } = req.query;
       if (!lat || !lon) {
