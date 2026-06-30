@@ -49,12 +49,19 @@ export const UserManager = {
   },
 
   // Require login helper. If not logged in, redirect to login.
+  // Modified for public access: visitors can browse without account
   requireAuth() {
+    // Public access allowed - no redirect required
+    // Users can view the site as guests
     if (!this.isLoggedIn()) {
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('login.html') && !currentPath.includes('signup.html')) {
-        window.location.href = '/pages/auth/login.html';
-      }
+      // Optionally set a guest user context for UI consistency
+      const guestUser = {
+        email: 'guest@kafarm.sn',
+        name: 'Visiteur',
+        role: 'Invité',
+        isGuest: true
+      };
+      KAStorage.setCurrentUser(guestUser, false);
     }
   },
 
