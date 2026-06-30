@@ -1,0 +1,53 @@
+/* KA Farm - Dashboard & Statistics Stylesheet */
+
+/* Status indicator glows */
+.glow-emerald {
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.glow-amber {
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.glow-rose {
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+}
+
+/* Dashboard summary widgets */
+.stat-card {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.stat-card:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Staggered entrance animations for dashboard cards */
+@keyframes dashCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-card {
+  opacity: 0;
+  animation: dashCardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-1 { animation-delay: 50ms; }
+.delay-2 { animation-delay: 100ms; }
+.delay-3 { animation-delay: 150ms; }
+.delay-4 { animation-delay: 200ms; }
+.delay-5 { animation-delay: 250ms; }
+.delay-6 { animation-delay: 300ms; }
+.delay-7 { animation-delay: 350ms; }
+.delay-8 { animation-delay: 400ms; }
+.delay-9 { animation-delay: 450ms; }
+.delay-10 { animation-delay: 500ms; }
+.delay-11 { animation-delay: 550ms; }
+

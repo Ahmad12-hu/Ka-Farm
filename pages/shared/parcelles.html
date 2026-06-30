@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Parcelles - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
+          <div class="space-y-1">
+            <span class="text-[10px] text-emerald-500 font-extrabold uppercase tracking-widest">Données d'Exploitation</span>
+            <h2 class="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+              <i data-lucide="map" class="h-6 w-6 text-emerald-500"></i> Gestion des Parcelles
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              Suivi cartographique de l'exploitation, localisation GPS, surface cultivée et historique des cultures.
+            </p>
+          </div>
+          
+          <div>
+            <button onclick="window.openAddParcelModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="plus" class="h-3.5 w-3.5"></i> Ajouter une parcelle
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Total area -->
+          <div class="bg-white dark:bg-[#0B2112]/40 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4 text-left space-y-1">
+            <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Surface Totale</p>
+            <div class="flex items-baseline gap-1">
+              <span id="stat-total-surface" class="text-xl font-black text-slate-800 dark:text-white">0</span>
+              <span class="text-[10px] font-bold text-slate-400 dark:text-[#819888]">m²</span>
+            </div>
+            <p class="text-[9px] text-[#819888] font-semibold">Tous espaces inclus</p>
+          </div>
+
+          <!-- Total Active Parcels -->
+          <div class="bg-white dark:bg-[#0B2112]/40 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4 text-left space-y-1">
+            <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Parcelles Actives</p>
+            <div class="flex items-baseline gap-1">
+              <span id="stat-active-count" class="text-xl font-black text-slate-800 dark:text-white">0</span>
+              <span class="text-[10px] font-bold text-slate-400 dark:text-[#819888]">sur</span>
+              <span id="stat-total-count" class="text-sm font-bold text-slate-400 dark:text-slate-300">0</span>
+            </div>
+            <p class="text-[9px] text-emerald-500 font-semibold" id="stat-cultivated-percentage">0% cultivé</p>
+          </div>
+
+          <!-- Average Surface -->
+          <div class="bg-white dark:bg-[#0B2112]/40 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4 text-left space-y-1">
+            <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Taille Moyenne</p>
+            <div class="flex items-baseline gap-1">
+              <span id="stat-avg-surface" class="text-xl font-black text-slate-800 dark:text-white">0</span>
+              <span class="text-[10px] font-bold text-slate-400 dark:text-[#819888]">m²</span>
+            </div>
+            <p class="text-[9px] text-[#819888] font-semibold">Par unité foncière</p>
+          </div>
+
+          <!-- GPS Center -->
+          <div class="bg-white dark:bg-[#0B2112]/40 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4 text-left space-y-1">
+            <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Centre d'Exploitation</p>
+            <div class="text-xs font-mono font-bold text-slate-800 dark:text-emerald-400 pt-1 leading-tight">
+              <div id="stat-gps-lat">14.7932° N</div>
+              <div id="stat-gps-lng">17.2654° O</div>
+            </div>
+            <p class="text-[9px] text-[#819888] font-semibold">Zone des Niayes 🇸🇳</p>
+          </div>
+        </div>
+
+        <!-- Interactive Map & Selected Parcel Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          <!-- Map Column (Left / Top) -->
+          <div class="lg:col-span-7 bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl p-6 text-left space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="space-y-0.5">
+                <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="map-pin" class="h-4 w-4 text-emerald-500"></i> Carte de l'Exploitation
+                </h3>
+                <p class="text-[10px] text-slate-400 dark:text-[#819888] font-semibold">Sélectionnez une zone pour voir ses caractéristiques horticoles.</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-3 text-[10px] font-bold">
+                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> Cultivée</span>
+                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-amber-500"></span> En préparation</span>
+                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-slate-500"></span> Jachère</span>
+                <span class="h-3 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></span>
+                <span class="flex items-center gap-0.5 text-sky-500">💦 Irrigué</span>
+                <span class="flex items-center gap-0.5 text-rose-500 animate-pulse">💧 Besoin d'eau</span>
+              </div>
+            </div>
+
+            <!-- Custom Interactive SVG Farm Grid -->
+            <div class="relative w-full aspect-[4/3] bg-slate-50 dark:bg-[#06130B] rounded-2xl overflow-hidden border border-slate-200 dark:border-[#143E23]/40 shadow-inner flex items-center justify-center p-2">
+              
+              <!-- Ambient grid lines in the background -->
+              <div class="absolute inset-0 bg-grid-lines opacity-10 pointer-events-none"></div>
+              
+              <svg id="farm-svg-map" class="w-full h-full" viewBox="0 0 500 380" xmlns="http://www.w3.org/2000/svg">
+                <!-- Grid Lines -->
+                <defs>
+                  <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
+                    <path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(16, 185, 129, 0.08)" stroke-width="1"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+
+                <!-- Senegal/Ka Farm Surrounding Boundaries -->
+                <rect x="5" y="5" width="490" height="370" rx="10" fill="none" stroke="rgba(16, 185, 129, 0.2)" stroke-width="2" stroke-dasharray="6 4" />
+
+                <!-- Farm infrastructures like Well/Borehole (Forage) or paths -->
+                <!-- Central road/path -->
+                <line x1="185" y1="10" x2="185" y2="370" stroke="rgba(113, 128, 150, 0.15)" stroke-width="16" stroke-linecap="round" />
+                <line x1="10" y1="130" x2="490" y2="130" stroke="rgba(113, 128, 150, 0.15)" stroke-width="12" stroke-linecap="round" />
+                
+                <!-- Water Forage / Basin representation -->
+                <circle cx="185" cy="130" r="16" fill="#0D2615" stroke="#38BDF8" stroke-width="3" />
+                <path d="M 181 125 L 189 135 M 189 125 L 181 135" stroke="#38BDF8" stroke-width="2" />
+                <text x="185" y="105" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="900" fill="#38BDF8" letter-spacing="1">FORAGE</text>
+
+                <!-- Planches (Interactive group loaded dynamically via javascript) -->
+                <g id="svg-parcelles-group">
+                  <!-- Generated via parcelles.js -->
+                </g>
+              </svg>
+              
+              <!-- Copy Coordinates quick notification -->
+              <div id="copy-toast" class="absolute bottom-4 left-4 bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-wider hidden animate-bounce flex items-center gap-1.5 shadow-lg">
+                <i data-lucide="check" class="h-3 w-3"></i> Coordonnées copiées !
+              </div>
+            </div>
+
+            <!-- Live GPS tracker panel mockup -->
+            <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-[#0D2615]/30 border border-slate-100 dark:border-[#143E23]/25 rounded-2xl">
+              <div class="flex items-center gap-3">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <div class="text-left">
+                  <p class="text-[10px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">Positionnement GPS en temps réel</p>
+                  <p class="text-[9px] text-[#819888] font-bold">Signal satellite actif • Précision &plusmn; 2.5 mètres</p>
+                </div>
+              </div>
+              <button onclick="window.getCurrentPositionGPS()" class="px-3 py-1.5 bg-[#0D2615]/50 border border-[#143E23] hover:bg-[#143E23]/40 text-emerald-400 rounded-xl text-[10px] font-extrabold transition-all flex items-center gap-1.5">
+                <i data-lucide="crosshair" class="h-3.5 w-3.5"></i> Recaler GPS
+              </button>
+            </div>
+          </div>
+
+          <!-- Parcel Detail & History Column (Right / Bottom) -->
+          <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Parcel Card -->
+            <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl p-6 text-left space-y-5">
+              <div class="flex justify-between items-start border-b border-slate-100 dark:border-[#143E23]/20 pb-4">
+                <div class="space-y-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span id="detail-status-badge" class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">CULTIVÉE</span>
+                    <span id="detail-id" class="text-[9px] font-mono text-slate-400 dark:text-[#819888] font-bold">ID: P-001</span>
+                  </div>
+                  <h3 id="detail-title" class="text-lg font-black text-slate-800 dark:text-white truncate">Parcelle Nord - Planche 2</h3>
+                </div>
+                
+                <div class="flex items-center gap-1 flex-shrink-0">
+                  <button id="btn-edit-parcel" class="p-1.5 bg-[#0D2615]/30 border border-[#143E23]/40 rounded-lg text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 transition-all cursor-pointer">
+                    <i data-lucide="edit" class="h-3.5 w-3.5"></i>
+                  </button>
+                  <button id="btn-delete-parcel" class="p-1.5 bg-[#0D2615]/30 border border-[#143E23]/40 rounded-lg text-slate-400 hover:text-rose-400 hover:border-rose-500/30 transition-all cursor-pointer">
+                    <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- General Info Grid -->
+              <div class="grid grid-cols-2 gap-4 text-xs font-semibold">
+                <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/20 p-3 rounded-xl space-y-1">
+                  <span class="text-[9px] text-slate-400 dark:text-[#819888] font-black uppercase tracking-wider block">Surface cultivée</span>
+                  <div class="flex items-baseline gap-1 text-slate-800 dark:text-slate-200">
+                    <span id="detail-surface" class="text-sm font-black">120</span>
+                    <span class="text-[9px] text-[#819888]">m²</span>
+                  </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/20 p-3 rounded-xl space-y-1">
+                  <span class="text-[9px] text-slate-400 dark:text-[#819888] font-black uppercase tracking-wider block">Culture en cours</span>
+                  <p id="detail-current-crop" class="text-sm font-black text-emerald-500 dark:text-emerald-400 truncate">Tomate Mongal F1</p>
+                </div>
+              </div>
+
+              <!-- GPS details with link -->
+              <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/20 p-4 rounded-2xl space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-[9px] text-slate-400 dark:text-[#819888] font-black uppercase tracking-wider">Coordonnées GPS précises</span>
+                  <button onclick="window.copyCurrentCoordinates()" class="text-[9px] text-emerald-500 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1 cursor-pointer">
+                    <i data-lucide="copy" class="h-3 w-3"></i> Copier
+                  </button>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4 text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
+                    <div>Lat: <span id="detail-lat">14.7932</span></div>
+                    <div>Lng: <span id="detail-lng">-17.2654</span></div>
+                  </div>
+                  <a id="detail-map-link" href="#" target="_blank" class="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-all flex items-center gap-1 text-[10px] font-black uppercase tracking-wider">
+                    <i data-lucide="navigation" class="h-3 w-3"></i> Maps
+                  </a>
+                </div>
+              </div>
+
+              <!-- Interactive Hydric Status Section (Option 3) -->
+              <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/20 p-4 rounded-2xl flex items-center justify-between">
+                <div class="space-y-1">
+                  <span class="text-[9px] text-slate-400 dark:text-[#819888] font-black uppercase tracking-wider block">État Hydrique</span>
+                  <div class="flex items-center gap-1.5 font-bold text-xs" id="detail-water-status-text">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                    <span class="text-emerald-500">Irrigué</span>
+                  </div>
+                </div>
+                <button id="btn-toggle-water" class="px-3 py-1.5 bg-sky-600/10 hover:bg-sky-600/20 text-sky-500 dark:text-sky-450 border border-sky-500/20 hover:border-sky-500/40 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="droplet" class="h-3.5 w-3.5"></i> Basculer d'état
+                </button>
+              </div>
+
+              <!-- History list -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-[#143E23]/20 pb-1.5">
+                  <h4 class="text-xs font-black text-[#819888] uppercase tracking-wider">Historique des cultures</h4>
+                  <button onclick="window.openAddHistoryModal()" class="text-[10px] text-emerald-500 dark:text-emerald-400 font-extrabold hover:underline flex items-center gap-1 cursor-pointer">
+                    <i data-lucide="plus" class="h-3.5 w-3.5"></i> Nouveau record
+                  </button>
+                </div>
+
+                <!-- Vertical Timeline -->
+                <div id="detail-history-container" class="space-y-4 pl-3 relative border-l border-slate-200 dark:border-[#143E23]/30 text-left pt-1">
+                  <!-- Timeline items populated via javascript -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Break-Even (Seuil de Rentabilité) Analysis Card -->
+            <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl p-6 text-left space-y-5">
+              <div class="flex justify-between items-center border-b border-slate-100 dark:border-[#143E23]/20 pb-4">
+                <div class="space-y-0.5">
+                  <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="calculator" class="h-4 w-4 text-emerald-500"></i> Seuil de Rentabilité
+                  </h3>
+                  <p class="text-[9px] text-slate-400 dark:text-[#819888] font-semibold">Analyse de rentabilité comparée au marché local.</p>
+                </div>
+                <button onclick="window.openBreakEvenConfigModal()" class="p-1.5 bg-[#0D2615]/30 border border-[#143E23]/40 rounded-lg text-emerald-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all cursor-pointer" title="Ajuster les coûts et prix du marché">
+                  <i data-lucide="sliders" class="h-3.5 w-3.5"></i>
+                </button>
+              </div>
+
+              <!-- Main Break Even Stats -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/20 p-3 rounded-xl space-y-1">
+                  <span class="text-[9px] text-slate-400 dark:text-[#819888] font-black uppercase tracking-wider block">Coûts de Semences / Intrants</span>
+                  <p id="be-cost-display" class="text-sm font-black text-slate-800 dark:text-white">0 FCFA</p>
+                </div>
+                <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/20 p-3 rounded-xl space-y-1">
+                  <span class="text-[9px] text-slate-400 dark:text-[#819888] font-black uppercase tracking-wider block">Prix du Marché Local</span>
+                  <p id="be-price-display" class="text-sm font-black text-emerald-500 dark:text-emerald-400">0 FCFA / kg</p>
+                </div>
+              </div>
+
+              <!-- Yield Target & Estimation -->
+              <div class="space-y-3.5 pt-1">
+                <div class="flex justify-between text-xs font-semibold">
+                  <span class="text-slate-500 dark:text-[#819888]">Rendement de Seuil requis :</span>
+                  <span id="be-threshold-qty" class="text-slate-800 dark:text-white font-extrabold">0 kg</span>
+                </div>
+                <div class="flex justify-between text-xs font-semibold">
+                  <span class="text-slate-500 dark:text-[#819888]">Production estimée de la parcelle :</span>
+                  <span id="be-est-qty" class="text-slate-800 dark:text-white font-extrabold">0 kg <span class="text-[9px] text-slate-400 dark:text-[#819888]">(0 kg/m²)</span></span>
+                </div>
+                
+                <!-- Visual Rentabilité Progress / Bar Indicator -->
+                <div class="space-y-1.5">
+                  <div class="flex justify-between text-[10px] font-black uppercase tracking-wider">
+                    <span id="be-status-label" class="text-emerald-500 dark:text-emerald-400">Optimiste</span>
+                    <span id="be-percentage-label" class="text-slate-600 dark:text-slate-300">0%</span>
+                  </div>
+                  <div class="w-full bg-slate-100 dark:bg-[#051009] rounded-full h-2.5 overflow-hidden border border-slate-200 dark:border-[#143E23]/50">
+                    <div id="be-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                  </div>
+                  <p class="text-[8.5px] text-slate-400 dark:text-[#819888] font-semibold italic">Le seuil indique le % de récolte nécessaire pour couvrir les investissements d'intrants.</p>
+                </div>
+              </div>
+
+              <!-- Expected Financial Outcome -->
+              <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/25 rounded-2xl p-4 space-y-2">
+                <div class="flex justify-between text-xs font-semibold">
+                  <span class="text-slate-500 dark:text-[#819888]">Chiffre d'Affaires estimé :</span>
+                  <span id="be-est-revenue" class="font-black text-slate-800 dark:text-slate-200">0 FCFA</span>
+                </div>
+                <div class="flex justify-between text-xs font-semibold border-t border-slate-200 dark:border-[#143E23]/20 pt-2">
+                  <span class="text-slate-500 dark:text-[#819888]">Marge brute potentielle :</span>
+                  <span id="be-est-margin" class="font-black text-emerald-600 dark:text-emerald-400">0 FCFA</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Table View of Parcels for quick searching/management -->
+        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl p-6 text-left space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="list" class="h-4 w-4 text-emerald-500"></i> Registre complet des parcelles
+            </h3>
+            <div class="relative w-full sm:w-64">
+              <input type="text" id="search-parcelles" placeholder="Rechercher une parcelle, culture..." class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none">
+              <i data-lucide="search" class="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400"></i>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl">
+            <table class="w-full text-xs font-semibold border-collapse text-slate-800 dark:text-slate-300">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-[#0B2112]/40 text-[#819888] uppercase text-[10px] tracking-wider border-b border-slate-150 dark:border-[#143E23]/40">
+                  <th class="px-4 py-3.5 text-left font-black">ID</th>
+                  <th class="px-4 py-3.5 text-left font-black">Nom de la Parcelle</th>
+                  <th class="px-4 py-3.5 text-left font-black">Statut</th>
+                  <th class="px-4 py-3.5 text-right font-black">Surface (m²)</th>
+                  <th class="px-4 py-3.5 text-left font-black">Localisation GPS</th>
+                  <th class="px-4 py-3.5 text-left font-black">Culture Actuelle</th>
+                  <th class="px-4 py-3.5 text-left font-black">Rotation Récents</th>
+                  <th class="px-4 py-3.5 text-center font-black">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="parcelles-table-body" class="divide-y divide-slate-100 dark:divide-[#143E23]/20">
+                <!-- Populated dynamically via parcelles.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add Parcel -->
+  <div id="add-parcel-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="plus-circle" class="h-4 w-4 text-emerald-500"></i> Ajouter une parcelle
+        </h3>
+        <button onclick="window.closeAddParcelModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="add-parcel-form" class="space-y-4 text-xs font-semibold">
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Nom de la parcelle</label>
+          <input type="text" id="form-add-name" required placeholder="Ex: Planche Nord - Planche 3" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Surface (m²)</label>
+            <input type="number" id="form-add-surface" required min="1" placeholder="Ex: 150" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Status horticole</label>
+            <select id="form-add-status" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+              <option value="Cultivée">Cultivée</option>
+              <option value="En préparation">En préparation</option>
+              <option value="Jachère">Jachère</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">GPS Latitude (N)</label>
+            <input type="number" id="form-add-lat" required step="0.0001" placeholder="Ex: 14.7932" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">GPS Longitude (O)</label>
+            <input type="number" id="form-add-lng" required step="0.0001" placeholder="Ex: -17.2654" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">État Hydrique</label>
+          <select id="form-add-water" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+            <option value="Irrigué">Irrigué</option>
+            <option value="Besoin d'eau">Besoin d'eau</option>
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Culture Actuelle</label>
+          <input type="text" id="form-add-crop" placeholder="Ex: Tomate Mongal F1 (optionnel)" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Historique de départ (séparé par virgules)</label>
+          <input type="text" id="form-add-history" placeholder="Ex: Tomate Mongal F1, Chou Cabus, Jachère" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs">
+          Enregistrer la parcelle
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Parcel -->
+  <div id="edit-parcel-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="edit" class="h-4 w-4 text-emerald-500"></i> Modifier la parcelle
+        </h3>
+        <button onclick="window.closeEditParcelModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="edit-parcel-form" class="space-y-4 text-xs font-semibold">
+        <input type="hidden" id="form-edit-id">
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Nom de la parcelle</label>
+          <input type="text" id="form-edit-name" required class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Surface (m²)</label>
+            <input type="number" id="form-edit-surface" required min="1" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Status horticole</label>
+            <select id="form-edit-status" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+              <option value="Cultivée">Cultivée</option>
+              <option value="En préparation">En préparation</option>
+              <option value="Jachère">Jachère</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">GPS Latitude</label>
+            <input type="number" id="form-edit-lat" required step="0.0001" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">GPS Longitude</label>
+            <input type="number" id="form-edit-lng" required step="0.0001" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">État Hydrique</label>
+          <select id="form-edit-water" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+            <option value="Irrigué">Irrigué</option>
+            <option value="Besoin d'eau">Besoin d'eau</option>
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Culture Actuelle</label>
+          <input type="text" id="form-edit-crop" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs">
+          Mettre à jour la parcelle
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Crop History Entry -->
+  <div id="add-history-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="plus-circle" class="h-4 w-4 text-emerald-500"></i> Ajouter un historique horticole
+        </h3>
+        <button onclick="window.closeAddHistoryModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="add-history-form" class="space-y-4 text-xs font-semibold">
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Nom de la culture cultivée</label>
+          <input type="text" id="form-hist-crop" required placeholder="Ex: Oignon Rouge de Galmi" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+        <div class="space-y-1">
+          <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Note sur la rotation</p>
+          <p class="text-[9px] text-[#819888]">Cette culture sera insérée au sommet de l'historique et de la rotation des cultures de la parcelle sélectionnée.</p>
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs">
+          Enregistrer le record
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Configure Break-Even Parameters -->
+  <div id="config-breakeven-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="calculator" class="h-4 w-4 text-emerald-500"></i> Configurer le Seuil de Rentabilité
+        </h3>
+        <button onclick="window.closeBreakEvenConfigModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="config-breakeven-form" class="space-y-4 text-xs font-semibold">
+        <input type="hidden" id="form-be-id">
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Coûts des Semences et Intrants (FCFA)</label>
+          <input type="number" id="form-be-cost" required min="0" placeholder="Ex: 40000" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          <p class="text-[9px] text-[#819888]">Total investi pour cette parcelle (engrais, semences, traitements, etc.)</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Prix de Vente Local (FCFA/kg)</label>
+            <input type="number" id="form-be-price" required min="0" placeholder="Ex: 800" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Rendement visé (kg / m²)</label>
+            <input type="number" id="form-be-yield" required min="0.1" step="0.1" placeholder="Ex: 4.5" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs">
+          Enregistrer et recalculer le seuil
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shared App & Router Entry Points -->
+  <script type="module" src="/js/router.js"></script>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/parcelles.js"></script>
+  <script type="module">
+    window.onThemeChanged = (dark) => {
+      if (window.ParcellesModule && typeof window.ParcellesModule.render === 'function') {
+        window.ParcellesModule.render();
+      }
+    };
+  </script>
+</body>
+</html>
