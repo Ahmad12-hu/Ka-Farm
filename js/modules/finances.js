@@ -1,5 +1,4 @@
 // KA Farm - Financial & Compost Calculator Module
-import { KAStorageMongoDB } from '../storage-mongodb.js';
 
 export const FinancesModule = {
   marketsData: {
@@ -32,7 +31,6 @@ export const FinancesModule = {
   selectedMarket: 'mbour',
 
   async init() {
-    await KAStorageMongoDB.init();
     this.renderFinances();
     this.setupListeners();
     this.calculateCompost();
@@ -43,10 +41,9 @@ export const FinancesModule = {
     const tbody = document.getElementById('finances-table-body');
     if (!tbody) return;
 
-    const finances = await KAStorageMongoDB.getFinances();
+    const finances = KAStorage.getFinances() || [];
 
-    // Cumulative stats - Centralized
-    const { totalRevenu: totalRevenre, totalDepense: totalExpense, solde: totalSolde } = await KAStorageMongoDB.getFinanceStats();
+    const { totalRevenu: totalRevenre, totalDepense: totalExpense, solde: totalSolde } = KAStorage.getFinanceStats();
 
     const elRev = document.getElementById('finances-total-revenu');
     const elExp = document.getElementById('finances-total-depense');
@@ -124,7 +121,7 @@ export const FinancesModule = {
     const cropBody = document.getElementById('crop-margins-table-body');
     if (!parcelBody && !cropBody) return;
 
-    const finances = await KAStorageMongoDB.getFinances();
+    const finances = KAStorage.getFinances() || [];
 
     // 1. Parcels Margins calculation
     const parcels = [
@@ -143,7 +140,6 @@ export const FinancesModule = {
           if (f.type === 'Revenu') rev += f.amount;
           else if (f.type === 'Dépense') exp += f.amount;
         } else if (!f.parcelId && f.description.toLowerCase().includes(p.name.toLowerCase().split(' ')[1] || 'impossible_match')) {
-          // Fallback matching by keyword in description
           if (f.type === 'Revenu') rev += f.amount;
           else if (f.type === 'Dépense') exp += f.amount;
         }
@@ -151,7 +147,6 @@ export const FinancesModule = {
       return { name: p.name, rev, exp, net: rev - exp };
     });
 
-    // Add "Autres/Non affectés" row
     let otherParcelRev = 0;
     let otherParcelExp = 0;
     finances.forEach(f => {
@@ -180,7 +175,6 @@ export const FinancesModule = {
       }).join('');
     }
 
-    // 2. Crop Margins calculation
     const cropsList = [
       'Tomate Mongal F1',
       'Oignon Rouge de Galmi',
@@ -197,7 +191,6 @@ export const FinancesModule = {
           if (f.type === 'Revenu') rev += f.amount;
           else if (f.type === 'Dépense') exp += f.amount;
         } else if (!f.cropName && f.description.toLowerCase().includes(cName.toLowerCase().split(' ')[0])) {
-          // Fallback matching by keyword in description (e.g. "tomates", "oignons", "menthe", "choux", "piments")
           if (f.type === 'Revenu') rev += f.amount;
           else if (f.type === 'Dépense') exp += f.amount;
         }
@@ -205,7 +198,6 @@ export const FinancesModule = {
       return { name: cName, rev, exp, net: rev - exp };
     });
 
-    // Add "Autres" row for crops
     let otherCropRev = 0;
     let otherCropExp = 0;
     finances.forEach(f => {
@@ -258,10 +250,6 @@ export const FinancesModule = {
 
     resultBox.classList.remove('hidden');
 
-    // Calculate simulated C/N ratio based on input weights
-    // Carbonaceous materials (straw, dry leaves) have high carbon (ratio around 60:1)
-    // Nitrogenous materials (manure, green scraps) have high nitrogen (ratio around 15:1)
-    // Weighted formula: C/N = (CarbonKg * 60 + NitrogenKg * 15) / (CarbonKg * 1 + NitrogenKg * 1)
     let ratioVal = 0;
     if (carbonKg + nitrogenKg > 0) {
       ratioVal = ((carbonKg * 60) + (nitrogenKg * 15)) / (carbonKg + nitrogenKg);
@@ -288,9 +276,8 @@ export const FinancesModule = {
   },
 
   setupListeners() {
-    // WhatsApp Export of a single receipt
     window.shareFinanceWhatsApp = async (id) => {
-      const finances = await KAStorageMongoDB.getFinances();
+      const finances = KAStorage.getFinances() || [];
       const f = finances.find(item => item.id === id);
       if (!f) return;
 
@@ -312,9 +299,8 @@ export const FinancesModule = {
       window.open(url, '_blank');
     };
 
-    // CSV Export
     window.exportFinancesCSV = async () => {
-      const finances = await KAStorageMongoDB.getFinances();
+      const finances = KAStorage.getFinances() || [];
       if (finances.length === 0) {
         alert("Aucune transaction à exporter !");
         return;
@@ -339,14 +325,12 @@ export const FinancesModule = {
       document.body.removeChild(link);
     };
 
-    // PDF Export via beautiful dynamic print overlay
     window.exportFinancesPDF = async () => {
-      const finances = await KAStorageMongoDB.getFinances();
-      const { totalRevenu, totalDepense, solde } = await KAStorageMongoDB.getFinanceStats();
+      const finances = KAStorage.getFinances() || [];
+      const { totalRevenu, totalDepense, solde } = KAStorage.getFinanceStats();
       const zone = localStorage.getItem('ka_farm_zone') || 'Dakar (Niayes)';
       const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-      // Create print style and print container
       const printAreaId = 'print-report-area';
       let printArea = document.getElementById(printAreaId);
       if (printArea) {
@@ -357,7 +341,6 @@ export const FinancesModule = {
       printArea.id = printAreaId;
       printArea.className = 'hidden';
       
-      // Build a premium-styled printable financial statement
       const transactionsHtml = finances.map(f => {
         const isRevenu = f.type === 'Revenu';
         const sign = isRevenu ? '+' : '-';
@@ -410,7 +393,6 @@ export const FinancesModule = {
           }
         </style>
         <div style="max-width: 800px; margin: 0 auto; padding: 20px; position: relative; min-height: 1000px;">
-          <!-- Elegant Background Watermark -->
           <div class="print-watermark">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
               <path d="M50 12 C70 12, 82 15, 82 34 C82 52, 70 66, 50 75 C30 66, 18 52, 18 34 C18 15, 30 12, 50 12 Z" stroke="#059669" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
@@ -425,10 +407,8 @@ export const FinancesModule = {
             </svg>
           </div>
 
-          <!-- Header -->
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px; position: relative; z-index: 10;">
             <div style="display: flex; align-items: center; gap: 15px;">
-              <!-- High-Fidelity Logo -->
               <div style="width: 55px; height: 55px; flex-shrink: 0;">
                 <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
                   <path d="M50 12 C70 12, 82 15, 82 34 C82 52, 70 66, 50 75 C30 66, 18 52, 18 34 C18 15, 30 12, 50 12 Z" stroke="#059669" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
@@ -453,13 +433,11 @@ export const FinancesModule = {
             </div>
           </div>
 
-          <!-- Title -->
           <div style="text-align: center; margin-bottom: 25px;">
             <h2 style="margin: 0; font-size: 18px; font-weight: 900; color: #1e293b; text-transform: uppercase;">Bilan Financier d'Exploitation</h2>
             <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b; font-style: italic;">Présenté pour dossiers de financement, coopératives horticoles et banques partenaires</p>
           </div>
 
-          <!-- Metadata info Grid -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 11px;">
             <div class="report-card" style="border: 1px solid #cbd5e1;">
               <h4 style="margin: 0 0 8px 0; text-transform: uppercase; font-size: 9px; color: #047857; letter-spacing: 0.5px;">Détails de l'Exploitation</h4>
@@ -475,7 +453,6 @@ export const FinancesModule = {
             </div>
           </div>
 
-          <!-- Summary widgets -->
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px;">
             <div style="border: 1px solid #a7f3d0; background: #f0fdf4; border-radius: 12px; padding: 12px; text-align: left;">
               <span style="font-size: 8px; text-transform: uppercase; font-weight: bold; color: #047857; letter-spacing: 0.5px;">Total Revenus (Entrées)</span>
@@ -491,7 +468,6 @@ export const FinancesModule = {
             </div>
           </div>
 
-          <!-- Table -->
           <h3 style="font-size: 11px; text-transform: uppercase; color: #1e293b; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">Grand Livre & Historique des Échanges</h3>
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
             <thead>
@@ -508,7 +484,6 @@ export const FinancesModule = {
             </tbody>
           </table>
 
-          <!-- Footer signatures -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px; font-size: 10px;">
             <div style="text-align: left; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
               <p style="margin: 0; font-weight: bold; color: #475569;">Pour l'Exploitation Agricole KA Farm</p>
@@ -526,25 +501,21 @@ export const FinancesModule = {
 
       document.body.appendChild(printArea);
 
-      // Trigger standard print
       setTimeout(() => {
         window.print();
-        // Cleanup after print dialog completes
         setTimeout(() => {
           printArea.remove();
         }, 1000);
       }, 300);
     };
 
-    // Delete finance item
     window.deleteFinance = async (id) => {
       if (!confirm('Voulez-vous supprimer cette ligne de comptabilité ?')) return;
-      const finances = (await KAStorageMongoDB.getFinances()).filter(f => f.id !== id);
-      await KAStorageMongoDB.saveFinances(finances);
+      const finances = (KAStorage.getFinances() || []).filter(f => f.id !== id);
+      KAStorage.saveFinances(finances);
       this.renderFinances();
     };
 
-    // Form submit
     const form = document.getElementById('shared-finance-form');
     if (form) {
       form.addEventListener('submit', async (e) => {
@@ -559,7 +530,7 @@ export const FinancesModule = {
 
         if (!desc || !amt || !date) return;
 
-        const finances = await KAStorageMongoDB.getFinances();
+        const finances = KAStorage.getFinances() || [];
         finances.unshift({
           id: `F-${Date.now()}`,
           description: desc,
@@ -571,11 +542,10 @@ export const FinancesModule = {
           cropName: cropName || undefined
         });
 
-        await KAStorageMongoDB.saveFinances(finances);
+        KAStorage.saveFinances(finances);
         this.renderFinances();
         form.reset();
         
-        // Reset date
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('form-fin-date').value = todayStr;
 
@@ -584,7 +554,6 @@ export const FinancesModule = {
       });
     }
 
-    // Live listening to compost calculator inputs
     const carbonInput = document.getElementById('compost-carbon-input');
     const nitrogenInput = document.getElementById('compost-nitrogen-input');
     
@@ -649,14 +618,12 @@ export const FinancesModule = {
     const others = parseFloat(document.getElementById('cost-others').value) || 0;
     const qty = parseFloat(document.getElementById('param-yield').value) || 500;
 
-    // Update yield display
     const yieldDisplay = document.getElementById('yield-display');
     if (yieldDisplay) yieldDisplay.textContent = `${qty} kg`;
 
     const totalCost = seeds + fertilizers + fuel + labor + others;
     const costPerKg = qty > 0 ? Math.round(totalCost / qty) : 0;
 
-    // Current price from selected market and crop
     const cropKey = document.getElementById('market-crop-select').value || 'tomate';
     const currentPrice = this.marketsData[cropKey][this.selectedMarket];
 
@@ -664,7 +631,6 @@ export const FinancesModule = {
     const netProfit = totalRevenue - totalCost;
     const roi = totalCost > 0 ? Math.round((netProfit / totalCost) * 100) : 0;
 
-    // Update fields
     const elCost = document.getElementById('calc-total-cost');
     const elPerKg = document.getElementById('calc-cost-per-kg');
     const elProfit = document.getElementById('calc-net-profit');
@@ -687,7 +653,6 @@ export const FinancesModule = {
         : 'text-[9px] text-rose-500 font-extrabold uppercase';
     }
 
-    // Advice box update
     const adviceTitle = document.getElementById('profit-advice-title');
     const adviceDesc = document.getElementById('profit-advice-desc');
     const adviceIcon = document.getElementById('profit-indicator-icon');
@@ -722,7 +687,6 @@ export const FinancesModule = {
   }
 };
 
-// Start finances module
 document.addEventListener('DOMContentLoaded', () => {
   FinancesModule.init();
 });
