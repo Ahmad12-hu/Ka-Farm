@@ -13,57 +13,10 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-        // Redirect all server-only/native modules to empty stub to prevent bundling
-        'bcrypt': path.resolve(__dirname, './js/empty.js'),
-        'pg': path.resolve(__dirname, './js/empty.js'),
-        'firebase': path.resolve(__dirname, './js/empty.js'),
-        '@mapbox/node-pre-gyp': path.resolve(__dirname, './js/empty.js'),
-        'mock-aws-s3': path.resolve(__dirname, './js/empty.js'),
-        'aws-sdk': path.resolve(__dirname, './js/empty.js'),
-        'nock': path.resolve(__dirname, './js/empty.js'),
-        'mongoose': path.resolve(__dirname, './js/empty.js'),
-        'mongodb': path.resolve(__dirname, './js/empty.js'),
       },
-    },
-    optimizeDeps: {
-      exclude: [
-        'bcrypt',
-        'pg',
-        'firebase',
-        '@mapbox/node-pre-gyp',
-        'mock-aws-s3',
-        'aws-sdk',
-        'nock',
-        'mongoose',
-        'mongodb'
-      ]
-    },
-    ssr: {
-      external: [
-        'bcrypt',
-        'pg',
-        'firebase',
-        '@mapbox/node-pre-gyp',
-        'mock-aws-s3',
-        'aws-sdk',
-        'nock',
-        'mongoose',
-        'mongodb'
-      ]
     },
     build: {
       rollupOptions: {
-        external: [
-          'bcrypt',
-          'pg',
-          'firebase',
-          '@mapbox/node-pre-gyp',
-          'mock-aws-s3',
-          'aws-sdk',
-          'nock',
-          'mongoose',
-          'mongodb'
-        ],
         input: {
           main: path.resolve(__dirname, 'index.html'),
           login: path.resolve(__dirname, 'pages/auth/login.html'),

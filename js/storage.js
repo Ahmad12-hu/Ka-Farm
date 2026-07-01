@@ -176,11 +176,11 @@ export const KAStorage = {
     if (!localStorage.getItem('ka_farm_elevage_health')) this.saveElevageHealth(DEFAULT_ELEVAGE_HEALTH);
     if (!localStorage.getItem('ka_farm_messages')) this.saveMessages(DEFAULT_MESSAGES);
 
-    // Firebase sync disabled due to permission errors - using localStorage only
-    // KAFirebaseSync.initSync((key, data) => {
-    //   // Notify current page that database data changed
-    //   document.dispatchEvent(new CustomEvent('ka_data_updated', { detail: { key, data } }));
-    // });
+    // Kicks off the Firebase live cloud synchronization
+    KAFirebaseSync.initSync((key, data) => {
+      // Notify current page that database data changed
+      document.dispatchEvent(new CustomEvent('ka_data_updated', { detail: { key, data } }));
+    });
   },
 
   get(key, fallback) {
@@ -196,8 +196,8 @@ export const KAStorage = {
   set(key, val) {
     try {
       localStorage.setItem(key, JSON.stringify(val));
-      // Firebase sync disabled - using localStorage only
-      // KAFirebaseSync.saveToCloud(key, val);
+      // Save changes to cloud Firestore asynchronously
+      KAFirebaseSync.saveToCloud(key, val);
     } catch (e) {
       console.error('Error setting localStorage key', key, e);
     }

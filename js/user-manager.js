@@ -1,16 +1,13 @@
 // KA Farm - User Manager
 // Handles roles, permissions and authorization rules
-// localStorage only (browser-compatible)
 
 import { KAStorage } from './storage.js';
 
 export const UserManager = {
   getRoles() {
     return {
-      TERRAIN: 'terrain',
-      BUREAU: 'gestionnaire',
-      ADMIN: 'admin',
-      INVITE: 'invite'
+      TERRAIN: 'Terrain',
+      BUREAU: 'Bureau'
     };
   },
 
@@ -22,54 +19,16 @@ export const UserManager = {
     return KAStorage.getCurrentUser() !== null;
   },
 
-  // Login avec localStorage
-  async login(email, password) {
-    try {
-      const users = KAStorage.getUsers();
-      const localUser = users.find(u => u.email === email && u.password === KAStorage.hashPassword(password));
-
-      if (localUser) {
-        const sessionUser = {
-          email: localUser.email,
-          name: localUser.name,
-          role: localUser.role,
-          fermeId: null,
-          userId: null,
-          isLocal: true
-        };
-
-        KAStorage.setCurrentUser(sessionUser, true);
-        return { success: true, user: sessionUser };
-      }
-    } catch (error) {
-      console.error('Erreur login localStorage:', error);
-    }
-
-    return { success: false, error: 'Email ou mot de passe incorrect' };
-  },
-
-  // Logout
-  logout() {
-    KAStorage.setCurrentUser(null, false);
-    window.location.href = '/index.html';
-  },
-
   // Check if current user has role Terrain (Moussa - ground operator)
   isTerrain() {
     const user = this.getCurrentUser();
-    return user && (user.role === 'terrain' || user.role === 'Terrain');
+    return user && user.role === 'Terrain';
   },
 
   // Check if current user has role Bureau (Aly - office supervisor)
   isBureau() {
     const user = this.getCurrentUser();
-    return user && (user.role === 'gestionnaire' || user.role === 'Bureau');
-  },
-
-  // Check if admin
-  isAdmin() {
-    const user = this.getCurrentUser();
-    return user && user.role === 'admin';
+    return user && user.role === 'Bureau';
   },
 
   // Role permissions checking
@@ -89,20 +48,21 @@ export const UserManager = {
     return true;
   },
 
-  // Require login helper. If not logged in, redirect to login.
-  // Modified for public access: visitors can browse without account
+  // Require login helper. If not logged in, automatically logs in default user.
   requireAuth() {
-    // Public access allowed - no redirect required
-    // Users can view the site as guests
     if (!this.isLoggedIn()) {
-      // Optionally set a guest user context for UI consistency
-      const guestUser = {
-        email: 'guest@kafarm.sn',
-        name: 'Visiteur',
-        role: 'invite',
-        isGuest: true
-      };
-      KAStorage.setCurrentUser(guestUser, false);
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('login.html') && !currentPath.includes('signup.html')) {
+        // Automatically log in as default user Amadou KA (amadoucoumbaka@gmail.com)
+        KAStorage.setCurrentUser({
+          email: 'amadoucoumbaka@gmail.com',
+          name: 'Amadou KA',
+          role: 'Bureau'
+        }, true);
+        
+        // Reload to apply logged-in state
+        window.location.reload();
+      }
     }
   },
 

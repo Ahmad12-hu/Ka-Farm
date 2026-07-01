@@ -1,4 +1,5 @@
 // KA Farm - Crops & Nurseries Module (With Sanitary Diagnostics)
+import { KAStorage } from '../storage.js';
 
 let liveStream = null;
 let currentSanitaryBase64 = '';
@@ -6,8 +7,7 @@ let currentSanitaryBase64 = '';
 const CROP_LIBRARY_DATA = KAStorage.getCropLibrary();
 
 export const CropsModule = {
-  async init() {
-    KAStorage.init();
+  init() {
     this.renderCrops();
     this.renderNurseries();
     this.renderTreatments();
@@ -214,11 +214,11 @@ export const CropsModule = {
     }
   },
 
-  async renderCrops() {
+  renderCrops() {
     const container = document.getElementById('crops-container');
     if (!container) return;
 
-    const crops = KAStorage.getCrops() || [];
+    const crops = KAStorage.getCrops();
 
     if (crops.length === 0) {
       container.innerHTML = `
@@ -381,16 +381,16 @@ export const CropsModule = {
 
   setupListeners() {
     // Delete crop
-    window.deleteCrop = async (id) => {
+    window.deleteCrop = (id) => {
       if (!confirm('Voulez-vous supprimer cette culture ?')) return;
-      const crops = (KAStorage.getCrops() || []).filter(c => c.id !== id);
+      const crops = KAStorage.getCrops().filter(c => c.id !== id);
       KAStorage.saveCrops(crops);
       this.renderCrops();
     };
 
     // Toggle water status
-    window.toggleWaterStatus = async (id) => {
-      const crops = KAStorage.getCrops() || [];
+    window.toggleWaterStatus = (id) => {
+      const crops = KAStorage.getCrops();
       const idx = crops.findIndex(c => c.id === id);
       if (idx !== -1) {
         crops[idx].waterStatus = crops[idx].waterStatus === 'Optimale' ? 'Besoin d\'eau' : 'Optimale';
@@ -400,8 +400,8 @@ export const CropsModule = {
     };
 
     // Toggle fertilizer status
-    window.toggleFertStatus = async (id) => {
-      const crops = KAStorage.getCrops() || [];
+    window.toggleFertStatus = (id) => {
+      const crops = KAStorage.getCrops();
       const idx = crops.findIndex(c => c.id === id);
       if (idx !== -1) {
         const states = ['OK', 'Besoin d\'azote', 'Besoin de potasse'];
@@ -465,7 +465,7 @@ export const CropsModule = {
     // Crop submission
     const cropForm = document.getElementById('shared-crop-form');
     if (cropForm) {
-      cropForm.addEventListener('submit', async (e) => {
+      cropForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const name = document.getElementById('form-crop-name').value;
         const field = document.getElementById('form-crop-field').value;
@@ -474,7 +474,7 @@ export const CropsModule = {
 
         if (!name || !field || !sowing || !harvest) return;
 
-        const crops = KAStorage.getCrops() || [];
+        const crops = KAStorage.getCrops();
         crops.unshift({
           id: `C-${Date.now()}`,
           name,

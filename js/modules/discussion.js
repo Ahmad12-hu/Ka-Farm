@@ -10,8 +10,8 @@ export const DiscussionModule = {
   init() {
     this.currentUser = KAStorage.getCurrentUser();
     if (!this.currentUser) {
-      // Public/visitor fallback: allow guest browsing without blocking access
-      this.currentUser = { email: 'guest@kafarm.sn', name: 'Visiteur', role: 'Invité', isGuest: true };
+      // Fallback
+      this.currentUser = { email: 'amadoucoumbaka@gmail.com', name: 'Amadou KA', role: 'Bureau' };
     }
 
     this.renderUserInfo();

@@ -20,10 +20,8 @@ try {
   console.error("Failed to initialize Firebase in Vercel function:", e);
 }
 
-function sanitizeText(text) {
-  return String(text || '').replace(/<[^>]*>/g, '').trim();
-}
-
+const app = express();
+app.use(express.json());
 
 // In-memory fallback message store for brothers discussion
 let serverMessages = [
@@ -58,15 +56,14 @@ app.get('/api/messages', async (req, res) => {
 
 app.post('/api/messages', async (req, res) => {
   const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
-  const cleanText = sanitizeText(text);
   if (!senderEmail || !text) {
     return res.status(400).json({ error: 'Champs requis manquants' });
   }
   const newMsg = {
     id: id || 'msg-' + Date.now(),
-    senderEmail: sanitizeText(senderEmail),
-    senderName: sanitizeText(senderName),
-    text: cleanText,
+    senderEmail,
+    senderName: senderName || senderEmail,
+    text,
     timestamp: timestamp || new Date().toISOString(),
     isPrivate: !!isPrivate
   };
@@ -186,21 +183,6 @@ app.post('/api/gemini', async (req, res) => {
   }
 });
 
-app.get('/api/health', async (req, res) => {
-  try {
-    const firebaseStatus = db ? 'initialized' : 'not initialized';
-    const geminiKey = process.env.GEMINI_API_KEY ? 'configured' : 'missing';
-    res.json({
-      status: 'ok',
-      firebase: firebaseStatus,
-      gemini: geminiKey,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ status: 'error', error: error.message });
-  }
-});
-
 app.get('/api/weather', async (req, res) => {
   try {
     const { lat, lon } = req.query;
@@ -227,12 +209,3 @@ app.get('/api/weather', async (req, res) => {
 });
 
 export default app;
-
-const app = express();
-app.use(express.json());
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  next();
-});

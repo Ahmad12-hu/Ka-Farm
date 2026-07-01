@@ -2,7 +2,7 @@
 import { KAStorage } from '../storage.js';
 
 export const DashboardModule = {
-  async init() {
+  init() {
     this.selectedZone = localStorage.getItem('ka_farm_zone') || 'Dakar';
     this.render();
     this.setupListeners();
@@ -14,12 +14,12 @@ export const DashboardModule = {
     };
   },
 
-  async render() {
-    const crops = KAStorage.getCrops() || [];
-    const tasks = KAStorage.getTasks() || [];
-    const finances = KAStorage.getFinances() || [];
+  render() {
+    const crops = KAStorage.getCrops();
+    const tasks = KAStorage.getTasks();
     const nurseries = KAStorage.getNurseries();
     const stocks = KAStorage.getStocks();
+    const finances = KAStorage.getFinances();
 
     // 1. Quantities
     const cropsCount = crops.length;

@@ -14,27 +14,9 @@ const firebaseConfig = JSON.parse(fs.readFileSync(path.resolve('firebase-applet-
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
 
-function apiAuth(req, res, next) {
-  const apiKey = req.headers['x-api-key'];
-  if (apiKey && apiKey === process.env.API_KEY) {
-    return next();
-  }
-  res.status(401).json({ error: 'Accès refusé' });
-}
-
-function sanitizeText(text) {
-  return String(text || '').replace(/<[^>]*>/g, '').trim();
-}
-
 async function startServer() {
   const app = express();
   app.use(express.json());
-  app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('Referrer-Policy', 'no-referrer');
-    next();
-  });
 
   // In-memory fallback message store for brothers discussion
   let serverMessages = [
@@ -60,15 +42,14 @@ async function startServer() {
 
   app.post('/api/messages', async (req, res) => {
     const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
-    const cleanText = sanitizeText(text);
     if (!senderEmail || !text) {
       return res.status(400).json({ error: 'Champs requis manquants' });
     }
     const newMsg = {
       id: id || 'msg-' + Date.now(),
-      senderEmail: sanitizeText(senderEmail),
-      senderName: sanitizeText(senderName),
-      text: cleanText,
+      senderEmail,
+      senderName: senderName || senderEmail,
+      text,
       timestamp: timestamp || new Date().toISOString(),
       isPrivate: !!isPrivate
     };
