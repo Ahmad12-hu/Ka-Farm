@@ -1,5 +1,5 @@
 // KA Farm - Financial & Compost Calculator Module
-import { KAStorage } from '../storage.js';
+import { KAStorageMongoDB } from '../storage-mongodb.js';
 
 export const FinancesModule = {
   marketsData: {
@@ -31,21 +31,22 @@ export const FinancesModule = {
 
   selectedMarket: 'mbour',
 
-  init() {
+  async init() {
+    await KAStorageMongoDB.init();
     this.renderFinances();
     this.setupListeners();
     this.calculateCompost();
     this.initMarketSimulator();
   },
 
-  renderFinances() {
+  async renderFinances() {
     const tbody = document.getElementById('finances-table-body');
     if (!tbody) return;
 
-    const finances = KAStorage.getFinances();
+    const finances = await KAStorageMongoDB.getFinances();
 
     // Cumulative stats - Centralized
-    const { totalRevenu: totalRevenre, totalDepense: totalExpense, solde: totalSolde } = KAStorage.getFinanceStats();
+    const { totalRevenu: totalRevenre, totalDepense: totalExpense, solde: totalSolde } = await KAStorageMongoDB.getFinanceStats();
 
     const elRev = document.getElementById('finances-total-revenu');
     const elExp = document.getElementById('finances-total-depense');
@@ -118,12 +119,12 @@ export const FinancesModule = {
     this.renderMargins();
   },
 
-  renderMargins() {
+  async renderMargins() {
     const parcelBody = document.getElementById('parcel-margins-table-body');
     const cropBody = document.getElementById('crop-margins-table-body');
     if (!parcelBody && !cropBody) return;
 
-    const finances = KAStorage.getFinances();
+    const finances = await KAStorageMongoDB.getFinances();
 
     // 1. Parcels Margins calculation
     const parcels = [
@@ -288,8 +289,8 @@ export const FinancesModule = {
 
   setupListeners() {
     // WhatsApp Export of a single receipt
-    window.shareFinanceWhatsApp = (id) => {
-      const finances = KAStorage.getFinances();
+    window.shareFinanceWhatsApp = async (id) => {
+      const finances = await KAStorageMongoDB.getFinances();
       const f = finances.find(item => item.id === id);
       if (!f) return;
 
@@ -312,8 +313,8 @@ export const FinancesModule = {
     };
 
     // CSV Export
-    window.exportFinancesCSV = () => {
-      const finances = KAStorage.getFinances();
+    window.exportFinancesCSV = async () => {
+      const finances = await KAStorageMongoDB.getFinances();
       if (finances.length === 0) {
         alert("Aucune transaction à exporter !");
         return;
@@ -339,9 +340,9 @@ export const FinancesModule = {
     };
 
     // PDF Export via beautiful dynamic print overlay
-    window.exportFinancesPDF = () => {
-      const finances = KAStorage.getFinances();
-      const { totalRevenu, totalDepense, solde } = KAStorage.getFinanceStats();
+    window.exportFinancesPDF = async () => {
+      const finances = await KAStorageMongoDB.getFinances();
+      const { totalRevenu, totalDepense, solde } = await KAStorageMongoDB.getFinanceStats();
       const zone = localStorage.getItem('ka_farm_zone') || 'Dakar (Niayes)';
       const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -536,17 +537,17 @@ export const FinancesModule = {
     };
 
     // Delete finance item
-    window.deleteFinance = (id) => {
+    window.deleteFinance = async (id) => {
       if (!confirm('Voulez-vous supprimer cette ligne de comptabilité ?')) return;
-      const finances = KAStorage.getFinances().filter(f => f.id !== id);
-      KAStorage.saveFinances(finances);
+      const finances = (await KAStorageMongoDB.getFinances()).filter(f => f.id !== id);
+      await KAStorageMongoDB.saveFinances(finances);
       this.renderFinances();
     };
 
     // Form submit
     const form = document.getElementById('shared-finance-form');
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const desc = document.getElementById('form-fin-desc').value;
         const type = document.getElementById('form-fin-type').value;
@@ -558,7 +559,7 @@ export const FinancesModule = {
 
         if (!desc || !amt || !date) return;
 
-        const finances = KAStorage.getFinances();
+        const finances = await KAStorageMongoDB.getFinances();
         finances.unshift({
           id: `F-${Date.now()}`,
           description: desc,
@@ -570,7 +571,7 @@ export const FinancesModule = {
           cropName: cropName || undefined
         });
 
-        KAStorage.saveFinances(finances);
+        await KAStorageMongoDB.saveFinances(finances);
         this.renderFinances();
         form.reset();
         
