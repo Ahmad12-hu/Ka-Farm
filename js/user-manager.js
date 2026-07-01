@@ -1,10 +1,8 @@
 // KA Farm - User Manager
 // Handles roles, permissions and authorization rules
-// Support PostgreSQL + localStorage fallback
+// localStorage only (browser-compatible)
 
 import { KAStorage } from './storage.js';
-import { UtilisateurModel } from '../database/models.js';
-import bcrypt from 'bcrypt';
 
 export const UserManager = {
   getRoles() {
@@ -24,34 +22,12 @@ export const UserManager = {
     return KAStorage.getCurrentUser() !== null;
   },
 
-  // Login avec PostgreSQL + fallback localStorage
+  // Login avec localStorage
   async login(email, password) {
-    try {
-      // Essayer PostgreSQL d'abord
-      const user = await UtilisateurModel.getByEmail(email);
-      if (user && user.est_actif && await bcrypt.compare(password, user.password_hash)) {
-        await UtilisateurModel.updateLastLogin(user.id);
-        
-        const sessionUser = {
-          email: user.email,
-          name: `${user.prenom || ''} ${user.nom}`.trim(),
-          role: user.role,
-          fermeId: user.ferme_id,
-          userId: user.id
-        };
-        
-        KAStorage.setCurrentUser(sessionUser, true);
-        return { success: true, user: sessionUser };
-      }
-    } catch (error) {
-      console.error('Erreur login PostgreSQL:', error);
-    }
-    
-    // Fallback vers localStorage (ancien système)
     try {
       const users = KAStorage.getUsers();
       const localUser = users.find(u => u.email === email && u.password === KAStorage.hashPassword(password));
-      
+
       if (localUser) {
         const sessionUser = {
           email: localUser.email,
@@ -61,14 +37,14 @@ export const UserManager = {
           userId: null,
           isLocal: true
         };
-        
+
         KAStorage.setCurrentUser(sessionUser, true);
         return { success: true, user: sessionUser };
       }
     } catch (error) {
       console.error('Erreur login localStorage:', error);
     }
-    
+
     return { success: false, error: 'Email ou mot de passe incorrect' };
   },
 
