@@ -1,5 +1,7 @@
 // KA Farm - Crops & Nurseries Module (With Sanitary Diagnostics)
+// Support PostgreSQL + localStorage fallback
 import { KAStorage } from '../storage.js';
+import { CultureModel, PepiniereModel } from '../../database/models.js';
 
 let liveStream = null;
 let currentSanitaryBase64 = '';

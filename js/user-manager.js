@@ -1,13 +1,18 @@
 // KA Farm - User Manager
 // Handles roles, permissions and authorization rules
+// Support PostgreSQL + localStorage fallback
 
 import { KAStorage } from './storage.js';
+import { UtilisateurModel } from '../database/models.js';
+import bcrypt from 'bcrypt';
 
 export const UserManager = {
   getRoles() {
     return {
-      TERRAIN: 'Terrain',
-      BUREAU: 'Bureau'
+      TERRAIN: 'terrain',
+      BUREAU: 'gestionnaire',
+      ADMIN: 'admin',
+      INVITE: 'invite'
     };
   },
 
@@ -19,16 +24,76 @@ export const UserManager = {
     return KAStorage.getCurrentUser() !== null;
   },
 
+  // Login avec PostgreSQL + fallback localStorage
+  async login(email, password) {
+    try {
+      // Essayer PostgreSQL d'abord
+      const user = await UtilisateurModel.getByEmail(email);
+      if (user && user.est_actif && await bcrypt.compare(password, user.password_hash)) {
+        await UtilisateurModel.updateLastLogin(user.id);
+        
+        const sessionUser = {
+          email: user.email,
+          name: `${user.prenom || ''} ${user.nom}`.trim(),
+          role: user.role,
+          fermeId: user.ferme_id,
+          userId: user.id
+        };
+        
+        KAStorage.setCurrentUser(sessionUser, true);
+        return { success: true, user: sessionUser };
+      }
+    } catch (error) {
+      console.error('Erreur login PostgreSQL:', error);
+    }
+    
+    // Fallback vers localStorage (ancien système)
+    try {
+      const users = KAStorage.getUsers();
+      const localUser = users.find(u => u.email === email && u.password === KAStorage.hashPassword(password));
+      
+      if (localUser) {
+        const sessionUser = {
+          email: localUser.email,
+          name: localUser.name,
+          role: localUser.role,
+          fermeId: null,
+          userId: null,
+          isLocal: true
+        };
+        
+        KAStorage.setCurrentUser(sessionUser, true);
+        return { success: true, user: sessionUser };
+      }
+    } catch (error) {
+      console.error('Erreur login localStorage:', error);
+    }
+    
+    return { success: false, error: 'Email ou mot de passe incorrect' };
+  },
+
+  // Logout
+  logout() {
+    KAStorage.setCurrentUser(null, false);
+    window.location.href = '/index.html';
+  },
+
   // Check if current user has role Terrain (Moussa - ground operator)
   isTerrain() {
     const user = this.getCurrentUser();
-    return user && user.role === 'Terrain';
+    return user && (user.role === 'terrain' || user.role === 'Terrain');
   },
 
   // Check if current user has role Bureau (Aly - office supervisor)
   isBureau() {
     const user = this.getCurrentUser();
-    return user && user.role === 'Bureau';
+    return user && (user.role === 'gestionnaire' || user.role === 'Bureau');
+  },
+
+  // Check if admin
+  isAdmin() {
+    const user = this.getCurrentUser();
+    return user && user.role === 'admin';
   },
 
   // Role permissions checking
@@ -58,7 +123,7 @@ export const UserManager = {
       const guestUser = {
         email: 'guest@kafarm.sn',
         name: 'Visiteur',
-        role: 'Invité',
+        role: 'invite',
         isGuest: true
       };
       KAStorage.setCurrentUser(guestUser, false);

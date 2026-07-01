@@ -24,14 +24,6 @@ function sanitizeText(text) {
   return String(text || '').replace(/<[^>]*>/g, '').trim();
 }
 
-const app = express();
-app.use(express.json());
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  next();
-});
 
 // In-memory fallback message store for brothers discussion
 let serverMessages = [
@@ -235,3 +227,12 @@ app.get('/api/weather', async (req, res) => {
 });
 
 export default app;
+
+const app = express();
+app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
