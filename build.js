@@ -36,7 +36,7 @@ function copyRecursive(src, dest) {
   }
 }
 
-// Clean dist directory
+// Clean dist directory safely
 if (fs.existsSync('dist')) {
   fs.rmSync('dist', { recursive: true });
 }
