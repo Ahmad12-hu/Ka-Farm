@@ -1,9 +1,8 @@
 // KA Farm - Dashboard Statistics & Overview Module
-import { KAStorageMongoDB } from '../storage-mongodb.js';
+import { KAStorage } from '../storage.js';
 
 export const DashboardModule = {
   async init() {
-    await KAStorageMongoDB.init();
     this.selectedZone = localStorage.getItem('ka_farm_zone') || 'Dakar';
     this.render();
     this.setupListeners();
@@ -16,11 +15,11 @@ export const DashboardModule = {
   },
 
   async render() {
-    const crops = await KAStorageMongoDB.getCrops();
-    const tasks = await KAStorageMongoDB.getTasks();
+    const crops = KAStorage.getCrops() || [];
+    const tasks = KAStorage.getTasks() || [];
+    const finances = KAStorage.getFinances() || [];
     const nurseries = KAStorage.getNurseries();
     const stocks = KAStorage.getStocks();
-    const finances = await KAStorageMongoDB.getFinances();
 
     // 1. Quantities
     const cropsCount = crops.length;
@@ -54,7 +53,7 @@ export const DashboardModule = {
     }
 
     // 2. Centralized Financial calculation
-    const { totalRevenu, totalDepense, solde } = await KAStorageMongoDB.getFinanceStats();
+    const { totalRevenu, totalDepense, solde } = KAStorage.getFinanceStats();
 
     const elRevenu = document.getElementById('stat-total-revenu');
     const elDepense = document.getElementById('stat-total-depense');
