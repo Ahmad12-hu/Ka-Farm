@@ -88,7 +88,9 @@
       }
 
       // Redirect to the dashboard (visitors can browse without account)
-      window.location.replace('/pages/shared/dashboard.html');
+      setTimeout(() => {
+        window.location.replace('/pages/shared/dashboard.html');
+      }, 100);
     });
   </script>
 </head>
