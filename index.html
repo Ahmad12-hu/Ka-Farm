@@ -69,29 +69,39 @@
     import { UserManager } from '/js/user-manager.js';
     import { KAStorage } from '/js/storage.js';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Initialize Default Storage Data if empty
-      KAStorage.init();
+    function safeRedirect() {
+      try {
+        // Initialize Default Storage Data if empty
+        KAStorage.init();
 
-      // Check user session - allow public/visitor access
-      let user = UserManager.getCurrentUser();
-      if (!user) {
-        // Allow public access as guest visitor
-        const guestUser = {
-          email: 'guest@kafarm.sn',
-          name: 'Visiteur',
-          role: 'Invité',
-          isGuest: true
-        };
-        KAStorage.setCurrentUser(guestUser, false);
-        user = UserManager.getCurrentUser();
+        // Check user session - allow public/visitor access
+        let user = UserManager.getCurrentUser();
+        if (!user) {
+          // Allow public access as guest visitor
+          const guestUser = {
+            email: 'guest@kafarm.sn',
+            name: 'Visiteur',
+            role: 'Invité',
+            isGuest: true
+          };
+          KAStorage.setCurrentUser(guestUser, false);
+          user = UserManager.getCurrentUser();
+        }
+      } catch (e) {
+        console.warn('KA Farm init warning:', e);
+      } finally {
+        // Always continue to dashboard even if module init fails
+        setTimeout(() => {
+          window.location.replace('/pages/shared/dashboard.html');
+        }, 100);
       }
+    }
 
-      // Redirect to the dashboard (visitors can browse without account)
-      setTimeout(() => {
-        window.location.replace('/pages/shared/dashboard.html');
-      }, 100);
-    });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', safeRedirect);
+    } else {
+      safeRedirect();
+    }
   </script>
 </head>
 
