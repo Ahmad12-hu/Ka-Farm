@@ -274,7 +274,6 @@ export const App = {
     this.applyTheme(isDarkMode);
     this.injectSidebar();
     this.injectMobileHeader();
-    this.injectMobileBottomNav();
     this.injectFooter();
     this.setupGlobalListeners();
     this.updateBadges();
@@ -626,66 +625,19 @@ export const App = {
           </div>
         </a>
         <div class="flex items-center gap-2">
-          <!-- Status profile pill -->
-          <span class="inline-flex items-center gap-1 py-0.5 px-2 rounded-full bg-emerald-500/10 text-[9px] font-extrabold text-emerald-400 border border-emerald-500/20">
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            ${currentUser ? currentUser.name.split(' ')[0] : 'Amadou'}
-          </span>
           <!-- Theme Toggle Button -->
           <button onclick="window.toggleAppTheme()" id="btn-theme-mobile" class="p-1.5 text-slate-300 hover:text-white hover:bg-[#0E2F19] rounded-lg transition-all cursor-pointer" title="Basculer le thème">
             <i data-lucide="${isDarkMode ? 'sun' : 'moon'}" class="h-4.5 w-4.5"></i>
+          </button>
+          <button onclick="window.toggleMobileSidebar()" class="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-[#0E2F19]">
+            <i data-lucide="menu" class="h-5 w-5"></i>
           </button>
         </div>
       </div>
     `;
   },
 
-  injectMobileBottomNav() {
-    if (document.getElementById('mobile-bottom-nav')) return;
 
-    const bottomNav = document.createElement('nav');
-    bottomNav.id = 'mobile-bottom-nav';
-    bottomNav.className = 'fixed bottom-0 left-0 right-0 h-16 bg-[#06130B]/95 dark:bg-[#06130B]/95 backdrop-blur-md border-t border-[#143E23] flex items-center justify-around px-2 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.45)]';
-    
-    bottomNav.innerHTML = `
-      <a href="/pages/shared/dashboard.html" data-tab="dashboard" class="mobile-nav-btn flex flex-col items-center justify-center flex-1 py-1 text-slate-400 dark:text-[#819888] hover:text-emerald-400 dark:hover:text-emerald-400 transition-all duration-200">
-        <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
-        <span class="text-[9px] font-black mt-1 tracking-tight">Tableau</span>
-        <span class="mobile-nav-dot scale-0"></span>
-      </a>
-      <a href="/pages/shared/parcelles.html" data-tab="parcelles" class="mobile-nav-btn flex flex-col items-center justify-center flex-1 py-1 text-slate-400 dark:text-[#819888] hover:text-emerald-400 dark:hover:text-emerald-400 transition-all duration-200">
-        <i data-lucide="map" class="h-5 w-5"></i>
-        <span class="text-[9px] font-black mt-1 tracking-tight">Parcelles</span>
-        <span class="mobile-nav-dot scale-0"></span>
-      </a>
-      <a href="/pages/shared/crops.html" data-tab="crops" class="mobile-nav-btn flex flex-col items-center justify-center flex-1 py-1 text-slate-400 dark:text-[#819888] hover:text-emerald-400 dark:hover:text-emerald-400 transition-all duration-200">
-        <i data-lucide="sprout" class="h-5 w-5"></i>
-        <span class="text-[9px] font-black mt-1 tracking-tight">Cultures</span>
-        <span class="mobile-nav-dot scale-0"></span>
-      </a>
-      <a href="/pages/shared/elevage.html" data-tab="elevage" class="mobile-nav-btn flex flex-col items-center justify-center flex-1 py-1 text-slate-400 dark:text-[#819888] hover:text-emerald-400 dark:hover:text-emerald-400 transition-all duration-200">
-        <i data-lucide="paw-print" class="h-5 w-5"></i>
-        <span class="text-[9px] font-black mt-1 tracking-tight">Élevage</span>
-        <span class="mobile-nav-dot scale-0"></span>
-      </a>
-      <button onclick="window.toggleMobileSidebar()" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 dark:text-[#819888] hover:text-emerald-400 dark:hover:text-emerald-400 cursor-pointer transition-all duration-200">
-        <i data-lucide="menu" class="h-5 w-5"></i>
-        <span class="text-[9px] font-black mt-1 tracking-tight">Menu</span>
-        <span class="mobile-nav-dot scale-0 invisible"></span>
-      </button>
-    `;
-
-    document.body.appendChild(bottomNav);
-
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
-    
-    // Dispatch the sidebarInjected event to let Router highlight bottom navigation buttons
-    setTimeout(() => {
-      document.dispatchEvent(new Event('sidebarInjected'));
-    }, 50);
-  },
 
   injectFooter() {
     const mainEl = document.querySelector('main');

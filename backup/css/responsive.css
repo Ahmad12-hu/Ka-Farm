@@ -1,0 +1,18 @@
+/* KA Farm - Responsive Media Queries */
+
+@media (max-width: 1024px) {
+  /* Dynamic mobile menu overlay transitions */
+  #sidebar.active {
+    transform: translateX(0);
+  }
+}
+
+/* Safe touch target padding for smaller displays */
+@media (max-width: 640px) {
+  .btn-touch {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

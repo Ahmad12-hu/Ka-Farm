@@ -36,10 +36,12 @@ export const Router = {
     // Auth pages
     const isAuthPage = path.includes('/pages/auth/login.html') || path.includes('/pages/auth/signup.html');
     const isHomePage = path === '/' || path.endsWith('/index.html');
+    // Public pages accessible without authentication
+    const isPublicPage = path.includes('/pages/shared/training.html') || path.includes('/pages/shared/discussion.html');
     
     if (isAuthPage) {
       UserManager.redirectIfAuth();
-    } else if (!isHomePage) {
+    } else if (!isHomePage && !isPublicPage) {
       // Any other subpage under pages/ requires auth
       UserManager.requireAuth();
     }

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centre de Formation Maraîchère - KA Farm</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body
+  class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+  <div id="mobile-header-placeholder"></div>
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <div id="sidebar-placeholder"></div>
+    <main class="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
+      <div class="w-full space-y-6">
+        <div class="text-left space-y-1">
+          <span class="text-[10px] text-cyan-400 font-extrabold uppercase tracking-widest">Académie KA Farm
+            Sénégal</span>
+          <h2 class="text-2xl font-black text-slate-850 dark:text-white flex items-center gap-2">
+            <i data-lucide="graduation-cap" class="h-6 w-6 text-cyan-400"></i> Guide & Formation Maraîchère
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Itinéraires techniques détaillés,
+            calendriers culturaux et diagnostics biologiques pour réussir vos cultures au Sénégal.</p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-8 space-y-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div
+                class="p-3 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-2xl text-left">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Cultures phares</span>
+                <span class="text-lg font-extrabold text-slate-800 dark:text-white">Oignon, Piment...</span>
+              </div>
+              <div
+                class="p-3 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-2xl text-left">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Pratiques</span>
+                <span class="text-lg font-extrabold text-emerald-400">100% Organique</span>
+              </div>
+              <div
+                class="p-3 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-2xl text-left">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Zones</span>
+                <span class="text-lg font-extrabold text-[#819888]">Niayes & Fleuve</span>
+              </div>
+              <div
+                class="p-3 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-2xl text-left">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Progression</span>
+                <span class="text-lg font-extrabold text-cyan-400">Test Quiz</span>
+              </div>
+            </div>
+            <div
+              class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-6 shadow-md">
+              <div class="space-y-3 pb-4 border-b border-slate-50 dark:border-[#143E23]/20">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div>
+                    <h3
+                      class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <i data-lucide="sprout" class="text-emerald-500 h-4 w-4"></i> Fiches Techniques & Itinéraires
+                    </h3>
+                    <p class="text-[10px] text-slate-400 mt-1 font-semibold">Sélectionnez une culture pour charger son
+                      itinéraire technique sénégalais complet.</p>
+                  </div>
+                  <div class="relative w-full md:w-64">
+                    <input type="text" id="crop-search-input" oninput="window.filterCropGuides()"
+                      placeholder="Rechercher une culture (ex: gombo)..."
+                      class="w-full bg-slate-50 dark:bg-[#061109]/50 border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2 pl-9 text-[11px] text-slate-800 dark:text-slate-200 outline-none font-bold">
+                    <i data-lucide="search" class="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400"></i>
+                  </div>
+                </div>
+                <div id="crop-tabs-container"
+                  class="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-emerald-600/30 scrollbar-track-transparent">
+                </div>
+              </div>
+              <div id="crop-guide-content" class="space-y-6"></div>
+            </div>
+            <div
+              class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 shadow-md">
+              <div>
+                <h3
+                  class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="book-open" class="text-cyan-400 h-4 w-4"></i> Principes de l'Agriculture Biologique
+                </h3>
+                <p class="text-[10px] text-slate-400 mt-1 font-semibold">Les 4 piliers essentiels pour protéger les sols
+                  et maximiser le rendement horticole.</p>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div
+                  class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl space-y-2">
+                  <span class="inline-block p-1.5 bg-emerald-500/15 text-emerald-400 rounded-lg"><i
+                      data-lucide="recycle" class="h-4 w-4"></i></span>
+                  <p class="text-xs font-black text-slate-800 dark:text-white">1. Compostage & Fumure Organique</p>
+                  <p class="text-[10px] text-slate-400 leading-relaxed font-semibold">Utilisation de fumier bien
+                    décomposé (ovin/bovin) à hauteur de 20 tonnes/hectare. Améliore la structure du sol sableux (Dior)
+                    et retient l'eau.</p>
+                </div>
+                <div
+                  class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl space-y-2">
+                  <span class="inline-block p-1.5 bg-cyan-500/15 text-cyan-400 rounded-lg"><i data-lucide="refresh-cw"
+                      class="h-4 w-4"></i></span>
+                  <p class="text-xs font-black text-slate-800 dark:text-white">2. Rotation des Cultures</p>
+                  <p class="text-[10px] text-slate-400 leading-relaxed font-semibold">Ne jamais faire succéder deux
+                    Solanacées (Piment, Tomate, Aubergine) sur la même planche. Alterne avec des Légumineuses (Gombo,
+                    Haricot) pour enrichir en Azote.</p>
+                </div>
+                <div
+                  class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl space-y-2">
+                  <span class="inline-block p-1.5 bg-amber-500/15 text-amber-400 rounded-lg"><i data-lucide="shield"
+                      class="h-4 w-4"></i></span>
+                  <p class="text-xs font-black text-slate-800 dark:text-white">3. Traitements Préventifs Biologiques</p>
+                  <p class="text-[10px] text-slate-400 leading-relaxed font-semibold">Purin d'ortie ou d'ail
+                    biquotidien, émulsions d'huile de Neem locale. Protègent contre la mineuse de la tomate, les
+                    pucerons et les thrips sans chimie.</p>
+                </div>
+                <div
+                  class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl space-y-2">
+                  <span class="inline-block p-1.5 bg-purple-500/15 text-purple-400 rounded-lg"><i data-lucide="droplet"
+                      class="h-4 w-4"></i></span>
+                  <p class="text-xs font-black text-slate-800 dark:text-white">4. Paillage Épais des Planches</p>
+                  <p class="text-[10px] text-slate-400 leading-relaxed font-semibold">Couverture des planches avec de la
+                    paille sèche d'arachide ou d'herbe. Réduit l'évapotranspiration de 40% face au soleil et empêche les
+                    herbes folles.</p>
+                </div>
+              </div>
+            </div>
+            <div
+              class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 shadow-md">
+              <div class="flex items-center justify-between border-b border-slate-50 dark:border-[#143E23]/10 pb-3">
+                <div>
+                  <h3
+                    class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="award" class="text-amber-400 h-4 w-4"></i> Quiz Maraîcher Express
+                  </h3>
+                  <p class="text-[10px] text-slate-400 mt-1 font-semibold">Testez vos compétences pratiques sur le
+                    maraîchage sahélien.</p>
+                </div>
+                <span id="quiz-score-badge"
+                  class="px-2.5 py-0.5 text-[9px] font-extrabold bg-emerald-600/10 text-emerald-400 rounded-full border border-emerald-500/25 hidden">Score:
+                  0/3</span>
+              </div>
+              <div id="quiz-container" class="space-y-4"></div>
+            </div>
+          </div>
+          <div class="lg:col-span-4 flex flex-col space-y-6">
+            <div
+              class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl flex flex-col h-[480px] sm:h-[520px] lg:h-[580px] shadow-lg text-left">
+              <div class="pb-3 border-b border-slate-50 dark:border-slate-800/10 space-y-1">
+                <h3
+                  class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="sparkles" class="h-4 w-4 text-cyan-400 animate-pulse"></i> Conseiller Pédagogique IA
+                </h3>
+                <p class="text-[10px] text-slate-400 font-semibold leading-relaxed">Posez des questions spécifiques sur
+                  l'enseignement agricole, les semis, maladies, et techniques du Sénégal.</p>
+              </div>
+              <div id="training-chat-container" class="flex-grow overflow-y-auto py-4 space-y-4 pr-1 min-h-0 text-xs">
+                <div class="flex justify-start text-left">
+                  <div
+                    class="p-3 bg-slate-50 dark:bg-[#061109]/70 border border-slate-100 dark:border-emerald-950/20 text-slate-800 dark:text-slate-300 rounded-2xl rounded-tl-none mr-12">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-cyan-400 block mb-1">🎓 Mentorat
+                      Horticole</span>
+                    <p class="leading-relaxed">Sénégalais(e) aguerri(e), je suis là pour vous former sur l'ensemble des
+                      cultures maraîchères du Sénégal (oignon, piment, chou, aubergine, tomate, gombo, carotte, salade,
+                      pomme de terre, patate douce, menthe, pastèque, navet, poivron). Quelle technique souhaitez-vous
+                      apprendre aujourd'hui ?</p>
+                  </div>
+                </div>
+              </div>
+              <form id="training-chat-form" class="pt-3 border-t border-slate-50 dark:border-[#143E23]/10 flex gap-2">
+                <input type="text" id="training-chat-input" required placeholder="Poser une question de culture..."
+                  class="flex-grow bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-3 text-[11px] text-slate-850 dark:text-slate-200 outline-none">
+                <button type="submit"
+                  class="p-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl transition-colors cursor-pointer flex items-center justify-center shadow-md">
+                  <i data-lucide="send" class="h-4 w-4"></i>
+                </button>
+              </form>
+            </div>
+            <div
+              class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-3.5 shadow-md">
+              <h4 class="text-[10px] font-black text-[#819888] uppercase tracking-wider">🗓️ Périodes Importantes</h4>
+              <div class="space-y-2 text-xs">
+                <div
+                  class="p-2.5 bg-slate-50 dark:bg-[#061109]/30 rounded-xl border border-slate-100 dark:border-[#143E23]/10 flex items-start gap-2.5">
+                  <span class="text-lg">🍂</span>
+                  <div>
+                    <p class="font-bold text-slate-800 dark:text-white">Octobre - Novembre</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5 leading-normal">Semis des pépinières d'oignons de
+                      contre-saison froide. Indispensable pour éviter la floraison précoce.</p>
+                  </div>
+                </div>
+                <div
+                  class="p-2.5 bg-slate-50 dark:bg-[#061109]/30 rounded-xl border border-slate-100 dark:border-[#143E23]/10 flex items-start gap-2.5">
+                  <span class="text-lg">☀️</span>
+                  <div>
+                    <p class="font-bold text-slate-800 dark:text-white">Mars - Avril</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5 leading-normal">Période critique de repiquage du piment
+                      de contre-saison chaude. Paillage lourd et ombrage légers recommandés.</p>
+                  </div>
+                </div>
+                <div
+                  class="p-2.5 bg-slate-50 dark:bg-[#061109]/30 rounded-xl border border-slate-100 dark:border-[#143E23]/10 flex items-start gap-2.5">
+                  <span class="text-lg">⛈️</span>
+                  <div>
+                    <p class="font-bold text-slate-800 dark:text-white">Juillet - Septembre</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5 leading-normal">Saison des pluies (Hivernage). Idéal
+                      pour chou d'hivernage et aubergine. Veiller au buttage rigoureux pour le drainage.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="/js/router.js"></script>
+  <script type="module" src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const CROP_GUIDES = { compostage_bio: { title: "🍃 Masterclass : Fabrication de Compost Bio-Actif KA-Farm", variety: "Type : Amendement organique aérobie accéléré", cycle: "Durée de maturation : 45 à 60 jours en tas couvert", steps: [{ title: "1. Choix & Dosage des Matières Premières", desc: "Respectez le rapport Carbone/Azote (C/N = 30). Mélangez 60% de matières carbonées sèches avec 30% de matières azotées fraîches et 10% de fumier animal bien sec." }, { title: "2. Montage du Tas & Arrosage Initial", desc: "Montez en couches de 15 à 20 cm en alternant matières sèches, matières vertes et fumier. Arrosez généreusement. Couvrez pour maintenir la chaleur." }, { title: "3. Phases de Température & Retournement", desc: "Retournez le tas tous les 10 à 15 jours. Si le tas refroidit ou sèche, ré-humidifiez-le légèrement." }, { title: "4. Signes de Maturité & Dosage Sol", desc: "Appliquez 2 à 3 kg de compost mûr par mètre carré de planche maraîchère." }] }, biopesticides_recettes: { title: "🛡️ Guide Pratique : Recettes de Biopesticides & Purins Locaux", variety: "Type : Préparations biologiques protectrices", cycle: "Fréquence : Tous les 5 à 7 jours en préventif, 3 jours en curatif", steps: [{ title: "1. Émulsion d'Ail et Piment", desc: "Écrasez 100g d'ail et 100g de piment. Laissez macérer 24h, filtrez, ajoutez 10ml de savon noir, diluez dans 9L d'eau." }, { title: "2. Purin de Feuilles de Neem", desc: "Pilez 2kg de feuilles de Neem, macérez 48h, filtrez. Pulvérisez pur contre les mineuses et chenilles." }, { title: "3. Décoction de Cendre de Bois", desc: "Faites bouillir 500g de cendre dans 5L d'eau pendant 20min. Diluez avec 5L d'eau froide. Anti-altises et apport potasse." }, { title: "4. Macération d'Oignon", desc: "Hachez 200g d'oignons avec la peau, trempez 24h, filtrez. Fongicide préventif contre mildiou et rouille." }] }, goutte_a_goutte: { title: "💧 Manuel d'Optimisation du Système Goutte-à-Goutte", variety: "Technologie : Micro-irrigation localisée sous paillage", cycle: "Fréquence : Quotidienne", steps: [{ title: "1. Choix des Heures Critiques", desc: "Arrosez le matin 6h-8h ou le soir 17h-18h. Évitez l'arrosage nocturne sur tomate pour limiter le mildiou." }, { title: "2. Calcul du Volume d'Eau", desc: "Saison fraîche : 30min/jour. Saison sèche chaude : 1h à 1h15/jour par plant." }, { title: "3. Maintenance", desc: "Purgez les lignes une fois par mois. Débouchez les goutteurs avec du vinaigre." }, { title: "4. Test de Pénétration", desc: "Enfoncez votre index à 5-8cm. Sol frais = irrigation parfaite. Sol poussièreux = augmenter durée." }] }, oignon: { title: "🧅 Itinéraire Technique de l'Oignon", variety: "Violet de Galmi, Mercedes F1, Safari", cycle: "130-150 jours", steps: [{ title: "1. Pépinière", desc: "Semez d'Octobre à Décembre. Arrosez 2 fois par jour jusqu'à levée." }, { title: "2. Repiquage", desc: "Repiquez à 10cm d'intervalle. Coupez légèrement feuilles et racines (habillage)." }, { title: "3. Eau & Fertilisation", desc: "Arrêtez l'irrigation 15 jours avant récolte pour durcir les bulbes." }, { title: "4. Ennemis", desc: "Thrips : extrait d'ail dilué. Mildiou : bouillie bordelaise diluée." }] }, piment: { title: "🌶️ Itinéraire Technique du Piment", variety: "Piment Antillais, Piment oiseau", cycle: "150-180 jours", steps: [{ title: "1. Pépinière", desc: "Protégez du soleil par ombrage artificiel. Repiquez après 45 jours." }, { title: "2. Irrigation", desc: "Arrosez tous les 2 jours sous paillage pour stabiliser l'humidité." }, { title: "3. Fumure", desc: "Apport de cendre de bois toutes les 3 semaines après floraison." }, { title: "4. Maladies", desc: "Virus mosaïque : retirez plants atteints. Pulvérisez huile de Neem." }] }, chou: { title: "🥬 Itinéraire Technique du Chou", variety: "KK Cross F1, Tropica Cross", cycle: "90-110 jours", steps: [{ title: "1. Semis", desc: "Préfère Novembre à Février. Repiquage dès 4-5 feuilles." }, { title: "2. Fertilisation", desc: "Incorporez compost riche 1 semaine avant repiquage." }, { title: "3. Irrigation", desc: "Arrosez généreusement tôt le matin." }, { title: "4. Ravageurs", desc: "Chenilles : purin de Neem ou décoction d'ail hebdomadaire." }] }, aubergine: { title: "🍆 Itinéraire Technique de l'Aubergine", variety: "Florida High Bush, Diakhatou", cycle: "120-140 jours", steps: [{ title: "1. Pépinière", desc: "Germination jusqu'à 10 jours. Repiquage à 50cm." }, { title: "2. Buttage", desc: "Buttez autour du pied pour soutenir les fruits lourds." }, { title: "3. Taille", desc: "Coupez les gourmands pour diriger la sève." }, { title: "4. Ravageurs", desc: "Acariens : eau savonneuse sous les feuilles." }] }, tomate: { title: "🍅 Itinéraire Technique de la Tomate", variety: "Mongal F1, Nadira, Xina", cycle: "110-130 jours", steps: [{ title: "1. Semis", desc: "Idéal d'Octobre à Février. Protégez contre soleil fort." }, { title: "2. Tuteurage", desc: "Installez tuteurs en bambou rapidement." }, { title: "3. Taille", desc: "Supprimez les gourmands axillaires." }, { title: "4. Maladies", desc: "TYLCV : voiles de pépinière et huile de Neem préventive." }] }, gombo: { title: "🌱 Itinéraire Technique du Gombo", variety: "Clemson Spineless, Koto", cycle: "70-90 jours", steps: [{ title: "1. Semis Direct", desc: "Poquets de 3 graines espacés de 50cm." }, { title: "2. Démariage", desc: "Gardez le plant le plus vigoureux par poquet." }, { title: "3. Arrosage", desc: "Arrosez tous les 3 jours. Cueillez tous les 2 jours." }, { title: "4. Ravageurs", desc: "Altises : décoction d'ail ou cendres fines." }] }, carotte: { title: "🥕 Itinéraire Technique de la Carotte", variety: "New Kuroda, Amazonia", cycle: "90-110 jours", steps: [{ title: "1. Sol & Semis", desc: "Sol meuble sans cailloux. Lignes distantes de 20cm." }, { title: "2. Éclaircissage", desc: "Ne gardez qu'un plant tous les 5cm." }, { title: "3. Fumure", desc: "Compost mûr + cendre de bois. Évitez azote frais." }, { title: "4. Nématodes", desc: "Rotation stricte et oeillets d'Inde (Tagetes)." }] }, laitue: { title: "🥬 Itinéraire Technique de la Laitue", variety: "Eden, Great Lakes", cycle: "45-60 jours", steps: [{ title: "1. Semis", desc: "Endroit frais et ombragé. Germe mal au-dessus de 30°C." }, { title: "2. Repiquage", desc: "À 25cm d'intervalle, fin d'après-midi." }, { title: "3. Irrigation", desc: "Arrosage biquotidien de surface." }, { title: "4. Ravageurs", desc: "Barrière de cendre contre limaces. Eau savonneuse contre pucerons." }] }, pomme_de_terre: { title: "🥔 Itinéraire Technique de la Pomme de Terre", variety: "Spunta, Claustar", cycle: "90-115 jours", steps: [{ title: "1. Plantation", desc: "Novembre à Janvier. Tubercules à 10cm de profondeur." }, { title: "2. Buttage", desc: "Buttez à 15cm puis 3 semaines plus tard." }, { title: "3. Irrigation", desc: "Arrêtez l'eau 10 jours avant récolte." }, { title: "4. Maladies", desc: "Mildiou : bouillie bordelaise préventive." }] }, patate_douce: { title: "🍠 Itinéraire Technique de la Patate Douce", variety: "Tieboulene, Orange Flesh", cycle: "120-150 jours", steps: [{ title: "1. Multiplication", desc: "Boutures de 30cm avec 3-4 bourgeons." }, { title: "2. Billons", desc: "Billons de 30cm pour éviter asphyxie racinaire." }, { title: "3. Couverture", desc: "Les lianes couvrent le sol et réduisent arrosage." }, { title: "4. Charançon", desc: "Évitez la replantation sur même planche 2 ans." }] }, menthe: { title: "🌿 Itinéraire Technique de la Menthe", variety: "Menthe locale marocaine", cycle: "Pérenne", steps: [{ title: "1. Bouturage", desc: "Boutures de stolons avec racines." }, { title: "2. Humidité", desc: "Arrosez quotidiennement. Semi-ombragé." }, { title: "3. Taille", desc: "Coupez à 5cm du sol régulièrement." }, { title: "4. Champignons", desc: "Rouille : taillez ras et aérez." }] }, pasteque: { title: "🍉 Itinéraire Technique de la Pastèque", variety: "Kaolack, Sugar Baby", cycle: "85-100 jours", steps: [{ title: "1. Semis", desc: "Poquets de 3 graines, espacez 1,5m." }, { title: "2. Taille", desc: "Pincez tige après 4ème feuille." }, { title: "3. Eau", desc: "Stoppez irrigation 10-12 jours avant récolte." }, { title: "4. Mouche des fruits", desc: "Pièges à phéromones ou sacs protecteurs." }] }, navet: { title: "🥕 Itinéraire Technique du Navet", variety: "Globe à collet violet", cycle: "55-70 jours", steps: [{ title: "1. Semis", desc: "Lignes distantes de 25cm." }, { title: "2. Éclaircissage", desc: "Un plant tous les 10cm." }, { title: "3. Irrigation", desc: "Fraîcheur constante obligatoire." }, { title: "4. Altises", desc: "Arrosez feuillage ou purin de Neem." }] }, poivron: { title: "🫑 Itinéraire Technique du Poivron", variety: "Yolo Wonder, Tresor F1", cycle: "120-145 jours", steps: [{ title: "1. Pépinière", desc: "Lignes de 10cm, 2 arrosages/jour." }, { title: "2. Repiquage", desc: "40cm x 60cm. Compost au pied." }, { title: "3. Irrigation", desc: "Régulier sans inondation." }, { title: "4. Nécrose Apicale", desc: "Arrosage régulier + paillage lourd." }] } };
+      const QUIZ_QUESTIONS = [{ id: 1, question: "Quelle pratique réduit drastiquement l'évaporation de l'eau sous le soleil du Sénégal ?", options: ["L'arrosage intensif à midi", "Le paillage épais des planches avec de la paille d'arachide", "Laisser le sol entièrement nu", "Pulvériser du sel sur le sol"], correct: 1, explanation: "Le paillage bio-sourcé réduit les besoins en eau d'irrigation de près de 40%." }, { id: 2, question: "Pourquoi ne pas replanter du piment après une récolte d'aubergine sur la même planche ?", options: ["Ce sont deux cultures qui se détestent", "Ce sont toutes deux des Solanacées, risquant des maladies du sol", "Le piment refuse de pousser sur terre noire", "Il n'y a aucune contre-indication"], correct: 1, explanation: "La rotation évite la propagation des nématodes et champignons spécifiques aux Solanacées." }, { id: 3, question: "Quel traitement biologique combat les chenilles perforatrices du chou ?", options: ["Engrais chimique d'urée", "Le purin de feuilles ou huile de Neem locale", "Arrosage à l'eau saline", "Couper la pépinière"], correct: 1, explanation: "Le Neem contient de l'Azadirachtine qui perturbe le cycle des chenilles." }, { id: 4, question: "Quelle distance pour le repiquage définitif du Poivron ?", options: ["5cm très serré", "40cm sur ligne et 60cm entre lignes", "2 mètres", "Les poivrons ne se repiquent pas"], correct: 1, explanation: "Un espacement 40x60cm permet une circulation d'air saine." }, { id: 5, question: "Qu'est-ce qui cause la nécrose apicale ('cul noir') ?", options: ["Attaque de sauterelles", "Carence en calcium liée à arrosages irréguliers", "Excès de vent", "Maladie causée par oiseaux"], correct: 1, explanation: "Un arrosage régulier et un bon paillage corrigent cela." }, { id: 6, question: "Quel élément active la décomposition du compost ?", options: ["La cendre de bois", "Les fientes de volaille ou fumier mouton bien sec", "Plastique recyclé", "Eau salée"], correct: 1, explanation: "Les déjections animales sont riches en azote et bactéries actives." }, { id: 7, question: "Qu'est-ce que l'opération d'habillage des oignons ?", options: ["Envelopper de feuilles de baobab", "Couper légèrement feuilles et racines", "Ajouter chaux blanche", "Laver à l'eau savonneuse"], correct: 1, explanation: "L'habillage réduit la transpiration et stimule de nouvelles racines." }, { id: 8, question: "Pourquoi arrêter d'arroser les oignons 15 jours avant récolte ?", options: ["Économiser l'eau", "Durcir les tuniques et améliorer conservation", "L'oignon n'aime plus l'eau", "Éviter feuilles sucrées"], correct: 1, explanation: "Le sevrage durcit les couches protectrices et empêche moisissures." }];
+      let currentQuizIdx = 0;
+      let userQuizAnswers = [];
+      let currentSelectedCrop = 'oignon';
+      window.renderCropTabs = (searchQuery = '') => {
+        const tabsContainer = document.getElementById('crop-tabs-container');
+        if (!tabsContainer) return;
+        const query = searchQuery.toLowerCase().trim();
+        const keys = Object.keys(CROP_GUIDES);
+        const filteredKeys = keys.filter(key => key.includes(query) || CROP_GUIDES[key].title.toLowerCase().includes(query) || CROP_GUIDES[key].variety.toLowerCase().includes(query));
+        if (filteredKeys.length === 0) { tabsContainer.innerHTML = '<span class=\"text-[10px] text-rose-400 font-extrabold p-2 uppercase\">Aucune culture trouvée.</span>'; return; }
+        tabsContainer.innerHTML = filteredKeys.map(key => { const isActive = key === currentSelectedCrop; const displayLabel = key.replace(/_/g, ' '); const activeClass = isActive ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-[#061109]/30 text-slate-600 dark:text-[#819888] hover:text-emerald-500 hover:bg-slate-200 dark:hover:bg-[#143E23]/25'; return `<button onclick=\"window.selectCropGuide('${key}')\" id=\"btn-crop-${key}\" class=\"crop-tab-btn flex-shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${activeClass}\">${displayLabel}</button>`; }).join('');
+        if (!filteredKeys.includes(currentSelectedCrop)) window.selectCropGuide(filteredKeys[0]);
+      };
+      window.filterCropGuides = () => { const input = document.getElementById('crop-search-input'); const query = input ? input.value : ''; window.renderCropTabs(query); };
+      window.selectCropGuide = (cropKey) => {
+        currentSelectedCrop = cropKey;
+        document.querySelectorAll('.crop-tab-btn').forEach(btn => { btn.className = "crop-tab-btn flex-shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer bg-slate-100 dark:bg-[#061109]/30 text-slate-600 dark:text-[#819888] hover:text-emerald-500 hover:bg-slate-200 dark:hover:bg-[#143E23]/25"; });
+        const activeBtn = document.getElementById('btn-crop-' + cropKey); if (activeBtn) activeBtn.className = "crop-tab-btn flex-shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer bg-emerald-600 text-white shadow-sm";
+        const data = CROP_GUIDES[cropKey]; if (!data) return;
+        const contentDiv = document.getElementById('crop-guide-content'); if (contentDiv) { contentDiv.className = 'space-y-6 animate-fadeIn'; contentDiv.innerHTML = '<div class=\"border-b border-slate-50 dark:border-[#143E23]/10 pb-4 space-y-1.5\"><h4 class=\"text-base font-black text-slate-800 dark:text-white leading-tight\">' + data.title + '</h4><div class=\"flex flex-wrap gap-2 pt-1.5\"><span class=\"text-[9px] font-bold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/15\">' + data.variety + '</span><span class=\"text-[9px] font-bold bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/15\">' + data.cycle + '</span></div></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\">' + data.steps.map(step => '<div class=\"p-4 bg-slate-50 dark:bg-[#061109]/40 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl text-left space-y-1\"><h5 class=\"text-xs font-black text-emerald-500 uppercase tracking-wider\">' + step.title + '</h5><p class=\"text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed\">' + step.desc + '</p></div>').join('') + '</div>'; }
+      };
+      window.renderCropTabs(); window.selectCropGuide('compostage_bio');
+      window.renderQuizQuestion = () => {
+        const quizBox = document.getElementById('quiz-container'); if (!quizBox) return;
+        if (currentQuizIdx >= QUIZ_QUESTIONS.length) { let correctCount = 0; QUIZ_QUESTIONS.forEach((q, idx) => { if (userQuizAnswers[idx] === q.correct) correctCount++; }); const badge = document.getElementById('quiz-score-badge'); if (badge) { badge.textContent = 'Score: ' + correctCount + '/' + QUIZ_QUESTIONS.length; badge.classList.remove('hidden'); } quizBox.innerHTML = '<div class=\"p-6 bg-[#0B2112]/50 border border-emerald-500/20 rounded-2xl text-center space-y-4 animate-fadeIn\"><span class=\"text-3xl\">🏆</span><div class=\"space-y-1\"><h4 class=\"text-sm font-black text-white uppercase tracking-wider\">Formation validée avec succès !</h4><p class=\"text-xs text-slate-400\">Vous avez obtenu <strong class=\"text-emerald-400\">' + correctCount + ' sur ' + QUIZ_QUESTIONS.length + '</strong>.</p></div><button onclick=\"window.restartQuiz()\" class=\"px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl cursor-pointer transition-all\">Recommencer le Quiz</button></div>'; return; }
+        const q = QUIZ_QUESTIONS[currentQuizIdx]; quizBox.innerHTML = '<div class=\"space-y-3.5 animate-fadeIn text-xs\"><div class=\"flex items-start gap-2\"><span class=\"px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-lg text-[10px] font-black uppercase\">Q' + (currentQuizIdx + 1) + '</span><p class=\"font-extrabold text-slate-800 dark:text-slate-200\">' + q.question + '</p></div><div class=\"grid grid-cols-1 gap-2 pl-3 sm:pl-7\">' + q.options.map((opt, optIdx) => '<button onclick=\"window.submitQuizAnswer(' + optIdx + ')\" class=\"w-full text-left p-3 bg-slate-50 dark:bg-[#061109]/30 hover:bg-slate-100 dark:hover:bg-[#11321C] border border-slate-150 dark:border-[#1A4525] rounded-xl text-[11px] text-slate-700 dark:text-slate-300 font-medium transition-colors cursor-pointer\">' + opt + '</button>').join('') + '</div></div>';
+      };
+      window.submitQuizAnswer = (selectedIdx) => { const q = QUIZ_QUESTIONS[currentQuizIdx]; userQuizAnswers.push(selectedIdx); const quizBox = document.getElementById('quiz-container'); const isCorrect = selectedIdx === q.correct; quizBox.innerHTML = '<div class=\"space-y-4 animate-fadeIn\"><div class=\"p-4 rounded-2xl border ' + (isCorrect ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20') + ' space-y-2\"><p class=\"text-xs font-black ' + (isCorrect ? 'text-emerald-400' : 'text-rose-400') + ' flex items-center gap-1.5\">' + (isCorrect ? 'Félicitations !' : 'Réponse erronée.') + '</p><p class=\"text-[11px] text-slate-300 font-semibold leading-relaxed\">' + q.explanation + '</p></div><button onclick=\"window.nextQuizQuestion()\" class=\"px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1\">Question suivante <i data-lucide=\"arrow-right\" class=\"h-3 w-3\"></i></button></div>'; if (window.lucide) window.lucide.createIcons(); };
+      window.nextQuizQuestion = () => { currentQuizIdx++; window.renderQuizQuestion(); };
+      window.restartQuiz = () => { currentQuizIdx = 0; userQuizAnswers = []; const badge = document.getElementById('quiz-score-badge'); if (badge) badge.classList.add('hidden'); window.renderQuizQuestion(); };
+      window.renderQuizQuestion();
+      const chatForm = document.getElementById('training-chat-form'); const chatInput = document.getElementById('training-chat-input'); const chatContainer = document.getElementById('training-chat-container'); let chatHistory = [];
+      if (chatForm && chatInput && chatContainer) { chatForm.addEventListener('submit', async (e) => { e.preventDefault(); const question = chatInput.value.trim(); if (!question) return; chatInput.value = ''; const userBubble = document.createElement('div'); userBubble.className = 'flex justify-end text-right'; userBubble.innerHTML = '<div class=\"p-3 bg-emerald-600 text-white rounded-2xl rounded-tr-none ml-12 font-medium\">' + question + '</div>'; chatContainer.appendChild(userBubble); chatContainer.scrollTop = chatContainer.scrollHeight; chatHistory.push({ role: 'user', text: question }); const loadingId = 'load-' + Date.now(); const loader = document.createElement('div'); loader.id = loadingId; loader.className = 'flex justify-start text-left animate-pulse'; loader.innerHTML = '<div class=\"p-3 bg-slate-50 dark:bg-[#061109]/70 border border-slate-100 dark:border-emerald-950/20 text-slate-500 rounded-2xl rounded-tl-none mr-12 flex items-center gap-2\"><span class=\"text-[9px] font-black uppercase tracking-wider text-cyan-400\">🤖 Rédaction</span><p class=\"text-xs font-bold italic\">Le mentor horticole étudie votre question...</p></div>'; chatContainer.appendChild(loader); chatContainer.scrollTop = chatContainer.scrollHeight; try { const instructionContext = 'Tu es le Mentor d\'Apprentissage Horticole de KA Farm au Sénégal. Ton rôle est d\'éduquer, enseigner et former l\'utilisateur de manière extrêmement pratique et bienveillante sur la culture maraîchère locale. Reste rigoureusement focalisé sur les techniques agricoles du Sénégal. Sois concis, utilise des listes à puces claires et évite le jargon complexe. Limite ta réponse à 120-150 mots maximum. Si l\'utilisateur pose une question totalement hors-sujet, rappelle-lui gentiment que tu es là pour sa formation horticole. Les cultures supportées sont : oignon, piment, chou, aubergine, tomate, gombo, carotte, laitue, pomme de terre, patate douce, menthe, pastèque, navet, poivron.'; const completePrompt = instructionContext + '\n\nQuestion de l\'apprenant : ' + question; const response = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: completePrompt, history: chatHistory.slice(0, -1) }) }); const data = await response.json(); const loaderEl = document.getElementById(loadingId); if (loaderEl) loaderEl.remove(); if (data.error) throw new Error(data.error); const aiBubble = document.createElement('div'); aiBubble.className = 'flex justify-start text-left'; aiBubble.innerHTML = '<div class=\"p-3 bg-slate-50 dark:bg-[#061109]/70 border border-slate-100 dark:border-emerald-950/20 text-slate-800 dark:text-slate-300 rounded-2xl rounded-tl-none mr-12 leading-relaxed\"><span class=\"text-[9px] font-black uppercase tracking-wider text-cyan-400 block mb-1\">🎓 Mentorat Horticole</span><p>' + data.text.replace(/\n/g, '<br>') + '</p></div>'; chatContainer.appendChild(aiBubble); chatContainer.scrollTop = chatContainer.scrollHeight; chatHistory.push({ role: 'advisor', text: data.text }); } catch (err) { const loaderEl = document.getElementById(loadingId); if (loaderEl) loaderEl.remove(); const errorBubble = document.createElement('div'); errorBubble.className = 'flex justify-start text-left'; errorBubble.innerHTML = '<div class=\"p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl rounded-tl-none mr-12 leading-relaxed\"><span class=\"text-[9px] font-black uppercase tracking-wider block mb-1\">❌ Erreur</span><p>Désolé, impossible de joindre le mentor. Vérifiez votre clé API Gemini ou votre connexion réseau.</p></div>'; chatContainer.appendChild(errorBubble); chatContainer.scrollTop = chatContainer.scrollHeight; } }); }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes Ventes Terrain - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  <link class="stylesheet" rel="stylesheet" href="/css/styles.css">
+  <link class="stylesheet" rel="stylesheet" href="/css/personal.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-6">
+        
+        <!-- Page Title & Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
+          <div class="space-y-1">
+            <span class="text-[10px] text-emerald-500 font-extrabold uppercase tracking-widest">Espace Personnel</span>
+            <h2 class="text-2xl font-black text-slate-850 dark:text-white flex items-center gap-2">
+              <i data-lucide="coins" class="h-6 w-6 text-emerald-500"></i> Enregistrer mes Ventes (Terrain)
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              Enregistrez rapidement les fruits de votre labeur directement au marché pour synchronisation en ville.
+            </p>
+          </div>
+          <button onclick="document.getElementById('sale-form-modal').classList.remove('hidden')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-2">
+            <i data-lucide="plus" class="h-3.5 w-3.5"></i> Noter une vente
+          </button>
+        </div>
+
+        <!-- Sales Listings -->
+        <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl space-y-4 text-left">
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Journal des dernières ventes maraîchères</h3>
+          <div class="space-y-3" id="my-sales-container">
+            <!-- Dynamically populated via personal.js -->
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Dialog for logging a sale -->
+  <div id="sale-form-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="plus-circle" class="h-4 w-4 text-emerald-500"></i> Noter une Vente de Récolte
+        </h3>
+        <button onclick="document.getElementById('sale-form-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="personal-sale-form" class="space-y-4 text-xs font-semibold">
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Désignation</label>
+          <input type="text" id="personal-sale-desc" required placeholder="Ex: Vente de 3 paniers de tomates" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Catégorie</label>
+            <select id="personal-sale-category" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+              <option value="Vente Légumes" selected>🍅 Vente Légumes</option>
+              <option value="Aromates">🌿 Aromates & Fines herbes</option>
+              <option value="Pépinières">🌱 Jeunes Plants</option>
+              <option value="Autres">📦 Autres productions</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Montant (FCFA)</label>
+            <input type="number" id="personal-sale-amount" required placeholder="Ex: 45000" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date de la Vente</label>
+          <input type="date" id="personal-sale-date" required class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <button type="submit" onclick="document.getElementById('sale-form-modal').classList.add('hidden')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-950/20 text-xs">
+          Enregistrer la vente maraîchère
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shared App & Personal Module Entry Points -->
+  <script type="module" src="/js/router.js"></script>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/personal.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const saleDateInput = document.getElementById('personal-sale-date');
+      if (saleDateInput) saleDateInput.value = todayStr;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /pages/auth/login.html
+Allow: /pages/auth/signup.html
+Disallow: /pages/shared/
+Disallow: /pages/personal/
+Disallow: /js/
+Disallow: /css/
+Disallow: /api/
+
+Sitemap: https://kafarm.sn/sitemap.xml
