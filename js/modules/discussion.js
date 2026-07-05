@@ -425,7 +425,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
     const modalCaption = document.getElementById('share-modal-caption');
 
     if (modal && modalImg && modalCaption) {
-      modalImg.src = msg.image || '/assets/logo.svg';
+      modalImg.src = msg.image || '/assets/logo.png';
       modalCaption.value = msg.text || '';
       
       // Reset hashtag selections
