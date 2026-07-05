@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Profil - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/personal.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-6">
+        
+        <!-- Page Title -->
+        <div class="text-left space-y-1">
+          <span class="text-[10px] text-emerald-500 font-extrabold uppercase tracking-widest">Espace Personnel</span>
+          <h2 class="text-2xl font-black text-slate-850 dark:text-white flex items-center gap-2">
+            <i data-lucide="user" class="h-6 w-6 text-emerald-500"></i> Mon Profil & Réseaux
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+            Gérez vos informations de compte, vos réseaux sociaux, et visualisez votre activité individuelle au sein de KA Farm.
+          </p>
+        </div>
+
+        <!-- Profile card -->
+        <div class="p-6 bg-white dark:bg-[#0B2112] rounded-3xl border border-slate-100 dark:border-[#143E23]/30 flex flex-col md:flex-row gap-6 items-center md:items-start text-left">
+          <div id="personal-avatar" class="h-20 w-20 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-3xl border border-emerald-550/40 profile-avatar-glow flex-shrink-0">
+            A
+          </div>
+          <div class="space-y-4 flex-grow w-full">
+            <div>
+              <div class="flex items-center gap-3">
+                <h3 class="text-lg font-black text-slate-800 dark:text-white">Amadou KA</h3>
+                <span id="personal-role-badge" class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  Bureau
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Exploitant officiel de KA Farm</p>
+              
+              <!-- Réseaux Sociaux -->
+              <div id="personal-social-links" class="flex flex-wrap items-center gap-2 mt-3.5">
+                <!-- Rendu dynamique depuis personal.js -->
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-[#143E23]/20">
+              <div class="p-4 bg-slate-50 dark:bg-[#061109]/40 border border-slate-100 dark:border-[#143E23]/20 rounded-2xl">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tâches en attente</p>
+                <p id="personal-stats-tasks" class="text-2xl font-black text-slate-800 dark:text-emerald-400 mt-1">0</p>
+              </div>
+              <div class="p-4 bg-slate-50 dark:bg-[#061109]/40 border border-slate-100 dark:border-[#143E23]/20 rounded-2xl">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Ventes Saisies</p>
+                <p id="personal-stats-sales" class="text-2xl font-black text-slate-800 dark:text-emerald-400 mt-1">0 F</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Profile Form -->
+        <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left">
+          <h4 class="text-sm font-black text-slate-800 dark:text-white mb-4">Mettre à jour mes informations</h4>
+          <form id="personal-profile-form" class="space-y-4 text-xs font-semibold">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nom complet</label>
+                <input type="text" id="personal-name-input" required class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+              </div>
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Adresse Email</label>
+                <input type="email" id="personal-email-input" required class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+              </div>
+            </div>
+
+            <!-- Social Media Inputs -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Twitter / X</label>
+                <div class="relative flex items-center">
+                  <span class="absolute left-4 text-sky-400 flex items-center justify-center pointer-events-none">
+                    <i data-lucide="twitter" class="h-4 w-4"></i>
+                  </span>
+                  <input type="url" id="personal-twitter-input" placeholder="https://twitter.com/nom" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl pl-11 pr-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-400/50">
+                </div>
+              </div>
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">LinkedIn</label>
+                <div class="relative flex items-center">
+                  <span class="absolute left-4 text-[#0A66C2] flex items-center justify-center pointer-events-none">
+                    <i data-lucide="linkedin" class="h-4 w-4"></i>
+                  </span>
+                  <input type="url" id="personal-linkedin-input" placeholder="https://linkedin.com/in/nom" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl pl-11 pr-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-400/50">
+                </div>
+              </div>
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Facebook</label>
+                <div class="relative flex items-center">
+                  <span class="absolute left-4 text-[#1877F2] flex items-center justify-center pointer-events-none">
+                    <i data-lucide="facebook" class="h-4 w-4"></i>
+                  </span>
+                  <input type="url" id="personal-facebook-input" placeholder="https://facebook.com/nom" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl pl-11 pr-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-400/50">
+                </div>
+              </div>
+            </div>
+            
+            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-950/20 text-xs">
+              Enregistrer les modifications
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Shared App & Personal Module Entry Points -->
+  <script type="module" src="/js/router.js"></script>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/personal.js"></script>
+</body>
+</html>

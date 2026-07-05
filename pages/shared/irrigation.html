@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planning d'Irrigation - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-6">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
+          <div class="space-y-1">
+            <span class="text-[10px] text-sky-400 font-extrabold uppercase tracking-widest">Coordonner l'Eau</span>
+            <h2 class="text-2xl font-black text-slate-850 dark:text-white flex items-center gap-2">
+              <i data-lucide="droplets" class="h-6 w-6 text-sky-400"></i> Planning d'Irrigation Hebdomadaire
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              Calendrier des tours d'eau et des tours de vannes pour rationaliser l'accès à l'eau de forage.
+            </p>
+          </div>
+          <button onclick="document.getElementById('watering-modal').classList.remove('hidden')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="plus" class="h-3.5 w-3.5"></i> Nouveau tour d'eau
+          </button>
+        </div>
+
+        <!-- Widget Météo Agricole & Calculateur d'Évapotranspiration (ET0) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left shadow-sm">
+          <!-- Météo Agricole Sénégal -->
+          <div class="space-y-4 flex flex-col justify-between">
+            <div class="space-y-1">
+              <h3 class="text-xs font-black text-slate-850 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="cloud-sun" class="h-4 w-4 text-amber-500 animate-pulse"></i> Météo Agricole Sénégal
+              </h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+                Données climatiques réelles ou simulées pour ajuster l'irrigation.
+              </p>
+            </div>
+            
+            <div class="space-y-3 bg-slate-50 dark:bg-[#061109]/30 p-4 rounded-2xl border border-slate-100 dark:border-[#143E23]/15">
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Région / Zone Agricole</label>
+                <select id="weather-city" class="w-full bg-white dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none" onchange="window.onCityChange(this.value)">
+                  <option value="dakar">Dakar (Région de Dakar)</option>
+                  <option value="diourbel">Diourbel (Bassin du Baol)</option>
+                  <option value="fatick">Fatick (Sine-Saloum)</option>
+                  <option value="kaffrine">Kaffrine (Bassin Arachidier Est)</option>
+                  <option value="kaolack">Kaolack (Bassin Arachidier)</option>
+                  <option value="kedougou">Kédougou (Sud-Est)</option>
+                  <option value="kolda">Kolda (Haute Casamance)</option>
+                  <option value="louga">Louga (Zone Sylvo-Pastorale)</option>
+                  <option value="matam">Matam (Moyenne Vallée)</option>
+                  <option value="saint-louis">Saint-Louis (Vallée du Fleuve)</option>
+                  <option value="sedhiou">Sédhiou (Moyenne Casamance)</option>
+                  <option value="tambacounda">Tambacounda (Sénégal Oriental)</option>
+                  <option value="thies">Thiès (Mbour & Petite Côte)</option>
+                  <option value="ziguinchor">Ziguinchor (Casamance Humide)</option>
+                  <option value="custom">⚙️ Paramètres Manuels</option>
+                </select>
+              </div>
+
+              <div id="weather-quick-display" class="pt-1 text-left space-y-2">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Calculateur Interactif d'Évapotranspiration (ET0) -->
+          <div class="space-y-4">
+            <h3 class="text-xs font-black text-slate-850 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="gauge" class="h-4 w-4 text-sky-400"></i> Estimateur ET₀ & Paramètres
+            </h3>
+            
+            <div class="space-y-3">
+              <!-- Temperature Slider -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Température moyenne</span>
+                  <span id="temp-val" class="text-amber-500">30 °C</span>
+                </div>
+                <input type="range" id="param-temp" min="15" max="48" value="30" class="w-full h-1.5 bg-slate-200 dark:bg-[#061109] rounded-lg appearance-none cursor-pointer accent-amber-500" oninput="window.updateET0Calculations()">
+              </div>
+
+              <!-- Wind Speed Slider -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Vitesse du Vent (Harmattan/Alizé)</span>
+                  <span id="wind-val" class="text-sky-400">15 km/h</span>
+                </div>
+                <input type="range" id="param-wind" min="0" max="50" value="15" class="w-full h-1.5 bg-slate-200 dark:bg-[#061109] rounded-lg appearance-none cursor-pointer accent-sky-400" oninput="window.updateET0Calculations()">
+              </div>
+
+              <!-- Humidity Slider -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Humidité relative de l'air</span>
+                  <span id="humidity-val" class="text-emerald-400">40 %</span>
+                </div>
+                <input type="range" id="param-humidity" min="5" max="95" value="40" class="w-full h-1.5 bg-slate-200 dark:bg-[#061109] rounded-lg appearance-none cursor-pointer accent-emerald-400" oninput="window.updateET0Calculations()">
+              </div>
+
+              <!-- Solar radiation Slider -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Ensoleillement journalier</span>
+                  <span id="sun-val" class="text-yellow-400">10 h/j</span>
+                </div>
+                <input type="range" id="param-sun" min="4" max="14" value="10" class="w-full h-1.5 bg-slate-200 dark:bg-[#061109] rounded-lg appearance-none cursor-pointer accent-yellow-400" oninput="window.updateET0Calculations()">
+              </div>
+
+              <!-- Crop Selector for Kc -->
+              <div class="space-y-1 pt-1.5 border-t border-slate-100 dark:border-[#143E23]/20">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Coefficient de Culture (Kc)</span>
+                  <span id="kc-val" class="text-sky-400">Kc: 1.15</span>
+                </div>
+                <select id="param-crop" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none" onchange="window.updateET0Calculations()">
+                  <option value="tomate">Tomate (Mois 2-3) — Kc 1.15</option>
+                  <option value="carotte">Carotte — Kc 1.00</option>
+                  <option value="oignon">Oignon — Kc 1.05</option>
+                  <option value="poivron">Poivron / Piment — Kc 1.05</option>
+                  <option value="chou">Chou Cabus — Kc 1.05</option>
+                  <option value="gombo">Gombo — Kc 0.95</option>
+                </select>
+              </div>
+
+              <!-- Soil Type Selector -->
+              <div class="space-y-1 pt-1.5 border-t border-slate-100 dark:border-[#143E23]/20">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Type de Sol</span>
+                  <span id="sol-val" class="text-amber-500 font-extrabold">Sableux</span>
+                </div>
+                <select id="param-sol" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none" onchange="window.updateET0Calculations()">
+                  <option value="sableux" selected>Sableux (Région de Dakar) - Drainage rapide</option>
+                  <option value="argileux">Argileux (Bassin Baol/Fleuve) - Rétention forte</option>
+                  <option value="limoneux">Argilo-limoneux - Équilibré</option>
+                </select>
+              </div>
+
+              <!-- Surface Slider -->
+              <div class="space-y-1 pt-1.5 border-t border-slate-100 dark:border-[#143E23]/20">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Surface de la planche</span>
+                  <span id="surface-val" class="text-emerald-500 font-extrabold">100 m²</span>
+                </div>
+                <input type="range" id="param-surface" min="10" max="1000" value="100" step="10" class="w-full h-1.5 bg-slate-200 dark:bg-[#061109] rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="window.updateET0Calculations()">
+              </div>
+            </div>
+          </div>
+
+          <!-- Conseils et Recommandations d'arrosage -->
+          <div class="space-y-4 p-4.5 bg-[#0D2615]/20 dark:bg-[#0D2615]/30 rounded-2xl border border-[#143E23]/30 flex flex-col justify-between">
+            <div class="space-y-2">
+              <span id="et0-badge" class="inline-block px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">ET₀ Modérée</span>
+              <div class="flex items-baseline gap-2">
+                <div class="flex items-baseline gap-0.5">
+                  <span id="et0-value" class="text-3xl font-black text-slate-800 dark:text-white">4.2</span>
+                  <span class="text-[10px] text-slate-450 dark:text-slate-400 font-bold">mm/j (ET₀)</span>
+                </div>
+                <div class="text-slate-300 dark:text-slate-550">|</div>
+                <div class="flex items-baseline gap-0.5">
+                  <span id="etc-value" class="text-2xl font-black text-emerald-600 dark:text-emerald-400">4.8</span>
+                  <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-bold">mm/j (ETc)</span>
+                </div>
+              </div>
+              <p class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wide">ET₀ (Référence) vs ETc (Besoin réel de la culture)</p>
+            </div>
+
+            <div class="p-3 bg-white dark:bg-[#061109]/40 rounded-xl border border-slate-100 dark:border-[#143E23]/10">
+              <p class="text-[10px] font-black uppercase text-emerald-400 flex items-center gap-1 mb-1">
+                <i data-lucide="info" class="h-3 w-3"></i> Conseils d'arrosage
+              </p>
+              <p id="watering-advice-text" class="text-[11px] text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">
+                Climat standard. Maintenez le temps d'arrosage habituel de 20 minutes par vanne.
+              </p>
+            </div>
+
+            <!-- Highly prominent recommended irrigation time widget inside right panel -->
+            <div class="space-y-2">
+              <div class="p-2.5 bg-sky-500/10 dark:bg-sky-500/5 rounded-xl border border-sky-500/20 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="timer" class="h-4 w-4 text-sky-400"></i>
+                  <div class="text-left">
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-wider">Durée conseillée</p>
+                    <p id="watering-time-suggest" class="text-xs font-black text-slate-800 dark:text-white">21 minutes / vanne</p>
+                  </div>
+                </div>
+                <span id="cycle-split-badge" class="text-[9px] px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded-md font-extrabold uppercase">1 cycle</span>
+              </div>
+
+              <!-- Volume of water required widget -->
+              <div class="p-2.5 bg-emerald-500/10 dark:bg-[#10B981]/5 rounded-xl border border-emerald-500/20 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="droplet" class="h-4 w-4 text-emerald-400"></i>
+                  <div class="text-left">
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-wider">Volume d'eau idéal requis</p>
+                    <p id="watering-volume-suggest" class="text-xs font-black text-emerald-500">480 Litres</p>
+                  </div>
+                </div>
+                <span class="text-[9px] px-2 py-0.5 bg-emerald-500/20 text-emerald-350 rounded-md font-extrabold uppercase">Total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Grid Tracker -->
+        <div class="grid grid-cols-1 sm:grid-cols-7 gap-3" id="weekly-days-grid">
+          <!-- Dynamically loaded days -->
+        </div>
+
+        <!-- Active watering tasks list -->
+        <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 shadow-sm">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/10">
+            <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="calendar-check" class="h-4 w-4 text-sky-400"></i> Programme d'Irrigation Actif
+            </h3>
+            <span class="text-[9px] text-[#819888] font-bold">Arrosage bi-quotidien préconisé</span>
+          </div>
+
+          <div class="space-y-3" id="watering-tasks-container">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal for scheduling a new watering task -->
+  <div id="watering-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="plus-circle" class="h-4 w-4 text-sky-400"></i> Planifier un Tour d'Eau
+        </h3>
+        <button onclick="document.getElementById('watering-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="watering-form" class="space-y-4 text-xs font-semibold">
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Culture ou Parcelle</label>
+          <input type="text" id="water-crop" required placeholder="Ex: Planche de Tomates Est" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jour de la Semaine</label>
+            <select id="water-day" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+              <option value="Lundi">Lundi</option>
+              <option value="Mardi">Mardi</option>
+              <option value="Mercredi">Mercredi</option>
+              <option value="Jeudi">Jeudi</option>
+              <option value="Vendredi">Vendredi</option>
+              <option value="Samedi">Samedi</option>
+              <option value="Dimanche">Dimanche</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Période de la Journée</label>
+            <select id="water-time" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+              <option value="Matin">🌅 Matin (6h00 - 8h00)</option>
+              <option value="Soir">🌇 Soir (17h00 - 19h00)</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" onclick="document.getElementById('watering-modal').classList.add('hidden')" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs">
+          Planifier le tour d'irrigation
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shared App & Local Scripts -->
+  <script type="module" src="/js/router.js"></script>
+  <script type="module" src="/js/app.js"></script>
+
+  <script type="module">
+    import { KAStorage } from '/js/storage.js';
+
+    const defaultWatering = [
+      { id: 'W-1', crop: 'Tomate Galmi (Planche 1)', day: 'Lundi', time: 'Matin', done: true },
+      { id: 'W-2', crop: 'Tomate Galmi (Planche 1)', day: 'Lundi', time: 'Soir', done: false },
+      { id: 'W-3', crop: 'Carottes (Planche Ouest)', day: 'Lundi', time: 'Matin', done: true },
+      { id: 'W-4', crop: 'Pépinière Poivrons', day: 'Mardi', time: 'Matin', done: false },
+      { id: 'W-5', crop: 'Pépinière Poivrons', day: 'Mardi', time: 'Soir', done: false },
+      { id: 'W-6', crop: 'Choux Cabus', day: 'Mercredi', time: 'Matin', done: false },
+    ];
+
+    function getWatering() {
+      const saved = localStorage.getItem('ka_farm_watering');
+      if (!saved) {
+        localStorage.setItem('ka_farm_watering', JSON.stringify(defaultWatering));
+        return defaultWatering;
+      }
+      return JSON.parse(saved);
+    }
+
+    function saveWatering(data) {
+      localStorage.setItem('ka_farm_watering', JSON.stringify(data));
+    }
+
+    function renderDaysHeader() {
+      const grid = document.getElementById('weekly-days-grid');
+      if (!grid) return;
+
+      const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+      const currentDayName = new Date().toLocaleDateString('fr-FR', { weekday: 'long' });
+      const normalizedToday = currentDayName.charAt(0).toUpperCase() + currentDayName.slice(1);
+
+      const items = getWatering();
+
+      grid.innerHTML = days.map(day => {
+        const dayItems = items.filter(it => it.day === day);
+        const doneCount = dayItems.filter(it => it.done).length;
+        const totalCount = dayItems.length;
+
+        let statusBg = 'bg-white dark:bg-[#0B2112]/40';
+        let ring = 'border-slate-100 dark:border-[#143E23]/20';
+        if (day.toLowerCase() === normalizedToday.toLowerCase()) {
+          statusBg = 'bg-sky-500/10 dark:bg-sky-500/5';
+          ring = 'border-sky-500/30';
+        }
+
+        return `
+          <div class="p-3 ${statusBg} border ${ring} rounded-2xl text-center space-y-1">
+            <p class="text-[10px] font-black text-slate-450 dark:text-slate-400 uppercase tracking-wider">${day.slice(0, 3)}</p>
+            <p class="text-xs font-black text-slate-800 dark:text-white">${day}</p>
+            <p class="text-[9px] text-sky-400 font-bold">${doneCount}/${totalCount} fait</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderWateringTasks() {
+      const container = document.getElementById('watering-tasks-container');
+      if (!container) return;
+
+      const items = getWatering();
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-slate-400">
+            <p class="text-xs font-bold">Aucune session d'arrosage planifiée.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = items.map(it => {
+        const textClass = it.done ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-200';
+        const icon = it.time === 'Matin' ? '🌅 Matin' : '🌇 Soir';
+        
+        return `
+          <div class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/25 rounded-2xl flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 text-left">
+              <input type="checkbox" ${it.done ? 'checked' : ''} 
+                     onclick="window.toggleWateringDone('${it.id}')"
+                     class="accent-sky-500 h-5 w-5 rounded-lg border-slate-300 dark:border-emerald-950 bg-slate-50 cursor-pointer">
+              <div>
+                <p class="text-xs font-black ${textClass}">${it.crop}</p>
+                <div class="flex items-center gap-2 mt-0.5 text-[9px] text-slate-400 font-extrabold">
+                  <span>📅 ${it.day}</span>
+                  <span>•</span>
+                  <span class="text-sky-400">${icon}</span>
+                </div>
+              </div>
+            </div>
+            
+            <button onclick="window.deleteWatering('${it.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#143E23]/25 transition-all cursor-pointer">
+              <i data-lucide="trash-2" class="h-4 w-4"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+
+    window.toggleWateringDone = (id) => {
+      const items = getWatering();
+      const idx = items.findIndex(it => it.id === id);
+      if (idx !== -1) {
+        items[idx].done = !items[idx].done;
+        saveWatering(items);
+        renderWateringTasks();
+        renderDaysHeader();
+      }
+    };
+
+    window.deleteWatering = (id) => {
+      if (!confirm('Retirer ce tour d\'eau ?')) return;
+      const items = getWatering().filter(it => it.id !== id);
+      saveWatering(items);
+      renderWateringTasks();
+      renderDaysHeader();
+    };
+
+    document.getElementById('watering-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const crop = document.getElementById('water-crop').value;
+      const day = document.getElementById('water-day').value;
+      const time = document.getElementById('water-time').value;
+
+      if (!crop) return;
+
+      const items = getWatering();
+      items.push({
+        id: `W-${Date.now()}`,
+        crop,
+        day,
+        time,
+        done: false
+      });
+
+      saveWatering(items);
+      document.getElementById('watering-form').reset();
+      renderWateringTasks();
+      renderDaysHeader();
+      alert('Tour d\'irrigation programmé !');
+    });
+
+    // City and Weather Presets for Senegal - obtained from centralized source in app.js
+    const CITY_PRESETS = window.SENEGAL_WEATHER_PRESETS || {
+      dakar: { name: 'Dakar (Région de Dakar)', temp: 26, wind: 15, humidity: 82, sun: 8, desc: '🌊 Climat maritime humide. Idéal pour cultures maraîchères côtières.' },
+      diourbel: { name: 'Diourbel (Bassin du Baol)', temp: 33, wind: 12, humidity: 58, sun: 10, desc: '🌾 Climat chaud et sec du Baol. Sols sableux exigeant un bon paillage.' },
+      fatick: { name: 'Fatick (Sine-Saloum)', temp: 31, wind: 14, humidity: 72, sun: 9, desc: '🌊 Estuaires du Sine-Saloum. Vigilance sur la salinité des sols maraîchers.' },
+      kaffrine: { name: 'Kaffrine (Bassin Arachidier Est)', temp: 33, wind: 13, humidity: 60, sun: 10, desc: '☀️ Zone agricole ensoleillée. Vents desséchants d\'Est (Harmattan léger).' },
+      kaolack: { name: 'Kaolack (Bassin Arachidier)', temp: 36, wind: 14, humidity: 35, sun: 10, desc: '☀ Climat soudano-sahélien chaud. Sols secs nécessitant une gestion fine de l\'arrosage.' },
+      kedougou: { name: 'Kédougou (Sud-Est)', temp: 32, wind: 9, humidity: 80, sun: 7, desc: '⛰️ Climat soudanien humide. Forte pluviométrie, attention à l\'engorgement des sols.' },
+      kolda: { name: 'Kolda (Haute Casamance)', temp: 32, wind: 10, humidity: 76, sun: 8, desc: '🌳 Zone forestière chaude et humide. Excellentes conditions de sol horticole.' },
+      louga: { name: 'Louga (Zone Sylvo-Pastorale)', temp: 33, wind: 17, humidity: 50, sun: 10, desc: '🏜️ Climat sahélien sec. Évaporations élevées, irrigation goutte-à-goutte prioritaire.' },
+      matam: { name: 'Matam (Moyenne Vallée)', temp: 39, wind: 18, humidity: 20, sun: 11, desc: '🔥 Chaleur extrême du Ferlo. Évapotranspiration critique de fin de journée.' },
+      'saint-louis': { name: 'Saint-Louis (Vallée)', temp: 32, wind: 22, humidity: 50, sun: 10, desc: '🌾 Alizés côtiers réguliers. Conditions optimales pour la culture maraîchère de contre-saison.' },
+      sedhiou: { name: 'Sédhiou (Moyenne Casamance)', temp: 31, wind: 8, humidity: 82, sun: 8, desc: '🌱 Climat guinéen très favorable aux cultures diversifiées et vergers.' },
+      tambacounda: { name: 'Tambacounda (Sénégal Oriental)', temp: 35, wind: 11, humidity: 50, sun: 10, desc: '☀️ Zone semi-aride continentale. Températures diurnes élevées exigeant un ombrage.' },
+      thies: { name: 'Thiès (Plateau / Mbour)', temp: 29, wind: 16, humidity: 55, sun: 9, desc: '🌅 Zone horticole majeure (Thiès & Petite Côte). Excellente rentabilité.' },
+      ziguinchor: { name: 'Ziguinchor (Casamance)', temp: 28, wind: 10, humidity: 75, sun: 8, desc: '🌴 Zone guinéenne humide. Évaporation modérée. Idéal pour l\'arboriculture.' }
+    };
+
+    const CROP_COEFFICIENTS = {
+      tomate: { name: 'Tomate', kc: 1.15 },
+      carotte: { name: 'Carotte', kc: 1.00 },
+      oignon: { name: 'Oignon', kc: 1.05 },
+      poivron: { name: 'Poivron', kc: 1.05 },
+      chou: { name: 'Chou', kc: 1.05 },
+      gombo: { name: 'Gombo', kc: 0.95 }
+    };
+
+    function calculateET0(temp, wind, humidity, sun) {
+      const tContrib = temp * 0.14;
+      const wContrib = wind * 0.08;
+      const hContrib = (100 - humidity) * 0.05;
+      const sContrib = sun * 0.3;
+      
+      let et0 = (tContrib + wContrib + hContrib + sContrib) / 2.4;
+      et0 = Math.max(1.5, Math.min(11.0, et0));
+      return parseFloat(et0.toFixed(1));
+    }
+
+    window.updateET0Calculations = () => {
+      const temp = parseInt(document.getElementById('param-temp').value);
+      const wind = parseInt(document.getElementById('param-wind').value);
+      const humidity = parseInt(document.getElementById('param-humidity').value);
+      const sun = parseInt(document.getElementById('param-sun').value);
+      const cropKey = document.getElementById('param-crop').value;
+      const solKey = document.getElementById('param-sol').value;
+      const surface = parseInt(document.getElementById('param-surface').value);
+
+      // Update Slider value displays
+      document.getElementById('temp-val').textContent = `${temp} °C`;
+      document.getElementById('wind-val').textContent = `${wind} km/h`;
+      document.getElementById('humidity-val').textContent = `${humidity} %`;
+      document.getElementById('sun-val').textContent = `${sun} h/j`;
+      
+      const solNames = {
+        sableux: 'Sableux (Dakar)',
+        argileux: 'Argileux (Fleuve)',
+        limoneux: 'Argilo-limoneux'
+      };
+      document.getElementById('sol-val').textContent = solNames[solKey] || 'Sableux';
+      document.getElementById('surface-val').textContent = `${surface} m²`;
+
+      // Calculate reference ET0
+      const et0 = calculateET0(temp, wind, humidity, sun);
+      
+      // Calculate crop-specific ETc
+      const crop = CROP_COEFFICIENTS[cropKey] || { name: 'Culture', kc: 1.0 };
+      const etc = parseFloat((et0 * crop.kc).toFixed(1));
+
+      document.getElementById('kc-val').textContent = `Kc: ${crop.kc}`;
+      document.getElementById('et0-value').textContent = et0;
+      document.getElementById('etc-value').textContent = etc;
+
+      // Get badges and advice
+      const badge = document.getElementById('et0-badge');
+      const advice = document.getElementById('watering-advice-text');
+      const suggest = document.getElementById('watering-time-suggest');
+      const volumeSuggest = document.getElementById('watering-volume-suggest');
+      const splitBadge = document.getElementById('cycle-split-badge');
+
+      badge.className = "inline-block px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-full ";
+      
+      // Calculate recommended minutes
+      let recMinutes = Math.round(20 * (etc / 4.2));
+      
+      // Adjust minutes based on Soil Type
+      let soilAdvice = "";
+      if (solKey === 'sableux') {
+        // Sandy soil has low retention - add a multiplier to account for quick drainage, but split into 2 cycles
+        recMinutes = Math.round(recMinutes * 1.15);
+        recMinutes = Math.max(12, Math.min(50, recMinutes));
+        const halfMinutes = Math.round(recMinutes / 2);
+        suggest.textContent = `${halfMinutes} min matin / ${halfMinutes} min soir`;
+        splitBadge.textContent = "2 cycles (Sable)";
+        splitBadge.className = "text-[9px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-md font-extrabold uppercase";
+        soilAdvice = " Sols sableux : arrosez en 2 sessions matin/soir pour réduire le lessivage des nutriments.";
+      } else if (solKey === 'argileux') {
+        // Clay soil holds water well - arrosage standard, 1 cycle is enough
+        recMinutes = Math.round(recMinutes * 0.9);
+        recMinutes = Math.max(10, Math.min(40, recMinutes));
+        suggest.textContent = `${recMinutes} minutes le matin`;
+        splitBadge.textContent = "1 cycle (Argile)";
+        splitBadge.className = "text-[9px] px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded-md font-extrabold uppercase";
+        soilAdvice = " Sols argileux : un seul arrosage matinal profond suffit, la rétention est maximale.";
+      } else {
+        // Limoneux - balanced
+        recMinutes = Math.max(10, Math.min(45, recMinutes));
+        suggest.textContent = `${recMinutes} minutes le matin`;
+        splitBadge.textContent = "1 cycle (Limon)";
+        splitBadge.className = "text-[9px] px-2 py-0.5 bg-emerald-500/20 text-emerald-350 rounded-md font-extrabold uppercase";
+        soilAdvice = " Sols limoneux : structure idéale, arrosage régulier équilibré.";
+      }
+
+      // Calculate total volume needed in Litres: ETc * surface (since 1 mm = 1 L/m²)
+      // Add safety margins for sandy soil
+      let volumeLitres = etc * surface;
+      if (solKey === 'sableux') volumeLitres *= 1.15; // 15% leaching loss allowance
+      volumeLitres = Math.round(volumeLitres);
+      volumeSuggest.textContent = `${volumeLitres.toLocaleString('fr-FR')} Litres`;
+
+      if (et0 < 3.0) {
+        badge.textContent = "ET₀ Faible";
+        badge.className += "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        advice.textContent = `L'évapotranspiration est faible. Réduisez l'arrosage de 30% pour préserver les racines.${soilAdvice}`;
+      } else if (et0 >= 3.0 && et0 < 5.0) {
+        badge.textContent = "ET₀ Modérée";
+        badge.className += "bg-sky-500/10 text-sky-400 border border-sky-500/20";
+        advice.textContent = `Climat équilibré. Les besoins réels de la culture (${crop.name}) s'élèvent à ${etc} mm aujourd'hui.${soilAdvice}`;
+      } else if (et0 >= 5.0 && et0 < 7.0) {
+        badge.textContent = "ET₀ Élevée";
+        badge.className += "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+        advice.textContent = `⚠️ Transpiration soutenue due au vent ou à la chaleur. Augmentez l'irrigation de 25% pour combler le déficit hydrique.${soilAdvice}`;
+      } else {
+        badge.textContent = "ET₀ Critique";
+        badge.className += "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        advice.textContent = `🚨 Vent sec (Harmattan) ou canicule intense ! Augmentez l'arrosage de 50% tôt le matin ou après 17h.${soilAdvice}`;
+      }
+    };
+
+    window.onCityChange = (cityKey) => {
+      const display = document.getElementById('weather-quick-display');
+      
+      if (cityKey === 'custom') {
+        display.innerHTML = `
+          <div class="p-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20">
+            <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
+              <i data-lucide="sliders" class="h-3 w-3"></i> Mode Manuel Actif
+            </p>
+            <p class="text-[10px] text-slate-400 mt-1">Ajustez librement les curseurs à droite pour simuler vos propres conditions.</p>
+          </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+        return;
+      }
+
+      const preset = CITY_PRESETS[cityKey];
+      if (!preset) return;
+
+      // Update inputs
+      document.getElementById('param-temp').value = preset.temp;
+      document.getElementById('param-wind').value = preset.wind;
+      document.getElementById('param-humidity').value = preset.humidity;
+      document.getElementById('param-sun').value = preset.sun;
+
+      // Show quick weather info card
+      display.innerHTML = `
+        <div class="space-y-1.5 text-[11px]">
+          <p class="font-extrabold text-slate-800 dark:text-slate-200">${preset.name}</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal font-medium">${preset.desc}</p>
+          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-[#143E23]/10">
+            <span class="text-slate-400">🌡 Temp: <strong class="text-slate-750 dark:text-slate-200">${preset.temp}°C</strong></span>
+            <span class="text-slate-400">💨 Vent: <strong class="text-slate-750 dark:text-slate-200">${preset.wind} km/h</strong></span>
+            <span class="text-slate-400">💧 Humid: <strong class="text-slate-750 dark:text-slate-200">${preset.humidity}%</strong></span>
+            <span class="text-slate-400">☀ Soleil: <strong class="text-slate-750 dark:text-slate-200">${preset.sun} h/j</strong></span>
+          </div>
+        </div>
+      `;
+
+      window.updateET0Calculations();
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    };
+
+    // Start
+    renderDaysHeader();
+    renderWateringTasks();
+    window.onCityChange('thies');
+  </script>
+</body>
+</html>

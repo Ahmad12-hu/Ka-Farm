@@ -1,0 +1,14 @@
+/* KA Farm - Personal Workspace Stylesheet */
+
+.task-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.profile-avatar-glow {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
