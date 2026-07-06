@@ -84,7 +84,7 @@ const DEFAULT_EMPLOYEE_PAYMENTS = [
 const DEFAULT_USERS = [
   { email: 'moussa@kafarm.sn', name: 'Moussa KA', role: 'Terrain', password: 'moussa-village' },
   { email: 'aly@kafarm.sn', name: 'Aly KA', role: 'Bureau', password: 'aly-dakar' },
-  { email: 'amadoucoumbaka@gmail.com', name: 'Amadou KA', role: 'Bureau', password: 'password' }
+  { email: 'contact@kafarm.sn', name: 'Amadou KA', role: 'Bureau', password: 'password' }
 ];
 
 const DEFAULT_CHEPTEL = [

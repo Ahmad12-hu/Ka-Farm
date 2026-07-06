@@ -12,7 +12,7 @@ export const DiscussionModule = {
     this.currentUser = KAStorage.getCurrentUser();
     if (!this.currentUser) {
       // Fallback
-      this.currentUser = { email: 'amadoucoumbaka@gmail.com', name: 'Amadou KA', role: 'Bureau' };
+      this.currentUser = { email: 'contact@kafarm.sn', name: 'Amadou KA', role: 'Bureau' };
     }
 
     this.renderUserInfo();
