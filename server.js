@@ -219,6 +219,12 @@ async function startServer() {
 
   const isProd = process.env.NODE_ENV === 'production';
 
+  // Mount API only if PostgreSQL is enabled
+  if (usePostgres && DB) {
+    const createApiRouter = (await import('./api/index.js')).default;
+    app.use('/api', createApiRouter());
+  }
+
   if (!isProd) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
