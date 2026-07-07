@@ -1,8 +1,8 @@
-// KA Farm - Discussion and Messaging Module with Photo Attachment & Social Media Sharing
+// KA Farm - Module discussion et messagerie avec pièce jointe photo et partage social
 import { KAStorage } from '../storage.js';
 
 export const DiscussionModule = {
-  currentChatId: 'general', // 'general' or 'direct'
+  currentChatId: 'general', // 'general' ou 'direct'
   messages: [],
   currentUser: null,
   pollIntervalId: null,
@@ -11,7 +11,7 @@ export const DiscussionModule = {
   init() {
     this.currentUser = KAStorage.getCurrentUser();
     if (!this.currentUser) {
-      // Fallback
+      // Valeur par défaut
       this.currentUser = { email: 'contact@kafarm.sn', name: 'Amadou KA', role: 'Bureau' };
     }
 
@@ -35,7 +35,7 @@ export const DiscussionModule = {
   },
 
   setupListeners() {
-    // Form submission
+    // Soumission du formulaire
     const form = document.getElementById('chat-send-form');
     if (form) {
       form.addEventListener('submit', (e) => {
@@ -44,7 +44,7 @@ export const DiscussionModule = {
       });
     }
 
-    // Search input
+    // Champ de recherche
     const searchInput = document.getElementById('chat-search');
     if (searchInput) {
       searchInput.addEventListener('input', () => {
@@ -52,7 +52,7 @@ export const DiscussionModule = {
       });
     }
 
-    // Photo input selection listener
+    // Sélection de photo
     const fileInput = document.getElementById('chat-image-input');
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
@@ -60,7 +60,7 @@ export const DiscussionModule = {
       });
     }
 
-    // Attach global functions to window for onclick handlers
+    // Attacher les fonctions globales pour les handlers HTML
     window.selectChat = (chatId) => this.selectChat(chatId);
     window.showChatSidebar = () => this.showChatSidebar();
     window.shareActivity = (type) => this.shareActivity(type);
@@ -87,7 +87,7 @@ export const DiscussionModule = {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check file size (limit to 8MB in client before compression or rejection)
+    // Vérifier la taille du fichier (limite 8 Mo)
     if (file.size > 8 * 1024 * 1024) {
       alert("Cette image est trop volumineuse (maximum 8 Mo).");
       return;
@@ -97,7 +97,7 @@ export const DiscussionModule = {
     reader.onload = (event) => {
       this.attachedImageBase64 = event.target.result;
       
-      // Show preview
+      // Afficher l'aperçu
       const previewContainer = document.getElementById('image-preview-container');
       const previewImg = document.getElementById('image-preview-img');
       const previewFilename = document.getElementById('image-preview-filename');
@@ -125,7 +125,7 @@ export const DiscussionModule = {
   selectChat(chatId) {
     this.currentChatId = chatId;
 
-    // Toggle views on mobile
+    // Basculer la vue sur mobile
     const isMobile = window.innerWidth < 768; // md breakpoint is 768px
     if (isMobile) {
       const sidebar = document.getElementById('chat-sidebar');
@@ -137,7 +137,7 @@ export const DiscussionModule = {
       }
     }
 
-    // Toggle active styles on sidebar
+    // Activer le style sur la barre latérale
     const genButton = document.getElementById('channel-general');
     const directButton = document.getElementById('channel-direct');
     const titleEl = document.getElementById('current-chat-title');
@@ -170,10 +170,10 @@ export const DiscussionModule = {
       if (response.ok) {
         const data = await response.json();
         this.messages = data;
-        // Save to local storage for caching/offline fallback
+        // Sauvegarder en localStorage pour cache et fallback hors ligne
         KAStorage.saveMessages(data);
       } else {
-        // Fallback to localStorage if API has any issues
+        // Fallback localStorage si l'API a un problème
         this.messages = KAStorage.getMessages();
       }
     } catch (err) {
@@ -186,10 +186,10 @@ export const DiscussionModule = {
   },
 
   startPolling() {
-    // Clear any existing poll
+    // Arrêter tout sondage existant
     if (this.pollIntervalId) clearInterval(this.pollIntervalId);
     
-    // Poll every 3.5 seconds
+    // Sonder toutes les 3.5 secondes
     this.pollIntervalId = setInterval(() => {
       this.loadMessages();
     }, 3500);
@@ -201,18 +201,18 @@ export const DiscussionModule = {
 
     const searchQuery = document.getElementById('chat-search')?.value.toLowerCase() || '';
 
-    // Filter messages for current active chat
+    // Filtrer les messages du chat actif
     let filtered = this.messages.filter(m => {
       if (this.currentChatId === 'general') {
-        // General channel displays messages that are NOT private direct messages
+        // Canal général : messages qui ne sont pas privés
         return !m.isPrivate;
       } else {
-        // Direct channel displays private messages
+        // Canal direct : messages privés uniquement
         return m.isPrivate === true;
       }
     });
 
-    // Apply search query if typed
+    // Appliquer la recherche si présente
     if (searchQuery) {
       filtered = filtered.filter(m => 
         m.text.toLowerCase().includes(searchQuery) ||
@@ -253,7 +253,7 @@ export const DiscussionModule = {
         textThemeColor = m.senderEmail.includes('moussa') ? 'text-amber-500' : 'text-[#819888]';
       }
 
-      // Check if message is a shared automated notification / report card
+      // Vérifier s'il s'agit d'une notification automatique ou carte de rapport
       const isNotification = m.text.startsWith('📢') || m.text.startsWith('💧') || m.text.startsWith('🥛') || m.text.startsWith('🌱');
 
       return `
@@ -302,7 +302,7 @@ export const DiscussionModule = {
       `;
     }).join('');
 
-    // Auto-scroll chat to bottom
+    // Défilement automatique vers le bas
     container.scrollTop = container.scrollHeight;
 
     if (window.lucide) {
@@ -350,7 +350,7 @@ export const DiscussionModule = {
       image: image || null
     };
 
-    // Optimistic client update
+    // Mise à jour optimiste du client
     this.messages.push(payload);
     this.renderMessages();
     this.updateLastMessagePreviews();
@@ -367,7 +367,7 @@ export const DiscussionModule = {
         this.messages = data;
         KAStorage.saveMessages(data);
       } else {
-        // Fallback save to localStorage if API fails
+        // Sauvegarde fallback en localStorage si API échoue
         KAStorage.saveMessages(this.messages);
       }
     } catch (err) {
@@ -531,10 +531,10 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
     const caption = document.getElementById('share-modal-caption')?.value || '';
     let url = '';
 
-    // Create custom shareable text
+      // Créer le texte de partage personnalisé
     const textToShare = caption + "\n\n🌐 Suivez notre exploitation horticole KA Farm en direct !";
 
-    // Copy to clipboard helper so they can paste easily on mobile/desktop
+    // Copier dans le presse-papier pour partage facile
     navigator.clipboard.writeText(caption).catch(err => console.log("Clipboard error", err));
 
     switch (platform) {
@@ -553,7 +553,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
     }
 
     if (url) {
-      // Friendly toast message explaining clipboard copying
+      // Message toast expliquant la copie
       const toast = document.createElement('div');
       toast.className = "fixed bottom-5 right-5 z-[100] bg-emerald-800 text-white font-black text-xs px-5 py-3 rounded-2xl shadow-2xl animate-bounce border border-emerald-500 flex items-center gap-2";
       toast.innerHTML = `<i data-lucide="copy-check" class="h-4 w-4"></i><span>Légende copiée ! Ouvrez le réseau pour coller et publier.</span>`;
@@ -562,7 +562,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
 
       setTimeout(() => toast.remove(), 4000);
 
-      // Open sharing window
+      // Ouvrir la fenêtre de partage
       window.open(url, '_blank');
     }
   },
@@ -579,7 +579,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
     }
 
     try {
-      // Convert base64 image data back into a high-fidelity image file object
+      // Convertir les données base64 en objet image
       const blob = await fetch(base64Data).then(r => r.blob());
       const file = new File([blob], "ka_farm_actualites.jpg", { type: "image/jpeg" });
 
@@ -609,12 +609,12 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
   }
 };
 
-// Auto initialize on load
+// Démarrage automatique au chargement
 document.addEventListener('DOMContentLoaded', () => {
   DiscussionModule.init();
 });
 
-// Live update listener from cloud database
+// Écoute de mise à jour depuis la base
 document.addEventListener('ka_data_updated', (e) => {
   if (e.detail && e.detail.key === 'ka_farm_messages') {
     DiscussionModule.messages = e.detail.data;
