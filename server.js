@@ -4,15 +4,19 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
 dotenv.config();
 
-// Load Firebase configuration
-const firebaseConfig = JSON.parse(fs.readFileSync(path.resolve('firebase-applet-config.json'), 'utf8'));
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
+let DB;
+let usePostgres = false;
+try {
+  const { DB: dbModule } = await import('./js/db.js');
+  DB = dbModule;
+  await DB.init();
+  usePostgres = true;
+} catch (e) {
+  console.warn('[Server] Module DB non disponible, mode mémoire/localStorage uniquement:', e.message);
+}
 
 async function startServer() {
   const app = express();
@@ -28,14 +32,13 @@ async function startServer() {
 
   app.get('/api/messages', async (req, res) => {
     try {
-      const docSnap = await getDoc(doc(db, "app_data", "messages"));
-      if (docSnap.exists()) {
-        res.json(docSnap.data().data || []);
-      } else {
-        res.json(serverMessages);
+      if (usePostgres && DB) {
+        const rows = await DB.list('messages', { orderBy: 'timestamp DESC' });
+        return res.json(rows.reverse());
       }
+      res.json(serverMessages);
     } catch (err) {
-      console.error("Firestore read error for messages:", err);
+      console.error("DB read error for messages:", err);
       res.json(serverMessages);
     }
   });
@@ -54,17 +57,17 @@ async function startServer() {
       isPrivate: !!isPrivate,
       image: image || null
     };
-    
+
     try {
-      const docRef = doc(db, "app_data", "messages");
-      const docSnap = await getDoc(docRef);
-      const currentMessages = docSnap.exists() ? (docSnap.data().data || []) : [...serverMessages];
-      currentMessages.push(newMsg);
-      
-      await setDoc(docRef, { data: currentMessages, updatedAt: new Date().toISOString() });
-      res.json(currentMessages);
+      if (usePostgres && DB) {
+        await DB.insert('messages', newMsg);
+        const rows = await DB.list('messages', { orderBy: 'timestamp ASC' });
+        return res.json(rows);
+      }
+      serverMessages.push(newMsg);
+      res.json(serverMessages);
     } catch (err) {
-      console.error("Firestore write error for messages:", err);
+      console.error("DB write error for messages:", err);
       serverMessages.push(newMsg);
       res.json(serverMessages);
     }
@@ -81,14 +84,13 @@ async function startServer() {
 
   app.get('/api/stocks', async (req, res) => {
     try {
-      const docSnap = await getDoc(doc(db, "app_data", "stocks"));
-      if (docSnap.exists()) {
-        res.json(docSnap.data().data || []);
-      } else {
-        res.json(serverStocks);
+      if (usePostgres && DB) {
+        const rows = await DB.list('stocks', { orderBy: 'name ASC' });
+        return res.json(rows);
       }
+      res.json(serverStocks);
     } catch (err) {
-      console.error("Firestore read error for stocks:", err);
+      console.error("DB read error for stocks:", err);
       res.json(serverStocks);
     }
   });
@@ -97,10 +99,16 @@ async function startServer() {
     const { stocks } = req.body;
     if (stocks && Array.isArray(stocks)) {
       try {
-        await setDoc(doc(db, "app_data", "stocks"), { data: stocks, updatedAt: new Date().toISOString() });
-        res.json({ success: true, message: 'Stocks synchronisés avec succès', stocks });
+        if (usePostgres && DB) {
+          await DB.delete('stocks', 'all');
+          await DB.insertMany('stocks', stocks.map(s => ({ ...s, enterprise_id: 'ka_farm' })));
+          const rows = await DB.list('stocks', { orderBy: 'name ASC' });
+          return res.json({ success: true, message: 'Stocks synchronisés avec succès', stocks: rows });
+        }
+        serverStocks = stocks;
+        res.json({ success: true, message: 'Stocks synchronisés en mémoire', stocks: serverStocks });
       } catch (err) {
-        console.error("Firestore write error for stocks:", err);
+        console.error("DB write error for stocks:", err);
         serverStocks = stocks;
         res.json({ success: true, message: 'Stocks synchronisés en mémoire', stocks: serverStocks });
       }
