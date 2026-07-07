@@ -1,5 +1,5 @@
 // KA Farm - Couche d'accès PostgreSQL
-// Abstraction CRUD pour toutes les tables
+// CRUD générique pour toutes les tables
 
 import { Pool } from 'pg';
 

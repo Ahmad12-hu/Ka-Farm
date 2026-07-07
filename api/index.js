@@ -1,6 +1,6 @@
-// KA Farm API v2
-// Express Router for PostgreSQL-backed collections
-// Mounted at /api
+// API v2 de KA Farm
+// Routeur Express pour les collections PostgreSQL
+// Monté sur /api
 
 import express from 'express';
 import pg from 'pg';

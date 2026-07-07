@@ -1,5 +1,5 @@
-// KA Farm - Storage Engine
-// Manages API-first persistence with localStorage fallback
+// Moteur de stockage KA Farm
+// Gère la persistance API-first avec fallback localStorage
 
 const API_BASE = '';
 const USE_API = typeof window !== 'undefined' && window.location.protocol !== 'file:';

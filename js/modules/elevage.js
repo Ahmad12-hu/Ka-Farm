@@ -1,4 +1,4 @@
-// KA Farm - Élevage and Livestock Management Module
+// KA Farm - Module élevage et gestion du cheptel
 import { KAStorage } from '../storage.js';
 
 export const ElevageModule = {
@@ -11,12 +11,12 @@ export const ElevageModule = {
   },
 
   setupListeners() {
-    // Tab switching
+    // Changement d'onglet
     window.switchElevageTab = (tabId) => {
       this.switchTab(tabId);
     };
 
-    // Search and filters
+    // Recherche et filtres
     const cheptelSearch = document.getElementById('cheptel-search');
     if (cheptelSearch) {
       cheptelSearch.addEventListener('input', () => {
@@ -24,7 +24,7 @@ export const ElevageModule = {
       });
     }
 
-    // Modal close when clicking outside
+    // Fermer la modale en cliquant à l'extérieur
     const modals = ['add-cheptel-modal', 'add-production-modal', 'add-health-modal'];
     modals.forEach(id => {
       const modal = document.getElementById(id);
@@ -37,7 +37,7 @@ export const ElevageModule = {
       }
     });
 
-    // Form Submissions
+    // Soumissions des formulaires
     const cheptelForm = document.getElementById('cheptel-form');
     if (cheptelForm) {
       cheptelForm.addEventListener('submit', (e) => {
@@ -70,7 +70,7 @@ export const ElevageModule = {
       });
     }
 
-    // Dynamic unit changes based on production type
+    // Changement dynamique de l'unité selon le type de production
     const prodType = document.getElementById('prod-type');
     const prodUnit = document.getElementById('prod-unit');
     if (prodType && prodUnit) {
@@ -79,7 +79,7 @@ export const ElevageModule = {
       });
     }
 
-    // Global triggers
+    // Fonctions globales accessibles depuis le HTML
     window.deleteCheptelGroup = (id) => this.deleteCheptel(id);
     window.editCheptelGroup = (id) => this.openEditCheptel(id);
     window.deleteProductionLog = (id) => this.deleteProduction(id);
@@ -89,7 +89,7 @@ export const ElevageModule = {
   switchTab(tabId) {
     this.currentTab = tabId;
 
-    // Toggle tab styles
+    // :toggle styles des onglets
     const tabs = ['cheptel', 'alimentation', 'production', 'health'];
     tabs.forEach(t => {
       const link = document.getElementById(`tab-link-${t}`);
@@ -106,7 +106,7 @@ export const ElevageModule = {
       }
     });
 
-    // Toggle header actions
+    // Masquer/afficher les boutons d'ajout selon l'onglet
     const addCheptelBtn = document.getElementById('add-cheptel-btn');
     const addProductionBtn = document.getElementById('add-production-btn');
     const addHealthBtn = document.getElementById('add-health-btn');
@@ -123,7 +123,7 @@ export const ElevageModule = {
       addHealthBtn?.classList.remove('hidden');
     }
 
-    // Fetch and render data
+    // Charger et afficher les données
     this.renderCurrentTab();
   },
 
@@ -138,7 +138,7 @@ export const ElevageModule = {
       this.renderHealth();
     }
 
-    // Replace icons
+    // Remplacement des icônes
     if (window.lucide) {
       window.lucide.createIcons();
     }
@@ -169,7 +169,7 @@ export const ElevageModule = {
       c.purpose.toLowerCase().includes(query)
     );
 
-    // Calculate Stats
+    // Calcul des statistiques
     let totalQty = 0;
     filtered.forEach(c => totalQty += parseInt(c.quantity) || 0);
 
@@ -177,7 +177,7 @@ export const ElevageModule = {
     const alertGroupsCount = filtered.filter(c => c.status === 'Malade' || c.status === 'Quarantaine').length;
     const healthyPercent = activeGroupsCount > 0 ? Math.round(((activeGroupsCount - alertGroupsCount) / activeGroupsCount) * 100) : 100;
 
-    // Render Stats to DOM
+    // Afficher les statistiques dans le DOM
     const totalCountDom = document.getElementById('cheptel-total-count');
     if (totalCountDom) totalCountDom.textContent = totalQty.toLocaleString('fr-FR') + ' têtes';
 
@@ -300,10 +300,10 @@ export const ElevageModule = {
     let cheptel = KAStorage.getCheptel();
 
     if (id) {
-      // Edit
+      // Modifier
       cheptel = cheptel.map(c => c.id === id ? { ...c, name, type, breed, quantity, unit, status, purpose } : c);
     } else {
-      // Add
+      // Ajouter
       const newGroup = {
         id: 'CH-' + Date.now().toString().slice(-4),
         name, type, breed, quantity, unit, status, purpose
@@ -314,14 +314,14 @@ export const ElevageModule = {
     KAStorage.saveCheptel(cheptel);
     this.populateHealthTargets();
     
-    // Close & reset
+    // Fermer et réinitialiser
     document.getElementById('add-cheptel-modal').classList.add('hidden');
     document.getElementById('cheptel-form').reset();
     document.getElementById('cheptel-edit-id').value = '';
 
     this.renderCheptel();
     
-    // Refresh sidebar badges if applicable
+    // Rafraîchir les badges du menu si nécessaire
     if (window.App && window.App.updateBadges) {
       window.App.updateBadges();
     }
@@ -353,12 +353,12 @@ export const ElevageModule = {
     const stocks = KAStorage.getStocks();
     const feeds = stocks.filter(s => s.category === 'Alimentation');
 
-    // Check low stock count specifically for feeds
+    // Vérifier les stocks bas spécifiquement pour l'alimentation
     const lowFeeds = feeds.filter(f => f.quantity <= (f.maxQuantity * 0.25));
     if (banner) {
       if (lowFeeds.length > 0) {
         banner.classList.remove('hidden');
-        // Customize text based on critical item
+        // Personnaliser le texte selon l'article critique
         const textEl = banner.querySelector('#feed-alert-text') || banner.querySelector('p:nth-of-type(2)');
         if (textEl) {
           textEl.innerHTML = `L'aliment <strong>${lowFeeds[0].name}</strong> est actuellement à <strong>${lowFeeds[0].quantity} / ${lowFeeds[0].maxQuantity} ${lowFeeds[0].unit}</strong> (${Math.round((lowFeeds[0].quantity/lowFeeds[0].maxQuantity)*100)}%). Commandez au plus vite pour assurer l'alimentation quotidienne.`;
@@ -368,7 +368,7 @@ export const ElevageModule = {
       }
     }
 
-    // Populate ration distribution selector
+    // Remplir le sélecteur de distribution de ration
     if (selectFeed) {
       selectFeed.innerHTML = feeds.map(f => `
         <option value="${f.id}">${f.name} (Restant: ${f.quantity} ${f.unit})</option>
@@ -455,14 +455,14 @@ export const ElevageModule = {
       return;
     }
 
-    // Update quantity
+    // Mettre à jour la quantité
     stocks[stockIndex].quantity -= qtyToConsume;
     KAStorage.saveStocks(stocks);
 
-    // Save Finance expense or note if helpful (optional)
+    // Enregistrer une dépense financière si nécessaire
     alert(`Ration de ${qtyToConsume} ${feedItem.unit} de "${feedItem.name}" distribuée au troupeau avec succès.`);
 
-    // Reset Form
+    // Réinitialiser le formulaire
     document.getElementById('feed-consumption-form').reset();
     
     this.renderAlimentation();
@@ -483,10 +483,10 @@ export const ElevageModule = {
 
     const logs = KAStorage.getElevageProduction();
     
-    // Sort descending by date
+    // Tri par date décroissante
     const sorted = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Calculate total week stats
+    // Calculer les statistiques de la semaine
     const totalMilk = logs.filter(l => l.type === 'Lait').reduce((sum, l) => sum + (parseFloat(l.quantity) || 0), 0);
     const totalEggs = logs.filter(l => l.type === 'Œufs').reduce((sum, l) => sum + (parseFloat(l.quantity) || 0), 0);
 
@@ -631,7 +631,7 @@ export const ElevageModule = {
     logs.push(newLog);
     KAStorage.saveElevageHealth(logs);
 
-    // Dynamic Integration with Finances Module
+    // Intégration dynamique avec le module des finances
     if (cost > 0) {
       const finances = KAStorage.getFinances();
       const newExpense = {
@@ -663,7 +663,7 @@ export const ElevageModule = {
   }
 };
 
-// Auto initialize on load
+// Démarrage automatique au chargement
 document.addEventListener('DOMContentLoaded', () => {
   ElevageModule.init();
 });

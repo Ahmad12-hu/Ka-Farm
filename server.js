@@ -22,7 +22,7 @@ async function startServer() {
   const app = express();
   app.use(express.json({ limit: '12mb' }));
 
-  // In-memory fallback message store for brothers discussion
+  // Stockage local des messages pour la discussion
   let serverMessages = [
     { id: 'msg-1', senderEmail: 'moussa@kafarm.sn', senderName: 'Moussa KA', text: 'Salam Aly ! J\'ai fini de vérifier le système de goutte-à-goutte sur la parcelle A. Tout fonctionne bien pour les tomates 🍅.', timestamp: '2026-06-25T08:30:00.000Z', isPrivate: false, image: null },
     { id: 'msg-2', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'Wa alaykoum salam Moussa. Alhamdoulilah ! Et qu\'en est-il du stock de compost bio ? Est-ce qu\'on a assez pour la pépinière de poivrons ?', timestamp: '2026-06-25T09:15:00.000Z', isPrivate: false, image: null },
@@ -73,7 +73,7 @@ async function startServer() {
     }
   });
 
-  // In-memory fallback stocks store
+  // Stockage local des stocks
   let serverStocks = [
     { id: 'S-301', name: 'Compost Organique Bio', category: 'Amendements', quantity: 350, maxQuantity: 1000, unit: 'kg' },
     { id: 'S-302', name: 'Semences Tomate Mongal F1', category: 'Semences', quantity: 12, maxQuantity: 50, unit: 'sachets' },
@@ -117,7 +117,7 @@ async function startServer() {
     }
   });
 
-  // API router for Gemini
+  // API pour l'assistant Gemini
   app.post('/api/gemini', async (req, res) => {
     try {
       const { prompt, history } = req.body;
@@ -190,7 +190,7 @@ async function startServer() {
     }
   });
 
-  // API router for real weather proxy
+  // API proxy pour la météo
   app.get('/api/weather', async (req, res) => {
     try {
       const { lat, lon } = req.query;
@@ -219,7 +219,7 @@ async function startServer() {
 
   const isProd = process.env.NODE_ENV === 'production';
 
-  // Mount API only if PostgreSQL is enabled
+  // Monter l'API seulement si PostgreSQL est activé
   if (usePostgres && DB) {
     const createApiRouter = (await import('./api/index.js')).default;
     app.use('/api', createApiRouter());
@@ -232,7 +232,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static files from dist with html extensions support
+    // Servir les fichiers statiques depuis dist
     app.use(express.static(path.resolve('dist'), { extensions: ['html'] }));
     app.get('*', (req, res) => {
       res.sendFile(path.resolve('dist/index.html'));

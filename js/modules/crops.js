@@ -1,4 +1,4 @@
-// KA Farm - Crops & Nurseries Module (With Sanitary Diagnostics)
+// KA Farm - Module cultures et pépinières (avec diagnostics sanitaires)
 import { KAStorage } from '../storage.js';
 
 let liveStream = null;
@@ -16,7 +16,7 @@ export const CropsModule = {
     this.initYieldEstimator();
     this.setupListeners();
 
-    // Support search query parameter for fiches de culture
+    // Support du paramètre de recherche pour les fiches de culture
     const urlParams = new URLSearchParams(window.location.search);
     const searchParam = urlParams.get('search');
     if (searchParam) {
@@ -259,16 +259,16 @@ export const CropsModule = {
     }
 
     container.innerHTML = crops.map(crop => {
-      // Water badge
+      // Badge eau
       const isDry = crop.waterStatus === 'Besoin d\'eau';
       const waterColor = isDry ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
       const waterIcon = isDry ? 'droplet-off' : 'droplet';
       
-      // Fertilization badge
+      // Badge fertilisation
       const fertNeed = crop.fertilizerStatus !== 'OK';
       const fertColor = fertNeed ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
       
-      // Sanitary status from recent photo or default sain
+      // Statut sanitaire depuis la photo récente ou par défaut sain
       const photos = crop.photos || [];
       let statusLabel = '🟢 Sain';
       let statusBadge = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
@@ -422,7 +422,7 @@ export const CropsModule = {
   },
 
   setupListeners() {
-    // Delete crop
+    // Supprimer la culture
     window.deleteCrop = (id) => {
       if (!confirm('Voulez-vous supprimer cette culture ?')) return;
       const crops = KAStorage.getCrops().filter(c => c.id !== id);
@@ -430,7 +430,7 @@ export const CropsModule = {
       this.renderCrops();
     };
 
-    // Toggle water status
+    // Basculer le statut hydrique
     window.toggleWaterStatus = (id) => {
       const crops = KAStorage.getCrops();
       const idx = crops.findIndex(c => c.id === id);
@@ -441,7 +441,7 @@ export const CropsModule = {
       }
     };
 
-    // Toggle fertilizer status
+    // Basculer le statut de fertilisation
     window.toggleFertStatus = (id) => {
       const crops = KAStorage.getCrops();
       const idx = crops.findIndex(c => c.id === id);
@@ -454,7 +454,7 @@ export const CropsModule = {
       }
     };
 
-    // Delete nursery
+    // Supprimer la pépinière
     window.deleteNursery = (id) => {
       if (!confirm('Voulez-vous supprimer cette pépinière ?')) return;
       const nurseries = KAStorage.getNurseries().filter(n => n.id !== id);
@@ -462,7 +462,7 @@ export const CropsModule = {
       this.renderNurseries();
     };
 
-    // Nursery status evolution
+    // Évolution du statut de la pépinière
     window.nextNurseryStatus = (id) => {
       const nurseries = KAStorage.getNurseries();
       const idx = nurseries.findIndex(n => n.id === id);
@@ -472,7 +472,7 @@ export const CropsModule = {
         if (curIdx < states.length - 1) {
           nurseries[idx].status = states[curIdx + 1];
         } else {
-          // If already Ready, we can transplant it to crops!
+          // Si déjà Prêt, on peut la repiquer en culture active !
           if (confirm('Cette pépinière est prête. Voulez-vous la repiquer et l\'ajouter aux planches de cultures actives ?')) {
             const crops = KAStorage.getCrops();
             const newCrop = {
@@ -491,7 +491,7 @@ export const CropsModule = {
             crops.unshift(newCrop);
             KAStorage.saveCrops(crops);
             
-            // Remove nursery
+            // Supprimer la pépinière
             const updatedNurseries = nurseries.filter(n => n.id !== id);
             KAStorage.saveNurseries(updatedNurseries);
             
@@ -545,7 +545,7 @@ export const CropsModule = {
       this.renderCrops(filtered);
     };
 
-    // Crop submission
+    // Enregistrement d'une culture
     const cropForm = document.getElementById('shared-crop-form');
     if (cropForm) {
       cropForm.addEventListener('submit', (e) => {
@@ -588,13 +588,13 @@ export const CropsModule = {
         const customContainer = document.getElementById('form-crop-field-custom-container');
         if (customContainer) customContainer.classList.add('hidden');
 
-        // Hide modal
+        // Masquer la modale
         document.getElementById('crop-form-modal').classList.add('hidden');
         alert('Nouvelle planche de culture enregistrée !');
       });
     }
 
-    // Nursery submission
+    // Enregistrement d'une pépinière
     const nurseryForm = document.getElementById('shared-nursery-form');
     if (nurseryForm) {
       nurseryForm.addEventListener('submit', (e) => {
@@ -663,7 +663,7 @@ export const CropsModule = {
       this.deleteSanitaryRecord(cropId, recordId);
     };
 
-    // TREATMENT & DAR BINDINGS
+    // LIENS TRAITEMENTS ET DAR
     window.openTreatmentModal = () => {
       const modal = document.getElementById('treatment-modal');
       const cropSelect = document.getElementById('form-treat-crop');
@@ -764,7 +764,7 @@ export const CropsModule = {
     };
   },
 
-  // ==================== SANITARY MODULE METHODS ====================
+  // ==================== MÉTHODES MODULE SANITAIRE ====================
   openSanitaryModal(cropId) {
     const modal = document.getElementById('sanitary-modal');
     const cropIdInput = document.getElementById('sanitary-crop-id');
@@ -1179,7 +1179,7 @@ export const CropsModule = {
   }
 };
 
-// Global image viewer helper
+// Visionneuse d'image globale
 window.viewFullSizePhoto = (imgUrl) => {
   const viewer = document.createElement('div');
   viewer.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 cursor-zoom-out';
@@ -1193,7 +1193,7 @@ window.viewFullSizePhoto = (imgUrl) => {
   document.body.appendChild(viewer);
 };
 
-// Global handlers for Sénégal Crop Practical Sheets library (Option 4)
+// Gestionnaires globaux pour la bibliothèque de fiches pratiques (Option 4)
 window.filterLibraryCrops = () => {
   const query = document.getElementById('library-search')?.value.toLowerCase().trim() || '';
   const filterType = document.getElementById('library-filter')?.value || 'all';
@@ -1228,7 +1228,7 @@ window.prefillCropForm = (cropName, destType) => {
   }
 };
 
-// Start crops module
+// Démarrage du module cultures
 document.addEventListener('DOMContentLoaded', () => {
   CropsModule.init();
 });
