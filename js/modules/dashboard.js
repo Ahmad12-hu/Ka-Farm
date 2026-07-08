@@ -1,4 +1,4 @@
-// KA Farm - Module tableau de bord et vue d'ensemble
+// KA Farm - Dashboard Statistics & Overview Module
 import { KAStorage } from '../storage.js';
 
 export const DashboardModule = {

@@ -48,13 +48,23 @@ export const UserManager = {
     return true;
   },
 
-  // Require login helper. If not logged in, redirect to login page.
+  // Require login helper. If not logged in, automatically logs in default user.
   requireAuth() {
     if (!this.isLoggedIn()) {
       const currentPath = window.location.pathname;
       if (!currentPath.includes('login.html') && !currentPath.includes('signup.html')) {
-        // Redirect to login page instead of auto-logging in
-        window.location.href = '/pages/auth/login.html';
+        // Automatically log in as default user Amadou KA (amadoucoumbaka@gmail.com)
+        KAStorage.setCurrentUser({
+          email: 'amadoucoumbaka@gmail.com',
+          name: 'Amadou KA',
+          role: 'Bureau',
+          enterpriseId: 'ka_farm',
+          enterpriseName: 'KA Farm',
+          enterpriseCode: 'KA-FARM'
+        }, true);
+        
+        // Reload to apply logged-in state
+        window.location.reload();
       }
     }
   },

@@ -7,9 +7,10 @@
   
   <!-- SEO Meta Tags -->
   <meta name="description" content="KA Farm Sénégal est l'exploitation maraîchère agro-écologique de référence au Sénégal. Découvrez nos techniques durables, notre élevage intégré et notre assistant IA agricole.">
+  <meta name="keywords" content="KA Farm, Sénégal, agriculture durable, agro-écologie, maraîchage, goutte-à-goutte, élevage Sénégal, biopesticides, Niayes, Amadou KA, Aly KA, Moussa KA">
   <meta name="author" content="KA Farm Sénégal">
-  <link rel="icon" type="image/png" href="/assets/logo.png">
-  <link rel="apple-touch-icon" href="/assets/logo.png">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -117,7 +118,7 @@
     window.accessDashboard = (roleType) => {
       KAStorage.init();
       
-      let email = 'contact@kafarm.sn';
+      let email = 'amadoucoumbaka@gmail.com';
       let name = 'Amadou KA';
       let role = 'Bureau';
 
@@ -254,9 +255,9 @@
       <a href="#ai-advisor" onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Conseiller IA</a>
       <a href="#membres" onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Équipe & Accès</a>
       <div class="px-4 pt-2">
-        <a href="/pages/auth/login.html" class="w-full text-center py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl block">
-          Accès Équipe
-        </a>
+        <button onclick="window.tryAccessDefault()" class="w-full text-center py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl">
+          <span id="mobile-login-btn-text">Espace de Gestion</span>
+        </button>
       </div>
     </div>
   </header>
@@ -286,14 +287,13 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-        <a href="#exploitation" class="w-full sm:w-auto px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95">
-          <i data-lucide="sprout" class="h-4.5 w-4.5"></i>
+        <button onclick="window.tryAccessDefault()" class="w-full sm:w-auto px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+          <i data-lucide="layout-dashboard" class="h-4.5 w-4.5"></i>
+          DÉMARRER KA-FARM OS (SYSTEME DE GESTION)
+        </button>
+        <a href="#exploitation" class="w-full sm:w-auto px-6 py-4 bg-[#0B2112] hover:bg-[#0F301B] border border-[#143E23]/40 text-slate-300 hover:text-white text-xs font-black rounded-xl flex items-center justify-center gap-2 transition-all">
           DÉCOUVRIR NOS CULTURES
           <i data-lucide="arrow-down" class="h-4 w-4"></i>
-        </a>
-        <a href="/pages/auth/login.html" class="w-full sm:w-auto px-6 py-4 bg-[#0B2112] hover:bg-[#0F301B] border border-[#143E23]/40 text-slate-300 hover:text-white text-xs font-black rounded-xl flex items-center justify-center gap-2 transition-all">
-          <i data-lucide="layout-dashboard" class="h-4.5 w-4.5"></i>
-          ACCÈS ÉQUIPE
         </a>
       </div>
     </div>
@@ -325,17 +325,17 @@
               <div class="text-center p-3 bg-[#040D06]/50 rounded-2xl border border-emerald-950/30">
                 <i data-lucide="thermometer" class="h-5 w-5 text-amber-400 mx-auto mb-1"></i>
                 <p class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Température</p>
-                <p id="live-temp" class="text-sm font-black text-white mt-1 font-mono">Chargement...</p>
+                <p id="live-temp" class="text-sm font-black text-white mt-1 font-mono">--°C</p>
               </div>
               <div class="text-center p-3 bg-[#040D06]/50 rounded-2xl border border-emerald-950/30">
                 <i data-lucide="droplet" class="h-5 w-5 text-sky-400 mx-auto mb-1"></i>
                 <p class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Humidité</p>
-                <p id="live-humidity" class="text-sm font-black text-white mt-1 font-mono">Chargement...</p>
+                <p id="live-humidity" class="text-sm font-black text-white mt-1 font-mono">--%</p>
               </div>
               <div class="text-center p-3 bg-[#040D06]/50 rounded-2xl border border-emerald-950/30">
                 <i data-lucide="cloud-rain" class="h-5 w-5 text-blue-400 mx-auto mb-1"></i>
                 <p class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Pluviométrie</p>
-                <p id="live-precipitation" class="text-sm font-black text-white mt-1 font-mono">Chargement...</p>
+                <p id="live-precipitation" class="text-sm font-black text-white mt-1 font-mono">-- mm</p>
               </div>
             </div>
           </div>
@@ -657,14 +657,14 @@
           <a href="#exploitation" class="hover:text-emerald-400 transition-colors">Notre Maraîchage</a>
           <a href="#meteo" class="hover:text-emerald-400 transition-colors">Indices Climatologiques</a>
           <a href="#ai-advisor" class="hover:text-emerald-400 transition-colors">Assistant Horticole IA</a>
-          <a href="/pages/auth/login.html" class="text-emerald-400 hover:underline">Accès Système de Gestion</a>
+          <a href="javascript:window.tryAccessDefault()" class="text-emerald-400 hover:underline">Accès Système de Gestion</a>
         </div>
       </div>
 
       <div class="space-y-3">
         <p class="text-xs font-black text-white uppercase tracking-widest">Coordonnées & Contact</p>
         <p class="text-slate-300">📍 Présent partout au Sénégal (Siège à Dakar)</p>
-        <p class="text-slate-300">📧 contact@kafarm.sn</p>
+        <p class="text-slate-300">📧 contact@kafarm.sn | amadoucoumbaka@gmail.com</p>
         <p class="text-[10px] text-slate-500 font-bold mt-2">© 2026 KA Farm Sénégal. Tous droits réservés.</p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-// KA Farm - Module financier et calculateur de compost
+// KA Farm - Financial & Compost Calculator Module
 import { KAStorage } from '../storage.js';
 
 export const FinancesModule = {
@@ -44,7 +44,7 @@ export const FinancesModule = {
 
     const finances = KAStorage.getFinances();
 
-    // Statistiques financières centralisées
+    // Cumulative stats - Centralized
     const { totalRevenu: totalRevenre, totalDepense: totalExpense, solde: totalSolde } = KAStorage.getFinanceStats();
 
     const elRev = document.getElementById('finances-total-revenu');
@@ -142,15 +142,15 @@ export const FinancesModule = {
           if (f.type === 'Revenu') rev += f.amount;
           else if (f.type === 'Dépense') exp += f.amount;
         } else if (!f.parcelId && f.description.toLowerCase().includes(p.name.toLowerCase().split(' ')[1] || 'impossible_match')) {
-      // Correspondance par mot-clé dans la description
-      if (f.type === 'Revenu') rev += f.amount;
-      else if (f.type === 'Dépense') exp += f.amount;
-    }
-  });
-  return { name: p.name, rev, exp, net: rev - exp };
-};
+          // Fallback matching by keyword in description
+          if (f.type === 'Revenu') rev += f.amount;
+          else if (f.type === 'Dépense') exp += f.amount;
+        }
+      });
+      return { name: p.name, rev, exp, net: rev - exp };
+    });
 
-// Ajouter une ligne "Autres/Non affectés"
+    // Add "Autres/Non affectés" row
     let otherParcelRev = 0;
     let otherParcelExp = 0;
     finances.forEach(f => {

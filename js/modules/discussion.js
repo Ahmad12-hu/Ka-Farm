@@ -1,8 +1,8 @@
-// KA Farm - Module discussion et messagerie avec pièce jointe photo et partage social
+// KA Farm - Discussion and Messaging Module with Photo Attachment & Social Media Sharing
 import { KAStorage } from '../storage.js';
 
 export const DiscussionModule = {
-  currentChatId: 'general', // 'general' ou 'direct'
+  currentChatId: 'general', // 'general' or 'direct'
   messages: [],
   currentUser: null,
   pollIntervalId: null,
@@ -11,8 +11,8 @@ export const DiscussionModule = {
   init() {
     this.currentUser = KAStorage.getCurrentUser();
     if (!this.currentUser) {
-      // Valeur par défaut
-      this.currentUser = { email: 'contact@kafarm.sn', name: 'Amadou KA', role: 'Bureau' };
+      // Fallback
+      this.currentUser = { email: 'amadoucoumbaka@gmail.com', name: 'Amadou KA', role: 'Bureau' };
     }
 
     this.renderUserInfo();
@@ -35,7 +35,7 @@ export const DiscussionModule = {
   },
 
   setupListeners() {
-    // Soumission du formulaire
+    // Form submission
     const form = document.getElementById('chat-send-form');
     if (form) {
       form.addEventListener('submit', (e) => {
@@ -44,7 +44,7 @@ export const DiscussionModule = {
       });
     }
 
-    // Champ de recherche
+    // Search input
     const searchInput = document.getElementById('chat-search');
     if (searchInput) {
       searchInput.addEventListener('input', () => {
@@ -52,7 +52,7 @@ export const DiscussionModule = {
       });
     }
 
-    // Sélection de photo
+    // Photo input selection listener
     const fileInput = document.getElementById('chat-image-input');
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
@@ -60,7 +60,7 @@ export const DiscussionModule = {
       });
     }
 
-    // Attacher les fonctions globales pour les handlers HTML
+    // Attach global functions to window for onclick handlers
     window.selectChat = (chatId) => this.selectChat(chatId);
     window.showChatSidebar = () => this.showChatSidebar();
     window.shareActivity = (type) => this.shareActivity(type);
@@ -87,7 +87,7 @@ export const DiscussionModule = {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Vérifier la taille du fichier (limite 8 Mo)
+    // Check file size (limit to 8MB in client before compression or rejection)
     if (file.size > 8 * 1024 * 1024) {
       alert("Cette image est trop volumineuse (maximum 8 Mo).");
       return;
@@ -97,7 +97,7 @@ export const DiscussionModule = {
     reader.onload = (event) => {
       this.attachedImageBase64 = event.target.result;
       
-      // Afficher l'aperçu
+      // Show preview
       const previewContainer = document.getElementById('image-preview-container');
       const previewImg = document.getElementById('image-preview-img');
       const previewFilename = document.getElementById('image-preview-filename');
@@ -125,7 +125,7 @@ export const DiscussionModule = {
   selectChat(chatId) {
     this.currentChatId = chatId;
 
-    // Basculer la vue sur mobile
+    // Toggle views on mobile
     const isMobile = window.innerWidth < 768; // md breakpoint is 768px
     if (isMobile) {
       const sidebar = document.getElementById('chat-sidebar');
@@ -137,7 +137,7 @@ export const DiscussionModule = {
       }
     }
 
-    // Activer le style sur la barre latérale
+    // Toggle active styles on sidebar
     const genButton = document.getElementById('channel-general');
     const directButton = document.getElementById('channel-direct');
     const titleEl = document.getElementById('current-chat-title');
@@ -170,10 +170,10 @@ export const DiscussionModule = {
       if (response.ok) {
         const data = await response.json();
         this.messages = data;
-        // Sauvegarder en localStorage pour cache et fallback hors ligne
+        // Save to local storage for caching/offline fallback
         KAStorage.saveMessages(data);
       } else {
-        // Fallback localStorage si l'API a un problème
+        // Fallback to localStorage if API has any issues
         this.messages = KAStorage.getMessages();
       }
     } catch (err) {
@@ -186,10 +186,10 @@ export const DiscussionModule = {
   },
 
   startPolling() {
-    // Arrêter tout sondage existant
+    // Clear any existing poll
     if (this.pollIntervalId) clearInterval(this.pollIntervalId);
     
-    // Sonder toutes les 3.5 secondes
+    // Poll every 3.5 seconds
     this.pollIntervalId = setInterval(() => {
       this.loadMessages();
     }, 3500);
@@ -201,18 +201,18 @@ export const DiscussionModule = {
 
     const searchQuery = document.getElementById('chat-search')?.value.toLowerCase() || '';
 
-    // Filtrer les messages du chat actif
+    // Filter messages for current active chat
     let filtered = this.messages.filter(m => {
       if (this.currentChatId === 'general') {
-        // Canal général : messages qui ne sont pas privés
+        // General channel displays messages that are NOT private direct messages
         return !m.isPrivate;
       } else {
-        // Canal direct : messages privés uniquement
+        // Direct channel displays private messages
         return m.isPrivate === true;
       }
     });
 
-    // Appliquer la recherche si présente
+    // Apply search query if typed
     if (searchQuery) {
       filtered = filtered.filter(m => 
         m.text.toLowerCase().includes(searchQuery) ||
@@ -253,7 +253,7 @@ export const DiscussionModule = {
         textThemeColor = m.senderEmail.includes('moussa') ? 'text-amber-500' : 'text-[#819888]';
       }
 
-      // Vérifier s'il s'agit d'une notification automatique ou carte de rapport
+      // Check if message is a shared automated notification / report card
       const isNotification = m.text.startsWith('📢') || m.text.startsWith('💧') || m.text.startsWith('🥛') || m.text.startsWith('🌱');
 
       return `
@@ -302,7 +302,7 @@ export const DiscussionModule = {
       `;
     }).join('');
 
-    // Défilement automatique vers le bas
+    // Auto-scroll chat to bottom
     container.scrollTop = container.scrollHeight;
 
     if (window.lucide) {
@@ -350,7 +350,7 @@ export const DiscussionModule = {
       image: image || null
     };
 
-    // Mise à jour optimiste du client
+    // Optimistic client update
     this.messages.push(payload);
     this.renderMessages();
     this.updateLastMessagePreviews();
@@ -367,7 +367,7 @@ export const DiscussionModule = {
         this.messages = data;
         KAStorage.saveMessages(data);
       } else {
-        // Sauvegarde fallback en localStorage si API échoue
+        // Fallback save to localStorage if API fails
         KAStorage.saveMessages(this.messages);
       }
     } catch (err) {
@@ -425,7 +425,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
     const modalCaption = document.getElementById('share-modal-caption');
 
     if (modal && modalImg && modalCaption) {
-      modalImg.src = msg.image || '/assets/logo.png';
+      modalImg.src = msg.image || '/assets/logo.svg';
       modalCaption.value = msg.text || '';
       
       // Reset hashtag selections
@@ -531,10 +531,10 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
     const caption = document.getElementById('share-modal-caption')?.value || '';
     let url = '';
 
-      // Créer le texte de partage personnalisé
+    // Create custom shareable text
     const textToShare = caption + "\n\n🌐 Suivez notre exploitation horticole KA Farm en direct !";
 
-    // Copier dans le presse-papier pour partage facile
+    // Copy to clipboard helper so they can paste easily on mobile/desktop
     navigator.clipboard.writeText(caption).catch(err => console.log("Clipboard error", err));
 
     switch (platform) {
@@ -553,7 +553,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
     }
 
     if (url) {
-      // Message toast expliquant la copie
+      // Friendly toast message explaining clipboard copying
       const toast = document.createElement('div');
       toast.className = "fixed bottom-5 right-5 z-[100] bg-emerald-800 text-white font-black text-xs px-5 py-3 rounded-2xl shadow-2xl animate-bounce border border-emerald-500 flex items-center gap-2";
       toast.innerHTML = `<i data-lucide="copy-check" class="h-4 w-4"></i><span>Légende copiée ! Ouvrez le réseau pour coller et publier.</span>`;
@@ -562,7 +562,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
 
       setTimeout(() => toast.remove(), 4000);
 
-      // Ouvrir la fenêtre de partage
+      // Open sharing window
       window.open(url, '_blank');
     }
   },
@@ -579,7 +579,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
     }
 
     try {
-      // Convertir les données base64 en objet image
+      // Convert base64 image data back into a high-fidelity image file object
       const blob = await fetch(base64Data).then(r => r.blob());
       const file = new File([blob], "ka_farm_actualites.jpg", { type: "image/jpeg" });
 
@@ -609,12 +609,12 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
   }
 };
 
-// Démarrage automatique au chargement
+// Auto initialize on load
 document.addEventListener('DOMContentLoaded', () => {
   DiscussionModule.init();
 });
 
-// Écoute de mise à jour depuis la base
+// Live update listener from cloud database
 document.addEventListener('ka_data_updated', (e) => {
   if (e.detail && e.detail.key === 'ka_farm_messages') {
     DiscussionModule.messages = e.detail.data;

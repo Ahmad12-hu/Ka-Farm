@@ -4,25 +4,21 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
 dotenv.config();
 
-let DB;
-let usePostgres = false;
-try {
-  const { DB: dbModule } = await import('./js/db.js');
-  DB = dbModule;
-  await DB.init();
-  usePostgres = true;
-} catch (e) {
-  console.warn('[Server] Module DB non disponible, mode mémoire/localStorage uniquement:', e.message);
-}
+// Load Firebase configuration
+const firebaseConfig = JSON.parse(fs.readFileSync(path.resolve('firebase-applet-config.json'), 'utf8'));
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
 
 async function startServer() {
   const app = express();
   app.use(express.json({ limit: '12mb' }));
 
-  // Stockage local des messages pour la discussion
+  // In-memory fallback message store for brothers discussion
   let serverMessages = [
     { id: 'msg-1', senderEmail: 'moussa@kafarm.sn', senderName: 'Moussa KA', text: 'Salam Aly ! J\'ai fini de vérifier le système de goutte-à-goutte sur la parcelle A. Tout fonctionne bien pour les tomates 🍅.', timestamp: '2026-06-25T08:30:00.000Z', isPrivate: false, image: null },
     { id: 'msg-2', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'Wa alaykoum salam Moussa. Alhamdoulilah ! Et qu\'en est-il du stock de compost bio ? Est-ce qu\'on a assez pour la pépinière de poivrons ?', timestamp: '2026-06-25T09:15:00.000Z', isPrivate: false, image: null },
@@ -32,13 +28,14 @@ async function startServer() {
 
   app.get('/api/messages', async (req, res) => {
     try {
-      if (usePostgres && DB) {
-        const rows = await DB.list('messages', { orderBy: 'timestamp DESC' });
-        return res.json(rows.reverse());
+      const docSnap = await getDoc(doc(db, "app_data", "messages"));
+      if (docSnap.exists()) {
+        res.json(docSnap.data().data || []);
+      } else {
+        res.json(serverMessages);
       }
-      res.json(serverMessages);
     } catch (err) {
-      console.error("DB read error for messages:", err);
+      console.error("Firestore read error for messages:", err);
       res.json(serverMessages);
     }
   });
@@ -57,23 +54,23 @@ async function startServer() {
       isPrivate: !!isPrivate,
       image: image || null
     };
-
+    
     try {
-      if (usePostgres && DB) {
-        await DB.insert('messages', newMsg);
-        const rows = await DB.list('messages', { orderBy: 'timestamp ASC' });
-        return res.json(rows);
-      }
-      serverMessages.push(newMsg);
-      res.json(serverMessages);
+      const docRef = doc(db, "app_data", "messages");
+      const docSnap = await getDoc(docRef);
+      const currentMessages = docSnap.exists() ? (docSnap.data().data || []) : [...serverMessages];
+      currentMessages.push(newMsg);
+      
+      await setDoc(docRef, { data: currentMessages, updatedAt: new Date().toISOString() });
+      res.json(currentMessages);
     } catch (err) {
-      console.error("DB write error for messages:", err);
+      console.error("Firestore write error for messages:", err);
       serverMessages.push(newMsg);
       res.json(serverMessages);
     }
   });
 
-  // Stockage local des stocks
+  // In-memory fallback stocks store
   let serverStocks = [
     { id: 'S-301', name: 'Compost Organique Bio', category: 'Amendements', quantity: 350, maxQuantity: 1000, unit: 'kg' },
     { id: 'S-302', name: 'Semences Tomate Mongal F1', category: 'Semences', quantity: 12, maxQuantity: 50, unit: 'sachets' },
@@ -84,13 +81,14 @@ async function startServer() {
 
   app.get('/api/stocks', async (req, res) => {
     try {
-      if (usePostgres && DB) {
-        const rows = await DB.list('stocks', { orderBy: 'name ASC' });
-        return res.json(rows);
+      const docSnap = await getDoc(doc(db, "app_data", "stocks"));
+      if (docSnap.exists()) {
+        res.json(docSnap.data().data || []);
+      } else {
+        res.json(serverStocks);
       }
-      res.json(serverStocks);
     } catch (err) {
-      console.error("DB read error for stocks:", err);
+      console.error("Firestore read error for stocks:", err);
       res.json(serverStocks);
     }
   });
@@ -99,16 +97,10 @@ async function startServer() {
     const { stocks } = req.body;
     if (stocks && Array.isArray(stocks)) {
       try {
-        if (usePostgres && DB) {
-          await DB.delete('stocks', 'all');
-          await DB.insertMany('stocks', stocks.map(s => ({ ...s, enterprise_id: 'ka_farm' })));
-          const rows = await DB.list('stocks', { orderBy: 'name ASC' });
-          return res.json({ success: true, message: 'Stocks synchronisés avec succès', stocks: rows });
-        }
-        serverStocks = stocks;
-        res.json({ success: true, message: 'Stocks synchronisés en mémoire', stocks: serverStocks });
+        await setDoc(doc(db, "app_data", "stocks"), { data: stocks, updatedAt: new Date().toISOString() });
+        res.json({ success: true, message: 'Stocks synchronisés avec succès', stocks });
       } catch (err) {
-        console.error("DB write error for stocks:", err);
+        console.error("Firestore write error for stocks:", err);
         serverStocks = stocks;
         res.json({ success: true, message: 'Stocks synchronisés en mémoire', stocks: serverStocks });
       }
@@ -117,7 +109,7 @@ async function startServer() {
     }
   });
 
-  // API pour l'assistant Gemini
+  // API router for Gemini
   app.post('/api/gemini', async (req, res) => {
     try {
       const { prompt, history } = req.body;
@@ -139,7 +131,7 @@ async function startServer() {
         }
       });
 
-      const systemInstruction = "Tu es KA-Farm Agro-Advisor, un conseiller horticole et maraîcher expert d'Afrique de l'Ouest (Sénégal), chaleureux, pragmatique, direct et scientifique. Tu réponds en français. Tu es spécialisé exclusivement dans le maraîchage (cultures de légumes, fines herbes, fruits de jardin, pépinières, irrigation goutte-à-goutte ou aspersion, maladies horticoles comme la mineuse de la tomate Tuta absoluta, le mildiou, l'oïdium, les thrips, et l'usage de biopesticides locaux comme le neem ou le piment). IMPORTANT : Pour les questions concernant la santé humaine, la consommation alimentaire, ou les traitements phytosanitaires chimiques, ajoute toujours un avertissement prudent et recommande de consulter un expert local ou un agronome certifié. Tes conseils sont basés sur les meilleures pratiques agroécologiques ouest-africaines mais ne remplacent pas l'avis d'un professionnel. Donne des réponses concises, claires, structurées et adaptées aux conditions locales ouest-africaines.";
+      const systemInstruction = "Tu es KA-Farm Agro-Advisor, un conseiller horticole et maraîcher expert d'Afrique de l'Ouest (Sénégal), chaleureux, pragmatique, direct et scientifique. Tu réponds en français. Tu es spécialisé exclusivement dans le maraîchage (cultures de légumes, fines herbes, fruits de jardin, pépinières, irrigation goutte-à-goutte ou aspersion, maladies horticoles comme la mineuse de la tomate Tuta absoluta, le mildiou, l'oïdium, les thrips, et l'usage de biopesticides locaux comme le neem ou le piment). Tu aides à diagnostiquer les ravageurs et maladies des légumes, planifier les pépinières maraîchères et le repiquage, optimiser l'arrosage et les amendements (compost organique, fumier) de manière écologique et agroécologique. Donne des réponses concises, claires, structurées et adaptées aux conditions locales ouest-africaines.";
 
       let contents = prompt;
       if (history && Array.isArray(history) && history.length > 0) {
@@ -190,7 +182,7 @@ async function startServer() {
     }
   });
 
-  // API proxy pour la météo
+  // API router for real weather proxy
   app.get('/api/weather', async (req, res) => {
     try {
       const { lat, lon } = req.query;
@@ -219,12 +211,6 @@ async function startServer() {
 
   const isProd = process.env.NODE_ENV === 'production';
 
-  // Monter l'API seulement si PostgreSQL est activé
-  if (usePostgres && DB) {
-    const createApiRouter = (await import('./api/index.js')).default;
-    app.use('/api', createApiRouter());
-  }
-
   if (!isProd) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -232,7 +218,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Servir les fichiers statiques depuis dist
+    // Serve static files from dist with html extensions support
     app.use(express.static(path.resolve('dist'), { extensions: ['html'] }));
     app.get('*', (req, res) => {
       res.sendFile(path.resolve('dist/index.html'));
