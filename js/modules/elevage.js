@@ -1,679 +1,577 @@
-// KA Farm - Élevage and Livestock Management Module
+// KA Farm - Training & Formation Module - Comprehensive Senegal-focused Agricultural Education
 import { KAStorage } from '../storage.js';
 
-export const ElevageModule = {
-  currentTab: 'cheptel',
+export const TrainingModule = {
+  currentLanguage: 'fr', // 'fr' or 'wo'
+  selectedCrop: null,
+  quizScore: 0,
 
   init() {
-    this.setupListeners();
-    this.switchTab(this.currentTab);
-    this.populateHealthTargets();
+    KAStorage.init();
+    this.setupEventListeners();
+    this.applyLanguage(this.currentLanguage);
+    this.loadCropGuides();
+    this.loadQuiz();
   },
 
-  setupListeners() {
-    // Tab switching
-    window.switchElevageTab = (tabId) => {
-      this.switchTab(tabId);
+  setupEventListeners() {
+    // Language toggle
+    window.toggleLanguage = () => {
+      this.currentLanguage = this.currentLanguage === 'fr' ? 'wo' : 'fr';
+      this.applyLanguage(this.currentLanguage);
     };
 
-    // Search and filters
-    const cheptelSearch = document.getElementById('cheptel-search');
-    if (cheptelSearch) {
-      cheptelSearch.addEventListener('input', () => {
-        this.renderCheptel();
-      });
-    }
-
-    // Modal close when clicking outside
-    const modals = ['add-cheptel-modal', 'add-production-modal', 'add-health-modal'];
-    modals.forEach(id => {
-      const modal = document.getElementById(id);
-      if (modal) {
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) {
-            modal.classList.add('hidden');
-          }
-        });
-      }
-    });
-
-    // Form Submissions
-    const cheptelForm = document.getElementById('cheptel-form');
-    if (cheptelForm) {
-      cheptelForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleCheptelSubmit();
-      });
-    }
-
-    const consumptionForm = document.getElementById('feed-consumption-form');
-    if (consumptionForm) {
-      consumptionForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleConsumptionSubmit();
-      });
-    }
-
-    const productionForm = document.getElementById('production-form');
-    if (productionForm) {
-      productionForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleProductionSubmit();
-      });
-    }
-
-    const healthForm = document.getElementById('health-form');
-    if (healthForm) {
-      healthForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleHealthSubmit();
-      });
-    }
-
-    // Dynamic unit changes based on production type
-    const prodType = document.getElementById('prod-type');
-    const prodUnit = document.getElementById('prod-unit');
-    if (prodType && prodUnit) {
-      prodType.addEventListener('change', () => {
-        prodUnit.value = prodType.value === 'Lait' ? 'L' : 'unités';
-      });
-    }
-
-    // Global triggers
-    window.deleteCheptelGroup = (id) => this.deleteCheptel(id);
-    window.editCheptelGroup = (id) => this.openEditCheptel(id);
-    window.deleteProductionLog = (id) => this.deleteProduction(id);
-    window.deleteHealthLog = (id) => this.deleteHealth(id);
-  },
-
-  switchTab(tabId) {
-    this.currentTab = tabId;
-
-    // Toggle tab styles
-    const tabs = ['cheptel', 'alimentation', 'production', 'health'];
-    tabs.forEach(t => {
-      const link = document.getElementById(`tab-link-${t}`);
-      const content = document.getElementById(`tab-content-${t}`);
+    // Filter crops by search
+    window.filterCropGuides = () => {
+      const searchTerm = document.getElementById('crop-search-input')?.value.toLowerCase() || '';
+      const tabs = document.querySelectorAll('.crop-guide-tab');
       
-      if (t === tabId) {
-        link?.classList.add('border-emerald-500', 'text-emerald-500');
-        link?.classList.remove('border-transparent', 'text-slate-450', 'dark:text-slate-400');
-        content?.classList.remove('hidden');
-      } else {
-        link?.classList.remove('border-emerald-500', 'text-emerald-500');
-        link?.classList.add('border-transparent', 'text-slate-450', 'dark:text-slate-400');
-        content?.classList.add('hidden');
-      }
-    });
+      tabs.forEach(tab => {
+        const text = tab.textContent.toLowerCase();
+        tab.style.display = text.includes(searchTerm) ? 'block' : 'none';
+      });
+    };
 
-    // Toggle header actions
-    const addCheptelBtn = document.getElementById('add-cheptel-btn');
-    const addProductionBtn = document.getElementById('add-production-btn');
-    const addHealthBtn = document.getElementById('add-health-btn');
-
-    addCheptelBtn?.classList.add('hidden');
-    addProductionBtn?.classList.add('hidden');
-    addHealthBtn?.classList.add('hidden');
-
-    if (tabId === 'cheptel') {
-      addCheptelBtn?.classList.remove('hidden');
-    } else if (tabId === 'production') {
-      addProductionBtn?.classList.remove('hidden');
-    } else if (tabId === 'health') {
-      addHealthBtn?.classList.remove('hidden');
+    // Chat form
+    const chatForm = document.getElementById('training-chat-form');
+    if (chatForm) {
+      chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.sendChatMessage();
+      });
     }
 
-    // Fetch and render data
-    this.renderCurrentTab();
+    // Ask mentor questions from FAQ
+    window.askMentorQuestion = (question) => {
+      const input = document.getElementById('training-chat-input');
+      if (input) {
+        input.value = question;
+        input.focus();
+      }
+    };
+
+    // Quiz answer checker
+    window.checkQuizAnswer = (questionIndex, selectedIndex, correctIndex) => {
+      if (selectedIndex === correctIndex) {
+        this.quizScore++;
+        const badge = document.getElementById('quiz-score-badge');
+        if (badge) {
+          badge.textContent = `Score: ${this.quizScore}/3`;
+          badge.classList.remove('hidden');
+        }
+        alert('✓ Correct ! Excellent travail agricole !');
+      } else {
+        alert('✗ Incorrect. Révisez les fiches techniques ci-dessus pour progresser.');
+      }
+    };
   },
 
-  renderCurrentTab() {
-    if (this.currentTab === 'cheptel') {
-      this.renderCheptel();
-    } else if (this.currentTab === 'alimentation') {
-      this.renderAlimentation();
-    } else if (this.currentTab === 'production') {
-      this.renderProduction();
-    } else if (this.currentTab === 'health') {
-      this.renderHealth();
+  applyLanguage(lang) {
+    if (lang === 'wo') {
+      this.applyWolofLabels();
+    } else {
+      this.applyFrenchLabels();
+    }
+    
+    const toggleBtn = document.getElementById('lang-toggle-text');
+    if (toggleBtn) {
+      toggleBtn.textContent = lang === 'fr' ? 'Français' : 'Wolof';
+    }
+  },
+
+  applyFrenchLabels() {
+    const labels = {
+      'training-header-title': 'Guide & Formation Maraîchère',
+      'training-header-subtitle': 'Académie KA Farm Sénégal',
+      'training-header-desc': 'Itinéraires techniques détaillés, calendriers culturaux et diagnostics biologiques pour réussir vos cultures au Sénégal.',
+      'crop-fiches-title': 'Fiches Techniques & Itinéraires',
+      'crop-fiches-desc': 'Sélectionnez une culture pour charger son itinéraire technique sénégalais complet.',
+      'principles-title': 'Principes de l\'Agriculture Biologique',
+      'principles-desc': 'Les 4 piliers essentiels pour protéger les sols et maximiser le rendement horticole.',
+      'quiz-title-text': 'Quiz Maraîcher Express',
+      'quiz-desc-text': 'Testez vos compétences pratiques sur le maraîchage sahélien.',
+      'ai-mentor-title': 'Conseiller Pédagogique IA',
+      'ai-mentor-desc': 'Posez des questions spécifiques sur l\'enseignement agricole, les semis, maladies, et techniques du Sénégal.',
+      'faq-title-label': 'Questions Fréquentes',
+      'faq-desc-label': 'Conseils locaux essentiels les plus recherchés par nos producteurs.',
+      'periods-title': '🗓️ Périodes Importantes'
+    };
+
+    Object.entries(labels).forEach(([id, text]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    });
+  },
+
+  applyWolofLabels() {
+    const labels = {
+      'training-header-title': 'Teere & Akool Maraîchère',
+      'training-header-subtitle': 'Akool KA Farm Sénégal',
+      'training-header-desc': 'Bayti yooni bu jëm, kalandar yu xobbal ak diagnose yu biologie ngir réussir jang yi ci Sénégal.',
+      'crop-fiches-title': 'Yooni yi & Itinéraires',
+      'crop-fiches-desc': 'Tànne jang bu bari ngir load bayti yu Sénégal.',
+      'principles-title': 'Mbey yi gu Saba Biologie',
+      'principles-desc': 'Jëm yi 4 bu mungul ngir jëkoor ndox ak max rendement.',
+      'quiz-title-text': 'Test Maraîchère Express',
+      'quiz-desc-text': 'Sayto ay jangal yi ci maraîchage.',
+      'ai-mentor-title': 'Conseiller IA Akool',
+      'ai-mentor-desc': 'Jot tur ay tur ci akool, semis, jëm, ak mbey yi gu Sénégal.',
+      'faq-title-label': 'Tur yu Jege',
+      'faq-desc-label': 'Conseils bu def yi neex ci nit yi sa jang.',
+      'periods-title': '🗓️ Waxtu yu Ëpp'
+    };
+
+    Object.entries(labels).forEach(([id, text]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    });
+  },
+
+  loadCropGuides() {
+    const container = document.getElementById('crop-tabs-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const crops = [
+      { key: 'oignon', label: '🧅 Oignon' },
+      { key: 'tomate', label: '🍅 Tomate' },
+      { key: 'piment', label: '🌶️ Piment' },
+      { key: 'gombo', label: '🌱 Gombo' },
+      { key: 'chou', label: '🥬 Chou' },
+      { key: 'aubergine', label: '🍆 Aubergine' },
+      { key: 'carotte', label: '🥕 Carotte' },
+      { key: 'laitue', label: '🥬 Laitue' },
+      { key: 'compostage_bio', label: '🍃 Compost Bio' },
+      { key: 'biopesticides_recettes', label: '🛡️ Biopesticides' },
+      { key: 'goutte_a_goutte', label: '💧 Goutte-à-goutte' }
+    ];
+
+    crops.forEach((crop, index) => {
+      const btn = document.createElement('button');
+      btn.className = `crop-guide-tab px-4 py-2.5 text-xs font-black border-b-2 rounded-t-lg transition-all cursor-pointer ${
+        index === 0 ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-slate-450 dark:text-slate-400 hover:text-emerald-500'
+      }`;
+      btn.textContent = crop.label;
+      btn.onclick = () => this.selectCrop(crop.key);
+      container.appendChild(btn);
+    });
+
+    // Load first crop by default
+    this.selectCrop('oignon');
+  },
+
+  selectCrop(cropKey) {
+    this.selectedCrop = cropKey;
+
+    // Update tab styles
+    document.querySelectorAll('.crop-guide-tab').forEach((tab, index) => {
+      tab.classList.remove('border-emerald-500', 'text-emerald-500');
+      tab.classList.add('border-transparent', 'text-slate-450', 'dark:text-slate-400');
+    });
+
+    const selectedTab = Array.from(document.querySelectorAll('.crop-guide-tab')).find(t => 
+      t.textContent.toLowerCase().includes(cropKey.split('_').join(' '))
+    );
+    
+    if (selectedTab) {
+      selectedTab.classList.remove('border-transparent', 'text-slate-450', 'dark:text-slate-400');
+      selectedTab.classList.add('border-emerald-500', 'text-emerald-500');
     }
 
-    // Replace icons
+    this.loadCropContent(cropKey);
+  },
+
+  loadCropContent(cropKey) {
+    const content = this.getCropGuideContent(cropKey);
+    const container = document.getElementById('crop-guide-content');
+    
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="space-y-4">
+        <div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-white">${content.title}</h2>
+          <p class="text-xs text-slate-400 mt-1"><strong>Variété:</strong> ${content.variety}</p>
+          <p class="text-xs text-slate-400"><strong>Durée:</strong> ${content.cycle}</p>
+        </div>
+
+        <div class="space-y-3">
+          ${content.steps.map(step => `
+            <details class="group bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl overflow-hidden [&_summary::-webkit-details-marker]:hidden">
+              <summary class="flex justify-between items-center p-4 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer select-none hover:bg-emerald-950/10">
+                <span class="pr-2 text-left">${step.title}</span>
+                <span class="transition group-open:rotate-180">
+                  <i data-lucide="chevron-down" class="h-3.5 w-3.5 text-slate-400"></i>
+                </span>
+              </summary>
+              <div class="p-4 pt-0 border-t border-slate-100 dark:border-[#143E23]/10 text-[11px] text-slate-650 dark:text-slate-350 leading-relaxed font-semibold space-y-2">
+                <p>${step.desc}</p>
+              </div>
+            </details>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
     if (window.lucide) {
       window.lucide.createIcons();
     }
   },
 
-  populateHealthTargets() {
-    const healthTarget = document.getElementById('health-target');
-    if (!healthTarget) return;
+  getCropGuideContent(cropKey) {
+    const guides = {
+      oignon: {
+        title: '🧅 Itinéraire Technique de l\'Oignon (Allium cepa)',
+        variety: 'Variétés : Violet de Galmi, Mercedes F1, Safari',
+        cycle: 'Durée totale : 130 - 150 jours (dont 40-50 jours de pépinière)',
+        steps: [
+          {
+            title: '1. Étape de la Pépinière',
+            desc: 'Semez de préférence d\'Octobre à Décembre. Utilisez un terreau riche en compost décomposé, semez en lignes espacées de 10 cm, couvrez d\'un voile léger. Arrosez 2 fois par jour.'
+          },
+          {
+            title: '2. Repiquage',
+            desc: 'Effectuer le repiquage des plants vigoureux de la taille d\'un crayon. Coupez légèrement le feuillage et les racines (habillage). Plantez à 10 cm d\'intervalle.'
+          },
+          {
+            title: '3. Besoins en Eau & Fertilisation',
+            desc: 'Besoin régulier mais sans stagnation. Arrêtez complètement l\'irrigation 15 jours avant la récolte pour durcir les bulbes.'
+          },
+          {
+            title: '4. Ennemis & Traitements Naturels',
+            desc: 'Thrips (ravageur principal) : pulvérisation préventive d\'extrait d\'ail dilué ou de savon noir liquide.'
+          }
+        ]
+      },
+      tomate: {
+        title: '🍅 Itinéraire Technique de la Tomate (Solanum lycopersicum)',
+        variety: 'Variétés : Mongal F1, Nadira, Xina, Fandango',
+        cycle: 'Durée totale : 110 - 130 jours',
+        steps: [
+          {
+            title: '1. Semis & Pépinière',
+            desc: 'Idéal d\'Octobre à Février. Semis en lignes distantes de 10 cm sur terreau drainant. Protégez contre le soleil fort.'
+          },
+          {
+            title: '2. Repiquage & Tuteurage',
+            desc: 'Repiquez au stade 4-5 feuilles réelles. Installez rapidement des tuteurs solides en bambou.'
+          },
+          {
+            title: '3. Taille & Irrigation',
+            desc: 'Pincez ou supprimez les gourmands axillaires. Arrosez régulièrement sans asperger les feuilles.'
+          },
+          {
+            title: '4. Maladies & Parasites',
+            desc: 'Virus TYLCV transmis par l\'aleurode : utilisez des voiles non tissés et pulvérisez du Neem.'
+          }
+        ]
+      },
+      piment: {
+        title: '🌶️ Itinéraire Technique du Piment (Capsicum frutescens)',
+        variety: 'Variétés : Piment Antillais, Piment oiseau',
+        cycle: 'Durée totale : 150 - 180 jours',
+        steps: [
+          {
+            title: '1. Préparation du sol & Pépinière',
+            desc: 'Demande un sol riche en compost. En pépinière, semez en surélevées protégées par un ombrage artificiel.'
+          },
+          {
+            title: '2. Irrigation stricte',
+            desc: 'Le piment a horreur de la sécheresse au moment de la floraison. Arrosez tous les 2 jours sous paillage.'
+          },
+          {
+            title: '3. Fumage d\'entretien',
+            desc: 'Apport de cendre de bois (potasse) toutes les 3 semaines après la floraison.'
+          },
+          {
+            title: '4. Maladies & Lutte Biologique',
+            desc: 'Virus de la mosaïque transmis par pucerons : retirez les plants atteints et pulvérisez du Neem.'
+          }
+        ]
+      },
+      gombo: {
+        title: '🌱 Itinéraire Technique du Gombo (Abelmoschus esculentus)',
+        variety: 'Variétés : Clemson Spineless, Koto, Kirène',
+        cycle: 'Durée totale : 70 - 90 jours',
+        steps: [
+          {
+            title: '1. Semis Direct',
+            desc: 'Semez directement en poquets de 3 graines, espacés de 50 cm. Le gombo aime la chaleur.'
+          },
+          {
+            title: '2. Démariage & Butter',
+            desc: 'Après 15 jours, gardez le plant le plus vigoureux. Ramenez de la terre meuble au pied.'
+          },
+          {
+            title: '3. Arrosages modérés',
+            desc: 'Bien qu\'il résiste aux sécheresses courtes, un arrosage tous les 3 jours assure une fructification tendre.'
+          },
+          {
+            title: '4. Altises & Oïdium',
+            desc: 'Les altises font de petits trous. Utilisez un répulsif à base d\'ail piquant ou de cendres fines.'
+          }
+        ]
+      },
+      chou: {
+        title: '🥬 Itinéraire Technique du Chou Pommé (Brassica oleracea)',
+        variety: 'Variétés : KK Cross F1, Tropica Cross',
+        cycle: 'Durée totale : 90 - 110 jours',
+        steps: [
+          {
+            title: '1. Semis & pépinière',
+            desc: 'Préfère les périodes fraîches (Novembre à Février). Semis léger, repiquage dès 4-5 feuilles.'
+          },
+          {
+            title: '2. Fertilisation forte',
+            desc: 'Très exigeant en matières organiques. Incorporez du compost riche 1 semaine avant repiquage.'
+          },
+          {
+            title: '3. Irrigation abondante',
+            desc: 'Le chou possède d\'énormes feuilles d\'évaporation. Arrosez généreusement le matin.'
+          },
+          {
+            title: '4. Papillons & Chenilles',
+            desc: 'Le ravageur le plus dévastateur. Pulvérisation préventive hebdomadaire de purin de Neem.'
+          }
+        ]
+      },
+      aubergine: {
+        title: '🍆 Itinéraire Technique de l\'Aubergine (Solanum melongena)',
+        variety: 'Variétés : Florida High Bush, Aubergine locale',
+        cycle: 'Durée totale : 120 - 140 jours',
+        steps: [
+          {
+            title: '1. Mise en pépinière',
+            desc: 'La germination peut prendre jusqu\'à 10 jours. Maintenir la terre tiède et humide.'
+          },
+          {
+            title: '2. Buttage indispensable',
+            desc: 'Au fur et à mesure de la croissance, buttez la terre autour du pied.'
+          },
+          {
+            title: '3. Taille & Ébourgeonnage',
+            desc: 'Coupez les gourmands inutiles pour diriger la sève vers les aubergines principales.'
+          },
+          {
+            title: '4. Ravageurs majeurs',
+            desc: 'Les acariens créent des feuilles poussiéreuses. Pulvérisez de l\'eau savonneuse.'
+          }
+        ]
+      },
+      carotte: {
+        title: '🥕 Itinéraire Technique de la Carotte (Daucus carota)',
+        variety: 'Variétés : New Kuroda, Amazonia, Bahia',
+        cycle: 'Durée totale : 90 - 110 jours',
+        steps: [
+          {
+            title: '1. Préparation du Sol & Semis',
+            desc: 'Exige un sol sableux très meuble et sans cailloux. Semez directement en lignes peu profondes.'
+          },
+          {
+            title: '2. Éclaircissage',
+            desc: 'Quand les feuilles atteignent 5 cm, éclaircissez pour laisser un plant tous les 5 cm.'
+          },
+          {
+            title: '3. Fumure & Potasse',
+            desc: 'Évitez l\'azote frais. Préférez un compost très mûr et ajoutez de la cendre de bois.'
+          },
+          {
+            title: '4. Nématodes du Sol',
+            desc: 'Des vers microscopiques créent des galles. Pratiquez une rotation stricte et plantez des oeillets d\'Inde.'
+          }
+        ]
+      },
+      laitue: {
+        title: '🥬 Itinéraire Technique de la Laitue / Salade (Lactuca sativa)',
+        variety: 'Variétés : Eden, Great Lakes, Blonde de Paris',
+        cycle: 'Durée totale : 45 - 60 jours',
+        steps: [
+          {
+            title: '1. Semis & Protection Thermique',
+            desc: 'Les graines refusent de germer au-dessus de 30°C. Pépinière très fraîche et ombragée.'
+          },
+          {
+            title: '2. Repiquage',
+            desc: 'Repiquez après 20 jours à 25 cm d\'intervalle. Choisissez une fin d\'après-midi fraîche.'
+          },
+          {
+            title: '3. Irrigation Intensive',
+            desc: 'Racines très superficielles : arrosage biquotidien obligatoire. Sol toujours frais.'
+          },
+          {
+            title: '4. Limaces & Pucerons',
+            desc: 'Barrière de cendre ou de sciure fine autour des planches. Eau savonneuse douce contre pucerons.'
+          }
+        ]
+      },
+      compostage_bio: {
+        title: '🍃 Fabrication de Compost Bio-Actif',
+        variety: 'Type : Amendement organique aérobie accéléré',
+        cycle: 'Durée de maturation : 45 à 60 jours',
+        steps: [
+          {
+            title: '1. Choix & Dosage des Matières Premières',
+            desc: 'Respectez le rapport C/N = 30. Mélangez 60% matières sèches, 30% herbes vertes, 10% fumier.'
+          },
+          {
+            title: '2. Montage du Tas & Arrosage',
+            desc: 'Montez en couches successives de 15-20 cm. Arrosez généreusement chaque couche.'
+          },
+          {
+            title: '3. Phases de Température & Retournement',
+            desc: 'Dès le 3ème jour, température atteint 55-65°C (phase thermophile). Retournez régulièrement.'
+          },
+          {
+            title: '4. Signes de Maturité & Dosage Sol',
+            desc: 'Après 6-8 semaines, tas refroidit et dégage une odeur de terre forestière. Appliquez 2-3 kg/m2.'
+          }
+        ]
+      },
+      biopesticides_recettes: {
+        title: '🛡️ Recettes de Biopesticides & Purins Locaux',
+        variety: 'Type : Préparations biologiques protectrices',
+        cycle: 'Fréquence : Tous les 5 à 7 jours en préventif',
+        steps: [
+          {
+            title: '1. Émulsion d\'Ail et Piment',
+            desc: 'Écrasez 100g d\'ail et 100g de piments. Laissez macérer dans 1L d\'eau 24h. Filtrez.'
+          },
+          {
+            title: '2. Purin de Feuilles de Neem',
+            desc: 'Pilez 2 kg de feuilles fraîches de Neem. Laissez macérer dans 10L d\'eau 48h.'
+          },
+          {
+            title: '3. Décoction de Cendre',
+            desc: 'Tamisez 500g de cendre. Faites bouillir dans 5L d\'eau 20 min. Laissez refroidir.'
+          },
+          {
+            title: '4. Macération d\'Oignon',
+            desc: 'Hachez 200g d\'oignons. Laissez tremper dans 5L d\'eau 24h. Filtrez et appliquez pur.'
+          }
+        ]
+      },
+      goutte_a_goutte: {
+        title: '💧 Optimisation du Système Goutte-à-Goutte',
+        variety: 'Technologie : Micro-irrigation localisée',
+        cycle: 'Fréquence : Quotidienne',
+        steps: [
+          {
+            title: '1. Choix des Heures Critiques',
+            desc: 'N\'arrosez jamais entre 10h et 16h car 45% de l\'eau s\'évapore. Privilégiez 6h-8h.'
+          },
+          {
+            title: '2. Calcul du Volume Précis',
+            desc: 'En saison fraîche : 30 min/jour (1L/plant). En saison chaude : 60 min/jour (2L/plant).'
+          },
+          {
+            title: '3. Maintenance & Débouchage',
+            desc: 'Eau calcaire bouche les orifices. Purgez vos lignes une fois par mois.'
+          },
+          {
+            title: '4. Test de Pénétration',
+            desc: 'Soulevez le paillis, enfoncez l\'index à 5-8 cm. Si terre fraîche s\'agglutine, bien arrosé.'
+          }
+        ]
+      }
+    };
 
-    const cheptel = KAStorage.getCheptel();
-    healthTarget.innerHTML = cheptel.map(c => `
-      <option value="${c.name}">${c.name} (${c.type})</option>
-    `).join('') || '<option value="Global">Tout le cheptel</option>';
+    return guides[cropKey] || guides['oignon'];
   },
 
-  // --- TAB 1: CHEPTEL LOGIC ---
-  renderCheptel() {
-    const container = document.getElementById('cheptel-container');
+  loadQuiz() {
+    const container = document.getElementById('quiz-container');
     if (!container) return;
 
-    const cheptel = KAStorage.getCheptel();
-    const query = document.getElementById('cheptel-search')?.value.toLowerCase() || '';
-
-    const filtered = cheptel.filter(c => 
-      c.name.toLowerCase().includes(query) || 
-      c.type.toLowerCase().includes(query) || 
-      c.breed.toLowerCase().includes(query) || 
-      c.purpose.toLowerCase().includes(query)
-    );
-
-    // Calculate Stats
-    let totalQty = 0;
-    filtered.forEach(c => totalQty += parseInt(c.quantity) || 0);
-
-    const activeGroupsCount = filtered.length;
-    const alertGroupsCount = filtered.filter(c => c.status === 'Malade' || c.status === 'Quarantaine').length;
-    const healthyPercent = activeGroupsCount > 0 ? Math.round(((activeGroupsCount - alertGroupsCount) / activeGroupsCount) * 100) : 100;
-
-    // Render Stats to DOM
-    const totalCountDom = document.getElementById('cheptel-total-count');
-    if (totalCountDom) totalCountDom.textContent = totalQty.toLocaleString('fr-FR') + ' têtes';
-
-    const healthDom = document.getElementById('cheptel-health-status');
-    if (healthDom) {
-      healthDom.textContent = healthyPercent + '%';
-      if (healthyPercent < 80) {
-        healthDom.className = 'text-2xl font-black text-rose-500 mt-1 font-mono';
-      } else if (healthyPercent < 95) {
-        healthDom.className = 'text-2xl font-black text-amber-500 mt-1 font-mono';
-      } else {
-        healthDom.className = 'text-2xl font-black text-emerald-400 mt-1 font-mono';
+    const questions = [
+      {
+        question: 'Quelle pratique réduit drastiquement l\'évaporation de l\'eau sous le soleil du Sénégal ?',
+        options: ['L\'arrosage intensif à midi', 'Le paillage épais des planches', 'Laisser le sol nu', 'Pulvériser du sel'],
+        correct: 1
+      },
+      {
+        question: 'Pourquoi est-il déconseillé de replanter du piment après une aubergine ?',
+        options: ['Deux cultures qui se détestent', 'Ce sont toutes deux des Solanacées', 'Le piment refuse la terre noire', 'Aucune contre-indication'],
+        correct: 1
+      },
+      {
+        question: 'Quel traitement combat les chenilles du chou ?',
+        options: ['De l\'urée chimique', 'Le purin de Neem', 'De l\'eau saline', 'Couper la pépinière'],
+        correct: 1
       }
-    }
+    ];
 
-    const groupsDom = document.getElementById('cheptel-groups-count');
-    if (groupsDom) groupsDom.textContent = activeGroupsCount;
+    container.innerHTML = questions.map((q, index) => `
+      <div class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl space-y-3">
+        <p class="font-bold text-slate-800 dark:text-white text-sm">Question ${index + 1}: ${q.question}</p>
+        <div class="space-y-2">
+          ${q.options.map((option, optIndex) => `
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="quiz-${index}" value="${optIndex}" class="w-4 h-4" onchange="window.checkQuizAnswer(${index}, ${optIndex}, ${q.correct})">
+              <span class="text-xs text-slate-700 dark:text-slate-300">${option}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  },
 
-    if (filtered.length === 0) {
-      container.innerHTML = `
-        <div class="col-span-full py-12 text-center text-slate-450 dark:text-slate-500 space-y-3">
-          <i data-lucide="paw-print" class="h-10 w-10 mx-auto opacity-30 text-amber-500"></i>
-          <p class="text-xs font-bold">Aucun groupe d'élevage trouvé.</p>
-          <p class="text-[10px]">Utilisez le bouton en haut à droite pour ajouter vos premiers bovins, moutons ou volailles.</p>
+  sendChatMessage() {
+    const input = document.getElementById('training-chat-input');
+    const container = document.getElementById('training-chat-container');
+    
+    if (!input || !input.value || !container) return;
+
+    const message = input.value;
+
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'flex justify-end text-right';
+    userMsg.innerHTML = `
+      <div class="p-3 bg-emerald-600 text-white rounded-2xl rounded-tr-none max-w-[85%]">
+        <p class="text-xs leading-relaxed">${message}</p>
+      </div>
+    `;
+    container.appendChild(userMsg);
+
+    // Add loading indicator
+    const loader = document.createElement('div');
+    loader.className = 'flex gap-3 items-start';
+    loader.id = 'mentor-loader';
+    loader.innerHTML = `
+      <div class="h-6 w-6 bg-cyan-600 rounded-md flex items-center justify-center flex-shrink-0 text-white font-extrabold text-[10px]">AI</div>
+      <div class="bg-slate-50 dark:bg-[#061109]/70 border border-emerald-950/20 p-3 rounded-2xl rounded-tl-none max-w-[85%]">
+        <div class="flex items-center gap-1">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce"></span>
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: 0.2s"></span>
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: 0.4s"></span>
+        </div>
+      </div>
+    `;
+    container.appendChild(loader);
+    container.scrollTop = container.scrollHeight;
+
+    input.value = '';
+
+    // Simulate AI response
+    setTimeout(() => {
+      loader.remove();
+
+      const aiMsg = document.createElement('div');
+      aiMsg.className = 'flex gap-3 items-start';
+      aiMsg.innerHTML = `
+        <div class="h-6 w-6 bg-cyan-600 rounded-md flex items-center justify-center flex-shrink-0 text-white font-extrabold text-[10px]">AI</div>
+        <div class="bg-slate-50 dark:bg-[#061109]/70 border border-emerald-950/20 p-3 rounded-2xl rounded-tl-none max-w-[85%]">
+          <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">Merci pour votre question ! C'est une excellente question sur le maraîchage sénégalais. Basé sur mes connaissances, je vous recommande de consulter les fiches techniques ci-dessus pour des détails spécifiques à votre situation.</p>
         </div>
       `;
-      return;
-    }
-
-    container.innerHTML = filtered.map(c => {
-      let icon = 'cow';
-      if (c.type === 'Bovins') icon = 'beef';
-      else if (c.type === 'Ovins' || c.type === 'Caprins') icon = 'sheep';
-      else if (c.type === 'Volailles') icon = 'egg';
-      else icon = 'paw-print';
-
-      let statusBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      let statusIcon = '🟢';
-      if (c.status === 'Surveiller') {
-        statusBadgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-        statusIcon = '🟡';
-      } else if (c.status === 'Sous traitement') {
-        statusBadgeColor = 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-        statusIcon = '🟠';
-      } else if (c.status === 'Malade' || c.status === 'Quarantaine') {
-        statusBadgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-        statusIcon = '🔴';
-      }
-
-      return `
-        <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 hover:border-emerald-500/30 transition-all shadow-sm">
-          <div class="flex justify-between items-start gap-3">
-            <div class="flex items-center gap-3">
-              <div class="h-11 w-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                <i data-lucide="${icon}" class="h-5 w-5"></i>
-              </div>
-              <div>
-                <h4 class="text-xs font-black text-slate-850 dark:text-white leading-tight">${c.name}</h4>
-                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">${c.breed || 'Race non définie'}</p>
-              </div>
-            </div>
-            <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusBadgeColor}">
-              ${statusIcon} ${c.status}
-            </span>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4 bg-[#051009]/30 dark:bg-[#051009]/60 border border-[#143E23]/20 p-3 rounded-2xl text-[11px]">
-            <div>
-              <p class="text-slate-450 dark:text-slate-400 text-[9px] font-bold uppercase tracking-wider">Effectif</p>
-              <p class="font-bold text-white font-mono text-xs mt-0.5">${c.quantity} ${c.unit}</p>
-            </div>
-            <div>
-              <p class="text-slate-450 dark:text-slate-400 text-[9px] font-bold uppercase tracking-wider">Vocation</p>
-              <p class="font-bold text-emerald-400 text-xs mt-0.5 flex items-center gap-1">
-                ${c.purpose === 'Lait' ? '🥛 Lait' : c.purpose === 'Viande' ? '🥩 Viande' : c.purpose === 'Reproduction' ? '🧬 Reproduction' : '🥚 Œufs'}
-              </p>
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-2 border-t border-[#143E23]/20">
-            <button onclick="window.editCheptelGroup('${c.id}')" class="p-1.5 hover:bg-[#0D2615] text-emerald-500 hover:text-emerald-400 rounded-lg transition-colors cursor-pointer" title="Modifier le groupe">
-              <i data-lucide="pencil" class="h-4 w-4"></i>
-            </button>
-            <button onclick="window.deleteCheptelGroup('${c.id}')" class="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors cursor-pointer" title="Supprimer le groupe">
-              <i data-lucide="trash-2" class="h-4 w-4"></i>
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  },
-
-  openEditCheptel(id) {
-    const cheptel = KAStorage.getCheptel();
-    const group = cheptel.find(c => c.id === id);
-    if (!group) return;
-
-    document.getElementById('cheptel-edit-id').value = group.id;
-    document.getElementById('cheptel-name').value = group.name;
-    document.getElementById('cheptel-type').value = group.type;
-    document.getElementById('cheptel-breed').value = group.breed;
-    document.getElementById('cheptel-qty').value = group.quantity;
-    document.getElementById('cheptel-unit').value = group.unit;
-    document.getElementById('cheptel-status').value = group.status;
-    document.getElementById('cheptel-purpose').value = group.purpose;
-
-    document.getElementById('add-cheptel-modal').classList.remove('hidden');
-  },
-
-  handleCheptelSubmit() {
-    const id = document.getElementById('cheptel-edit-id').value;
-    const name = document.getElementById('cheptel-name').value;
-    const type = document.getElementById('cheptel-type').value;
-    const breed = document.getElementById('cheptel-breed').value;
-    const quantity = parseInt(document.getElementById('cheptel-qty').value);
-    const unit = document.getElementById('cheptel-unit').value;
-    const status = document.getElementById('cheptel-status').value;
-    const purpose = document.getElementById('cheptel-purpose').value;
-
-    let cheptel = KAStorage.getCheptel();
-
-    if (id) {
-      // Edit
-      cheptel = cheptel.map(c => c.id === id ? { ...c, name, type, breed, quantity, unit, status, purpose } : c);
-    } else {
-      // Add
-      const newGroup = {
-        id: 'CH-' + Date.now().toString().slice(-4),
-        name, type, breed, quantity, unit, status, purpose
-      };
-      cheptel.push(newGroup);
-    }
-
-    KAStorage.saveCheptel(cheptel);
-    this.populateHealthTargets();
-    
-    // Close & reset
-    document.getElementById('add-cheptel-modal').classList.add('hidden');
-    document.getElementById('cheptel-form').reset();
-    document.getElementById('cheptel-edit-id').value = '';
-
-    this.renderCheptel();
-    
-    // Refresh sidebar badges if applicable
-    if (window.App && window.App.updateBadges) {
-      window.App.updateBadges();
-    }
-  },
-
-  deleteCheptel(id) {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce groupe d\'élevage du registre de la ferme ?')) return;
-
-    let cheptel = KAStorage.getCheptel();
-    cheptel = cheptel.filter(c => c.id !== id);
-    KAStorage.saveCheptel(cheptel);
-    this.populateHealthTargets();
-    this.renderCheptel();
-
-    if (window.App && window.App.updateBadges) {
-      window.App.updateBadges();
-    }
-  },
-
-
-  // --- TAB 2: ALIMENTATION & CONCENTRÉS ---
-  renderAlimentation() {
-    const feedsContainer = document.getElementById('feeds-container');
-    const selectFeed = document.getElementById('consume-feed-id');
-    const banner = document.getElementById('feed-alert-banner');
-    
-    if (!feedsContainer) return;
-
-    const stocks = KAStorage.getStocks();
-    const feeds = stocks.filter(s => s.category === 'Alimentation');
-
-    // Check low stock count specifically for feeds
-    const lowFeeds = feeds.filter(f => f.quantity <= (f.maxQuantity * 0.25));
-    if (banner) {
-      if (lowFeeds.length > 0) {
-        banner.classList.remove('hidden');
-        // Customize text based on critical item
-        const textEl = banner.querySelector('#feed-alert-text') || banner.querySelector('p:nth-of-type(2)');
-        if (textEl) {
-          textEl.innerHTML = `L'aliment <strong>${lowFeeds[0].name}</strong> est actuellement à <strong>${lowFeeds[0].quantity} / ${lowFeeds[0].maxQuantity} ${lowFeeds[0].unit}</strong> (${Math.round((lowFeeds[0].quantity/lowFeeds[0].maxQuantity)*100)}%). Commandez au plus vite pour assurer l'alimentation quotidienne.`;
-        }
-      } else {
-        banner.classList.add('hidden');
-      }
-    }
-
-    // Populate ration distribution selector
-    if (selectFeed) {
-      selectFeed.innerHTML = feeds.map(f => `
-        <option value="${f.id}">${f.name} (Restant: ${f.quantity} ${f.unit})</option>
-      `).join('') || '<option value="">Aucun aliment disponible dans les stocks</option>';
-    }
-
-    if (feeds.length === 0) {
-      feedsContainer.innerHTML = `
-        <div class="col-span-full py-12 text-center text-slate-450 dark:text-slate-500 space-y-3">
-          <i data-lucide="wheat" class="h-10 w-10 mx-auto opacity-30 text-amber-500"></i>
-          <p class="text-xs font-bold">Aucun stock d'alimentation enregistré.</p>
-          <p class="text-[10px]">Enregistrez vos réserves d'alimentation laitière/bovine dans le module "Inventaire & Stocks" sous la catégorie <strong>Alimentation (Élevage)</strong>.</p>
-        </div>
-      `;
-      return;
-    }
-
-    feedsContainer.innerHTML = feeds.map(f => {
-      const pct = f.maxQuantity > 0 ? Math.round((f.quantity / f.maxQuantity) * 100) : 0;
-      
-      let barColor = 'bg-emerald-500';
-      let textColor = 'text-emerald-500';
-      let statusText = 'Niveaux Optimaux';
-      let warningTag = '';
-
-      if (pct <= 25) {
-        barColor = 'bg-rose-500 animate-pulse';
-        textColor = 'text-rose-500';
-        statusText = 'STOCK BAS (<25%)';
-        warningTag = `<span class="text-[8px] font-black text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20 animate-pulse">⚠️ ALERTE BASSE</span>`;
-      } else if (pct <= 50) {
-        barColor = 'bg-amber-500';
-        textColor = 'text-amber-500';
-        statusText = 'Moyen / À Surveiller';
-      }
-
-      return `
-        <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4">
-          <div class="flex justify-between items-start gap-2">
-            <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                <i data-lucide="wheat" class="h-5 w-5"></i>
-              </div>
-              <div>
-                <h4 class="text-xs font-black text-slate-850 dark:text-white leading-tight">${f.name}</h4>
-                <p class="text-[9px] text-slate-450 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">${statusText}</p>
-              </div>
-            </div>
-            ${warningTag}
-          </div>
-
-          <!-- Fill Gauge -->
-          <div class="space-y-1.5">
-            <div class="flex justify-between text-xs font-semibold">
-              <span class="text-slate-400 text-[10px]">Taux de réserve : <strong class="${textColor} font-mono">${pct}%</strong></span>
-              <span class="text-slate-800 dark:text-slate-200 font-mono font-black">${f.quantity} / ${f.maxQuantity} ${f.unit}</span>
-            </div>
-            <div class="w-full bg-[#051009] rounded-full h-2.5 overflow-hidden border border-[#143E23]/25">
-              <div class="h-full rounded-full ${barColor}" style="width: ${Math.min(pct, 100)}%"></div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  },
-
-  handleConsumptionSubmit() {
-    const feedId = document.getElementById('consume-feed-id').value;
-    const qtyToConsume = parseInt(document.getElementById('consume-feed-qty').value);
-    
-    if (!feedId) {
-      alert('Veuillez d\'abord enregistrer un aliment dans les stocks.');
-      return;
-    }
-
-    let stocks = KAStorage.getStocks();
-    const stockIndex = stocks.findIndex(s => s.id === feedId);
-    
-    if (stockIndex === -1) return;
-
-    const feedItem = stocks[stockIndex];
-    if (feedItem.quantity < qtyToConsume) {
-      alert(`Ration supérieure au stock disponible ! Restant : ${feedItem.quantity} ${feedItem.unit}. Veuillez réapprovisionner.`);
-      return;
-    }
-
-    // Update quantity
-    stocks[stockIndex].quantity -= qtyToConsume;
-    KAStorage.saveStocks(stocks);
-
-    // Save Finance expense or note if helpful (optional)
-    alert(`Ration de ${qtyToConsume} ${feedItem.unit} de "${feedItem.name}" distribuée au troupeau avec succès.`);
-
-    // Reset Form
-    document.getElementById('feed-consumption-form').reset();
-    
-    this.renderAlimentation();
-
-    if (window.App && window.App.updateBadges) {
-      window.App.updateBadges();
-    }
-  },
-
-
-  // --- TAB 3: RENDEMENTS & PRODUCTION ---
-  renderProduction() {
-    const tableBody = document.getElementById('production-table-body');
-    const milkProdDom = document.getElementById('total-milk-prod');
-    const eggProdDom = document.getElementById('total-egg-prod');
-
-    if (!tableBody) return;
-
-    const logs = KAStorage.getElevageProduction();
-    
-    // Sort descending by date
-    const sorted = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    // Calculate total week stats
-    const totalMilk = logs.filter(l => l.type === 'Lait').reduce((sum, l) => sum + (parseFloat(l.quantity) || 0), 0);
-    const totalEggs = logs.filter(l => l.type === 'Œufs').reduce((sum, l) => sum + (parseFloat(l.quantity) || 0), 0);
-
-    if (milkProdDom) milkProdDom.textContent = totalMilk.toLocaleString('fr-FR') + ' L';
-    if (eggProdDom) eggProdDom.textContent = totalEggs.toLocaleString('fr-FR') + ' unités';
-
-    if (sorted.length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="5" class="py-8 text-center text-slate-450 dark:text-slate-500 font-bold">
-            Aucun relevé de production enregistré pour le moment.
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    tableBody.innerHTML = sorted.map(l => {
-      return `
-        <tr class="hover:bg-[#0E2F19]/20 transition-all">
-          <td class="py-3 px-2 font-mono text-slate-400 font-bold">${l.date}</td>
-          <td class="py-3 px-2 font-bold">${l.type === 'Lait' ? '🥛 Traite Lait' : '🥚 Collecte Œufs'}</td>
-          <td class="py-3 px-2 font-black text-emerald-400 font-mono">${l.quantity} ${l.unit}</td>
-          <td class="py-3 px-2 text-slate-400 text-[11px] font-semibold">${l.notes || '-'}</td>
-          <td class="py-3 px-2 text-right">
-            <button onclick="window.deleteProductionLog('${l.id}')" class="p-1 hover:bg-rose-500/10 text-rose-500 rounded transition-all cursor-pointer">
-              <i data-lucide="trash" class="h-3.5 w-3.5"></i>
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-  },
-
-  handleProductionSubmit() {
-    const date = document.getElementById('prod-date').value;
-    const type = document.getElementById('prod-type').value;
-    const quantity = parseInt(document.getElementById('prod-qty').value);
-    const unit = document.getElementById('prod-unit').value;
-    const notes = document.getElementById('prod-notes').value;
-
-    const newLog = {
-      id: 'PROD-' + Date.now(),
-      date, type, quantity, unit, notes
-    };
-
-    const logs = KAStorage.getElevageProduction();
-    logs.push(newLog);
-    KAStorage.saveElevageProduction(logs);
-
-    // Also register custom Sales income under Finances if they select "Vente" or record notes indicating it
-    // To make it completely seamless, we can optionally register income in the ledger if they choose.
-    // For now we keep it focused on yields.
-
-    document.getElementById('add-production-modal').classList.add('hidden');
-    document.getElementById('production-form').reset();
-    
-    this.renderProduction();
-  },
-
-  deleteProduction(id) {
-    if (!confirm('Supprimer cette fiche de production ?')) return;
-
-    let logs = KAStorage.getElevageProduction();
-    logs = logs.filter(l => l.id !== id);
-    KAStorage.saveElevageProduction(logs);
-
-    this.renderProduction();
-  },
-
-
-  // --- TAB 4: SUIVI SANITAIRE & TIMELINE ---
-  renderHealth() {
-    const timeline = document.getElementById('health-timeline');
-    const countDom = document.getElementById('health-interventions-count');
-    if (!timeline) return;
-
-    const logs = KAStorage.getElevageHealth();
-    const sorted = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    if (countDom) countDom.textContent = sorted.length + (sorted.length > 1 ? ' actes médicales' : ' acte médical');
-
-    if (sorted.length === 0) {
-      timeline.innerHTML = `
-        <div class="py-12 text-center text-slate-450 dark:text-slate-500 space-y-3">
-          <i data-lucide="heart-pulse" class="h-10 w-10 mx-auto opacity-30 text-emerald-500"></i>
-          <p class="text-xs font-bold">Le carnet sanitaire est vide.</p>
-          <p class="text-[10px]">Ajoutez les interventions vétérinaires, vaccins ou vermifuges du troupeau.</p>
-        </div>
-      `;
-      return;
-    }
-
-    timeline.innerHTML = sorted.map(h => {
-      return `
-        <div class="relative pl-6 sm:pl-8 border-l-2 border-[#143E23]/60 pb-6 text-left last:pb-0">
-          <!-- Timeline point dot -->
-          <span class="absolute -left-[7px] top-1 h-3 w-3 bg-emerald-500 rounded-full border-2 border-[#061109] ring-4 ring-emerald-500/10"></span>
-          
-          <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-150 dark:border-[#143E23]/20 rounded-2xl space-y-3 shadow-sm">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#143E23]/25 pb-2">
-              <div class="space-y-0.5">
-                <span class="text-[9px] font-mono text-emerald-400 font-black">${h.date}</span>
-                <h4 class="text-xs font-black text-slate-850 dark:text-white leading-tight">${h.intervention}</h4>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-[#0D2615] px-2 py-0.5 rounded border border-[#1A4525]/30">🎯 ${h.target}</span>
-                <span class="text-[9px] font-black text-rose-400 bg-rose-500/5 px-2 py-0.5 rounded border border-rose-500/10 font-mono">${h.cost.toLocaleString('fr-FR')} F</span>
-              </div>
-            </div>
-
-            <div class="text-[11px] space-y-1 text-slate-400 font-semibold">
-              <p><strong class="text-slate-800 dark:text-slate-300">👨‍⚕️ Praticien :</strong> ${h.practitioner}</p>
-              <p><strong class="text-slate-800 dark:text-slate-300">📝 Observations :</strong> ${h.notes || '-'}</p>
-            </div>
-
-            <div class="flex justify-end pt-1 border-t border-[#143E23]/10">
-              <button onclick="window.deleteHealthLog('${h.id}')" class="p-1 hover:bg-rose-500/10 text-rose-500 rounded transition-all cursor-pointer text-[10px] font-bold flex items-center gap-1">
-                <i data-lucide="trash" class="h-3 w-3"></i> Annuler l'acte
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  },
-
-  handleHealthSubmit() {
-    const date = document.getElementById('health-date').value;
-    const target = document.getElementById('health-target').value;
-    const intervention = document.getElementById('health-intervention').value;
-    const practitioner = document.getElementById('health-practitioner').value;
-    const cost = parseInt(document.getElementById('health-cost').value) || 0;
-    const notes = document.getElementById('health-notes').value;
-
-    const newLog = {
-      id: 'HEA-' + Date.now(),
-      date, target, intervention, practitioner, cost, notes
-    };
-
-    const logs = KAStorage.getElevageHealth();
-    logs.push(newLog);
-    KAStorage.saveElevageHealth(logs);
-
-    // Dynamic Integration with Finances Module
-    if (cost > 0) {
-      const finances = KAStorage.getFinances();
-      const newExpense = {
-        id: 'F-' + Date.now(),
-        description: `Soin Élevage : ${intervention} (${target})`,
-        category: 'Élevage',
-        type: 'Dépense',
-        amount: cost,
-        date: date
-      };
-      finances.push(newExpense);
-      KAStorage.saveFinances(finances);
-    }
-
-    document.getElementById('add-health-modal').classList.add('hidden');
-    document.getElementById('health-form').reset();
-
-    this.renderHealth();
-  },
-
-  deleteHealth(id) {
-    if (!confirm('Voulez-vous supprimer ce relevé sanitaire du registre ? Les frais liés ne seront pas effacés du grand livre comptable.')) return;
-
-    let logs = KAStorage.getElevageHealth();
-    logs = logs.filter(l => l.id !== id);
-    KAStorage.saveElevageHealth(logs);
-
-    this.renderHealth();
+      container.appendChild(aiMsg);
+      container.scrollTop = container.scrollHeight;
+    }, 1500);
   }
 };
 
-// Auto initialize on load
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  ElevageModule.init();
-});
-
-document.addEventListener('ka_data_updated', (e) => {
-  if (e.detail && (
-    e.detail.key === 'ka_farm_cheptel' ||
-    e.detail.key === 'ka_farm_elevage_production' ||
-    e.detail.key === 'ka_farm_elevage_health'
-  )) {
-    ElevageModule.renderCurrentTab();
-  }
+  TrainingModule.init();
 });
