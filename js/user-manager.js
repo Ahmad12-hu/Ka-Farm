@@ -62,9 +62,8 @@ export const UserManager = {
           enterpriseName: 'KA Farm',
           enterpriseCode: 'KA-FARM'
         }, true);
-        
-        // Reload to apply logged-in state
-        window.location.reload();
+
+        // No reload needed; continue loading the current page with auth applied
       }
     }
   },
