@@ -53,9 +53,9 @@ export const UserManager = {
     if (!this.isLoggedIn()) {
       const currentPath = window.location.pathname;
       if (!currentPath.includes('login.html') && !currentPath.includes('signup.html')) {
-        // Automatically log in as default user Amadou KA (amadoucoumbaka@gmail.com)
+        // Automatically log in as default user Amadou KA (contact@kafarm.sn)
         KAStorage.setCurrentUser({
-          email: 'amadoucoumbaka@gmail.com',
+          email: 'contact@kafarm.sn',
           name: 'Amadou KA',
           role: 'Bureau',
           enterpriseId: 'ka_farm',

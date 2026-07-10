@@ -594,7 +594,7 @@ export const App = {
               </div>
               <i data-lucide="arrow-right" class="h-3 w-3 text-emerald-500"></i>
             </button>
-            <button onclick="window.switchUser('amadoucoumbaka@gmail.com')" class="w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold hover:bg-[#0E2F19] flex items-center justify-between transition-colors cursor-pointer">
+            <button onclick="window.switchUser('contact@kafarm.sn')" class="w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold hover:bg-[#0E2F19] flex items-center justify-between transition-colors cursor-pointer">
               <div class="flex items-center gap-2">
                 <div class="h-5 w-5 bg-emerald-500/20 text-emerald-400 rounded-md flex items-center justify-center font-black">A</div>
                 <div>
