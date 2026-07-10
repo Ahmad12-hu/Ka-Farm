@@ -264,6 +264,8 @@ window.animateValue = function(element, start, end, duration = 800) {
 
 export const App = {
   init() {
+    // FORCER l'authentification D'ABORD pour éviter le race condition avec router.js
+    UserManager.requireAuth();
     currentUser = UserManager.getCurrentUser();
     
     // Ensure storage is initialized and cloud sync on-snapshots are active on all pages

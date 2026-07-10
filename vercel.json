@@ -4,6 +4,18 @@
     {
       "source": "/api/:path*",
       "destination": "/api/index.js"
+    },
+    {
+      "source": "/pages/shared/:page.html",
+      "destination": "/:page/index.html"
+    },
+    {
+      "source": "/pages/auth/:page.html",
+      "destination": "/:page/index.html"
+    },
+    {
+      "source": "/pages/personal/:page.html",
+      "destination": "/:page/index.html"
     }
   ]
 }
