@@ -248,6 +248,17 @@
                 </div>
               </div>
 
+              <!-- Type de Sol Section -->
+              <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/20 p-4 rounded-2xl flex items-center justify-between">
+                <div class="space-y-1">
+                  <span class="text-[9px] text-slate-400 dark:text-[#819888] font-black uppercase tracking-wider block">Type de Sol</span>
+                  <div class="flex items-center gap-1.5 font-bold text-xs" id="detail-sol-type-text">
+                    <i data-lucide="layers" class="h-3.5 w-3.5 text-amber-500"></i>
+                    <span id="detail-sol-type" class="text-amber-500">Argilo-limoneux</span>
+                  </div>
+                </div>
+              </div>
+
               <!-- Interactive Hydric Status Section (Option 3) -->
               <div class="bg-slate-50 dark:bg-[#0B2112]/30 border border-slate-100 dark:border-[#143E23]/20 p-4 rounded-2xl flex items-center justify-between">
                 <div class="space-y-1">
@@ -364,6 +375,7 @@
                   <th class="px-4 py-3.5 text-left font-black">ID</th>
                   <th class="px-4 py-3.5 text-left font-black">Nom de la Parcelle</th>
                   <th class="px-4 py-3.5 text-left font-black">Statut</th>
+                  <th class="px-4 py-3.5 text-left font-black">Type de Sol</th>
                   <th class="px-4 py-3.5 text-right font-black">Surface (m²)</th>
                   <th class="px-4 py-3.5 text-left font-black">Localisation GPS</th>
                   <th class="px-4 py-3.5 text-left font-black">Culture Actuelle</th>
@@ -435,6 +447,17 @@
         </div>
 
         <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Type de Sol</label>
+          <select id="form-add-sol" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+            <option value="sableux">Sableux (Drainage rapide)</option>
+            <option value="argileux">Argileux (Rétention forte)</option>
+            <option value="limoneux" selected>Argilo-limoneux (Équilibré)</option>
+            <option value="lateritique">Latéritique (Riche en fer)</option>
+          </select>
+          <p class="text-[9px] text-[#819888]">Sélectionnez le type de sol pour ajuster automatiquement les recommandations d'irrigation.</p>
+        </div>
+
+        <div class="space-y-1">
           <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Culture Actuelle</label>
           <input type="text" id="form-add-crop" placeholder="Ex: Tomate Mongal F1 (optionnel)" class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
         </div>
@@ -502,6 +525,16 @@
           <select id="form-edit-water" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
             <option value="Irrigué">Irrigué</option>
             <option value="Besoin d'eau">Besoin d'eau</option>
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Type de Sol</label>
+          <select id="form-edit-sol" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+            <option value="sableux">Sableux (Drainage rapide)</option>
+            <option value="argileux">Argileux (Rétention forte)</option>
+            <option value="limoneux">Argilo-limoneux (Équilibré)</option>
+            <option value="lateritique">Latéritique (Riche en fer)</option>
           </select>
         </div>
 

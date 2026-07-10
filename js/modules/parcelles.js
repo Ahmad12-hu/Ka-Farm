@@ -354,11 +354,29 @@ export const ParcellesModule = {
       }
 
       const recentRotations = p.history ? p.history.slice(0, 2).join(' ➔ ') : 'Aucun';
+      
+      // Soil type badge
+      const soilType = p.type_sol || 'sableux';
+      const soilTypeLabels = {
+        'sableux': 'Sableux',
+        'argileux': 'Argileux',
+        'limoneux': 'Limoneux',
+        'lateritique': 'Latéritique'
+      };
+      const soilTypeColors = {
+        'sableux': { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20' },
+        'argileux': { bg: 'bg-slate-600/10', text: 'text-slate-500', border: 'border-slate-500/20' },
+        'limoneux': { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20' },
+        'lateritique': { bg: 'bg-orange-500/10', text: 'text-orange-500', border: 'border-orange-500/20' }
+      };
+      const soilColors = soilTypeColors[soilType] || soilTypeColors.limoneux;
+      const soilBadge = `<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${soilColors.bg} ${soilColors.text} border ${soilColors.border}">${soilTypeLabels[soilType] || soilType}</span>`;
 
       tr.innerHTML = `
         <td class="px-4 py-3.5 font-mono text-slate-400 dark:text-[#819888] font-bold">${p.id}</td>
         <td class="px-4 py-3.5 font-black text-slate-800 dark:text-slate-100">${p.name}</td>
         <td class="px-4 py-3.5">${statusBadge}</td>
+        <td class="px-4 py-3.5">${soilBadge}</td>
         <td class="px-4 py-3.5 text-right font-bold text-slate-800 dark:text-slate-200">${p.surface} m²</td>
         <td class="px-4 py-3.5 font-mono text-[10px] text-slate-500 dark:text-[#819888] font-semibold">${Number(p.lat).toFixed(4)}, ${Number(p.lng).toFixed(4)}</td>
         <td class="px-4 py-3.5 font-bold text-emerald-500">${p.currentCrop || 'Libre'}</td>
@@ -454,6 +472,28 @@ export const ParcellesModule = {
         parcel.waterStatus = currentWater === 'Irrigué' ? "Besoin d'eau" : 'Irrigué';
         KAStorage.saveParcelles(parcelles);
         this.render();
+      };
+    }
+
+    // Set soil type
+    const soilTypeEl = document.getElementById('detail-sol-type');
+    const soilTypeTextEl = document.getElementById('detail-sol-type-text');
+    if (soilTypeEl && soilTypeTextEl) {
+      const soilType = parcel.type_sol || 'sableux';
+      const soilTypeLabels = {
+        'sableux': 'Sableux',
+        'argileux': 'Argileux',
+        'limoneux': 'Argilo-limoneux',
+        'lateritique': 'Latéritique'
+      };
+      soilTypeEl.textContent = soilTypeLabels[soilType] || soilType;
+      
+      // Add appropriate icon based on soil type
+      const soilIcons = {
+        'sableux': '🏖️',
+        'argileux': '🪨',
+        'limoneux': '🌍',
+        'lateritique': '🪨'
       };
     }
 
@@ -721,6 +761,7 @@ export const ParcellesModule = {
     const lat = parseFloat(document.getElementById('form-add-lat').value);
     const lng = parseFloat(document.getElementById('form-add-lng').value);
     const waterStatus = document.getElementById('form-add-water').value;
+    const type_sol = document.getElementById('form-add-sol').value;
     const currentCrop = document.getElementById('form-add-crop').value.trim();
     const historyText = document.getElementById('form-add-history').value.trim();
 
@@ -747,6 +788,7 @@ export const ParcellesModule = {
       lat,
       lng,
       status,
+      type_sol: type_sol || 'limoneux',
       waterStatus,
       currentCrop: currentCrop || '',
       history
@@ -773,6 +815,7 @@ export const ParcellesModule = {
     const lat = parseFloat(document.getElementById('form-edit-lat').value);
     const lng = parseFloat(document.getElementById('form-edit-lng').value);
     const waterStatus = document.getElementById('form-edit-water').value;
+    const type_sol = document.getElementById('form-edit-sol').value;
     const currentCrop = document.getElementById('form-edit-crop').value.trim();
 
     const idx = parcelles.findIndex(p => p.id === id);
@@ -790,6 +833,7 @@ export const ParcellesModule = {
         status,
         lat,
         lng,
+        type_sol: type_sol || parcelles[idx].type_sol || 'limoneux',
         waterStatus,
         currentCrop,
         history
@@ -886,6 +930,9 @@ window.openAddParcelModal = () => {
     
     document.getElementById('form-add-lat').value = rLat.toFixed(6);
     document.getElementById('form-add-lng').value = rLng.toFixed(6);
+    
+    // Set default soil type to 'limoneux' (balanced)
+    document.getElementById('form-add-sol').value = 'limoneux';
   }
 };
 
@@ -909,6 +956,7 @@ window.openEditParcelModal = (id) => {
   document.getElementById('form-edit-lng').value = parcel.lng;
   document.getElementById('form-edit-water').value = parcel.waterStatus || 'Irrigué';
   document.getElementById('form-edit-crop').value = parcel.currentCrop || '';
+  document.getElementById('form-edit-sol').value = parcel.type_sol || 'limoneux';
 
   const modal = document.getElementById('edit-parcel-modal');
   if (modal) modal.classList.remove('hidden');

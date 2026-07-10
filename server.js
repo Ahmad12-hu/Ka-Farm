@@ -4,21 +4,40 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { Pool } from 'pg';
 
 dotenv.config();
 
-// Load Firebase configuration
-const firebaseConfig = JSON.parse(fs.readFileSync(path.resolve('firebase-applet-config.json'), 'utf8'));
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
+// PostgreSQL connection pool
+let pool;
+let usePostgres = false;
+
+try {
+  pool = new Pool({
+    host: process.env.PG_HOST || 'localhost',
+    port: parseInt(process.env.PG_PORT || '5432'),
+    user: process.env.PG_USER || 'postgres',
+    password: process.env.PG_PASSWORD || '',
+    database: process.env.PG_DATABASE || 'kafarm',
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000
+  });
+  
+  // Test connection
+  await pool.query('SELECT 1');
+  usePostgres = true;
+  console.log('[DB] Connexion PostgreSQL établie avec succès');
+} catch (error) {
+  console.warn('[DB] PostgreSQL non disponible, utilisation du mode fallback mémoire:', error.message);
+  pool = null;
+}
 
 async function startServer() {
   const app = express();
   app.use(express.json({ limit: '12mb' }));
 
-  // In-memory fallback message store for brothers discussion
+  // In-memory fallback stores (used when PostgreSQL is not available)
   let serverMessages = [
     { id: 'msg-1', senderEmail: 'moussa@kafarm.sn', senderName: 'Moussa KA', text: 'Salam Aly ! J\'ai fini de vérifier le système de goutte-à-goutte sur la parcelle A. Tout fonctionne bien pour les tomates 🍅.', timestamp: '2026-06-25T08:30:00.000Z', isPrivate: false, image: null },
     { id: 'msg-2', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'Wa alaykoum salam Moussa. Alhamdoulilah ! Et qu\'en est-il du stock de compost bio ? Est-ce qu\'on a assez pour la pépinière de poivrons ?', timestamp: '2026-06-25T09:15:00.000Z', isPrivate: false, image: null },
@@ -26,51 +45,6 @@ async function startServer() {
     { id: 'msg-4', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'D\'accord, c\'est noté. Je passe la commande aujourd\'hui depuis le bureau de Dakar 💻.', timestamp: '2026-06-25T10:00:00.000Z', isPrivate: false, image: null }
   ];
 
-  app.get('/api/messages', async (req, res) => {
-    try {
-      const docSnap = await getDoc(doc(db, "app_data", "messages"));
-      if (docSnap.exists()) {
-        res.json(docSnap.data().data || []);
-      } else {
-        res.json(serverMessages);
-      }
-    } catch (err) {
-      console.error("Firestore read error for messages:", err);
-      res.json(serverMessages);
-    }
-  });
-
-  app.post('/api/messages', async (req, res) => {
-    const { id, senderEmail, senderName, text, timestamp, isPrivate, image } = req.body;
-    if (!senderEmail || (!text && !image)) {
-      return res.status(400).json({ error: 'Champs requis manquants (texte ou image nécessaire)' });
-    }
-    const newMsg = {
-      id: id || 'msg-' + Date.now(),
-      senderEmail,
-      senderName: senderName || senderEmail,
-      text: text || '',
-      timestamp: timestamp || new Date().toISOString(),
-      isPrivate: !!isPrivate,
-      image: image || null
-    };
-    
-    try {
-      const docRef = doc(db, "app_data", "messages");
-      const docSnap = await getDoc(docRef);
-      const currentMessages = docSnap.exists() ? (docSnap.data().data || []) : [...serverMessages];
-      currentMessages.push(newMsg);
-      
-      await setDoc(docRef, { data: currentMessages, updatedAt: new Date().toISOString() });
-      res.json(currentMessages);
-    } catch (err) {
-      console.error("Firestore write error for messages:", err);
-      serverMessages.push(newMsg);
-      res.json(serverMessages);
-    }
-  });
-
-  // In-memory fallback stocks store
   let serverStocks = [
     { id: 'S-301', name: 'Compost Organique Bio', category: 'Amendements', quantity: 350, maxQuantity: 1000, unit: 'kg' },
     { id: 'S-302', name: 'Semences Tomate Mongal F1', category: 'Semences', quantity: 12, maxQuantity: 50, unit: 'sachets' },
@@ -79,37 +53,481 @@ async function startServer() {
     { id: 'S-305', name: 'Aliments Concentrés Bovins', category: 'Alimentation', quantity: 180, maxQuantity: 1000, unit: 'kg' }
   ];
 
-  app.get('/api/stocks', async (req, res) => {
-    try {
-      const docSnap = await getDoc(doc(db, "app_data", "stocks"));
-      if (docSnap.exists()) {
-        res.json(docSnap.data().data || []);
-      } else {
-        res.json(serverStocks);
+  let serverCrops = [
+    { id: 'C-101', name: 'Tomate Mongal F1', field: 'Parcelle Nord - Planche 2', sowingDate: '2026-05-10', harvestDate: '2026-08-15', status: 'Floraison', waterStatus: 'Optimale', fertilizerStatus: 'OK', photos: [] },
+    { id: 'C-102', name: 'Oignon Rouge de Galmi', field: 'Parcelle Est - Grand Champ', sowingDate: '2026-04-15', harvestDate: '2026-09-01', status: 'Croissance', waterStatus: 'Besoin d\'eau', fertilizerStatus: 'OK', photos: [] }
+  ];
+
+  let serverParcelles = [
+    { id: 'P-001', name: 'Parcelle Nord - Planche 2', surface: 120, lat: 14.7932, lng: -17.2654, status: 'Cultivée', type_sol: 'sableux', history: ['Tomate Mongal F1'], currentCrop: 'Tomate Mongal F1', waterStatus: 'Irrigué' },
+    { id: 'P-002', name: 'Parcelle Est - Grand Champ', surface: 500, lat: 14.7938, lng: -17.2642, status: 'Cultivée', type_sol: 'limoneux', history: ['Oignon Rouge de Galmi'], currentCrop: 'Oignon Rouge de Galmi', waterStatus: 'Besoin d\'eau' }
+  ];
+
+  let serverTasks = [
+    { id: 'T-401', title: 'Irrigation matin de l\'oignon Galmi', category: 'Irrigation', dueDate: '2026-06-26', assignee: 'Moussa', priority: 'Haute', completed: false },
+    { id: 'T-402', title: 'Sarclage & Désherbage planche choux', category: 'Entretien', dueDate: '2026-06-28', assignee: 'Fatou', priority: 'Moyenne', completed: false }
+  ];
+
+  let serverFinances = [
+    { id: 'F-501', description: 'Vente de 8 caisses de Tomates Mongal', category: 'Vente Légumes', type: 'Revenu', amount: 120000, date: '2026-06-20' },
+    { id: 'F-502', description: 'Achat de semences oignon Galmi', category: 'Semences', type: 'Dépense', amount: 35000, date: '2026-06-18' }
+  ];
+
+  let serverEmployees = [
+    { id: 'E-001', name: 'Samba Diouf', phone: '77 521 44 22', role: 'Ouvrier agricole', dailyRate: 4000, status: 'Actif' },
+    { id: 'E-002', name: 'Awa Sow', phone: '76 432 11 00', role: 'Chef d\'équipe pépinière', dailyRate: 5000, status: 'Actif' }
+  ];
+
+  let serverCheptel = [
+    { id: 'CH-001', name: 'Génisses Laitières Holstein', type: 'Bovins', breed: 'Holstein/Guzera', quantity: 12, unit: 'têtes', status: 'Sain', purpose: 'Lait' },
+    { id: 'CH-002', name: 'Moutons Ladoum d\'Élevage', type: 'Ovins', breed: 'Ladoum Pur', quantity: 8, unit: 'têtes', status: 'Sain', purpose: 'Reproduction' }
+  ];
+
+  let serverElevageProduction = [
+    { id: 'PROD-001', date: '2026-06-25', type: 'Lait', quantity: 145, unit: 'L', notes: 'Excellente traite matinale.' },
+    { id: 'PROD-002', date: '2026-06-25', type: 'Œufs', quantity: 310, unit: 'unités', notes: '10 plateaux collectés.' }
+  ];
+
+  let serverElevageHealth = [
+    { id: 'HEA-001', date: '2026-06-10', target: 'Moutons Ladoum', intervention: 'Vaccination Pastorose', practitioner: 'Dr. Diop', cost: 15000, notes: 'Rappel annuel effectué.' }
+  ];
+
+  let serverNurseries = [
+    { id: 'PEP-201', name: 'Pépinière Tomates Mongal', cropType: 'Tomate', sowingDate: '2026-06-01', plannedTransplantDate: '2026-07-01', quantityEst: 1500, status: 'Levée', healthStatus: 'Excellent' },
+    { id: 'PEP-202', name: 'Pépinière Poivron Yolo Wonder', cropType: 'Poivron', sowingDate: '2026-06-10', plannedTransplantDate: '2026-07-15', quantityEst: 800, status: 'Semis', healthStatus: 'Excellent' }
+  ];
+
+  let serverAttendance = [
+    { employeeId: 'E-001', date: '2026-06-25', status: 'Présent', notes: '' },
+    { employeeId: 'E-002', date: '2026-06-25', status: 'Présent', notes: '' },
+    { employeeId: 'E-001', date: '2026-06-26', status: 'Présent', notes: '' },
+    { employeeId: 'E-002', date: '2026-06-26', status: 'Présent', notes: '' }
+  ];
+
+  let serverPayments = [
+    { id: 'PAY-001', employeeId: 'E-001', amount: 80000, date: '2026-06-15', periodStart: '2026-06-01', periodEnd: '2026-06-15', paymentMethod: 'Orange Money', status: 'Payé' },
+    { id: 'PAY-002', employeeId: 'E-002', amount: 100000, date: '2026-06-15', periodStart: '2026-06-01', periodEnd: '2026-06-15', paymentMethod: 'Wave', status: 'Payé' }
+  ];
+
+  // ==================== MESSAGES ====================
+  app.get('/api/messages', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM messages ORDER BY timestamp DESC');
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching messages from PostgreSQL:', err);
       }
-    } catch (err) {
-      console.error("Firestore read error for stocks:", err);
-      res.json(serverStocks);
     }
+    res.json(serverMessages);
+  });
+
+  app.post('/api/messages', async (req, res) => {
+    const { id, senderEmail, senderName, text, timestamp, isPrivate, image } = req.body;
+    if (!senderEmail || !text) {
+      return res.status(400).json({ error: 'Champs requis manquants' });
+    }
+    const newMsg = {
+      id: id || 'msg-' + Date.now(),
+      senderEmail,
+      senderName: senderName || senderEmail,
+      text,
+      timestamp: timestamp || new Date().toISOString(),
+      isPrivate: !!isPrivate
+    };
+
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO messages (id, enterprise_id, sender_email, sender_name, text, timestamp, is_private) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [newMsg.id, 'ka_farm', newMsg.senderEmail, newMsg.senderName, newMsg.text, newMsg.timestamp, newMsg.isPrivate]
+        );
+        res.json({ success: true, message: newMsg });
+        return;
+      } catch (err) {
+        console.error('Error saving message to PostgreSQL:', err);
+      }
+    }
+    
+    serverMessages.push(newMsg);
+    res.json({ success: true, message: newMsg });
+  });
+
+  // ==================== STOCKS ====================
+  app.get('/api/stocks', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM stocks WHERE enterprise_id = $1 ORDER BY name', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching stocks from PostgreSQL:', err);
+      }
+    }
+    res.json(serverStocks);
   });
 
   app.post('/api/stocks', async (req, res) => {
     const { stocks } = req.body;
     if (stocks && Array.isArray(stocks)) {
-      try {
-        await setDoc(doc(db, "app_data", "stocks"), { data: stocks, updatedAt: new Date().toISOString() });
-        res.json({ success: true, message: 'Stocks synchronisés avec succès', stocks });
-      } catch (err) {
-        console.error("Firestore write error for stocks:", err);
-        serverStocks = stocks;
-        res.json({ success: true, message: 'Stocks synchronisés en mémoire', stocks: serverStocks });
+      if (usePostgres && pool) {
+        try {
+          await pool.query('DELETE FROM stocks WHERE enterprise_id = $1', ['ka_farm']);
+          for (const stock of stocks) {
+            await pool.query(
+              'INSERT INTO stocks (id, enterprise_id, name, category, quantity, max_quantity, unit) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+              [stock.id, 'ka_farm', stock.name, stock.category, stock.quantity, stock.maxQuantity, stock.unit]
+            );
+          }
+          res.json({ success: true, message: 'Stocks synchronisés avec PostgreSQL', stocks });
+          return;
+        } catch (err) {
+          console.error('Error syncing stocks to PostgreSQL:', err);
+        }
       }
+      serverStocks = stocks;
+      res.json({ success: true, message: 'Stocks synchronisés en mémoire', stocks });
     } else {
       res.status(400).json({ error: 'Données de stock invalides' });
     }
   });
 
-  // API router for Gemini
+  // ==================== CROPS ====================
+  app.get('/api/crops', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM crops WHERE enterprise_id = $1 ORDER BY sowing_date DESC', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching crops from PostgreSQL:', err);
+      }
+    }
+    res.json(serverCrops);
+  });
+
+  app.post('/api/crops', async (req, res) => {
+    const crop = req.body;
+    if (!crop || !crop.id || !crop.name) {
+      return res.status(400).json({ error: 'ID et nom requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO crops (id, enterprise_id, name, field, sowing_date, harvest_date, status, water_status, fertilizer_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+          [crop.id, 'ka_farm', crop.name, crop.field, crop.sowingDate, crop.harvestDate, crop.status, crop.waterStatus, crop.fertilizerStatus]
+        );
+        res.json({ success: true, crop });
+        return;
+      } catch (err) {
+        console.error('Error saving crop to PostgreSQL:', err);
+      }
+    }
+    
+    const existing = serverCrops.find(c => c.id === crop.id);
+    if (existing) {
+      const idx = serverCrops.findIndex(c => c.id === crop.id);
+      serverCrops[idx] = { ...existing, ...crop };
+    } else {
+      serverCrops.push(crop);
+    }
+    res.json({ success: true, crop });
+  });
+
+  // ==================== PARCELLES ====================
+  app.get('/api/parcelles', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM parcelles WHERE enterprise_id = $1 ORDER BY name', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching parcelles from PostgreSQL:', err);
+      }
+    }
+    res.json(serverParcelles);
+  });
+
+  app.post('/api/parcelles', async (req, res) => {
+    const parcelle = req.body;
+    if (!parcelle || !parcelle.id || !parcelle.name) {
+      return res.status(400).json({ error: 'ID et nom requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO parcelles (id, enterprise_id, name, surface, lat, lng, status, type_sol, history, current_crop, water_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+          [parcelle.id, 'ka_farm', parcelle.name, parcelle.surface, parcelle.lat, parcelle.lng, parcelle.status, parcelle.type_sol || 'sableux', parcelle.history, parcelle.currentCrop, parcelle.waterStatus]
+        );
+        res.json({ success: true, parcelle });
+        return;
+      } catch (err) {
+        console.error('Error saving parcelle to PostgreSQL:', err);
+      }
+    }
+    
+    const existing = serverParcelles.find(p => p.id === parcelle.id);
+    if (existing) {
+      const idx = serverParcelles.findIndex(p => p.id === parcelle.id);
+      serverParcelles[idx] = { ...existing, ...parcelle };
+    } else {
+      serverParcelles.push(parcelle);
+    }
+    res.json({ success: true, parcelle });
+  });
+
+  // ==================== TASKS ====================
+  app.get('/api/tasks', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM tasks WHERE enterprise_id = $1 ORDER BY due_date ASC', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching tasks from PostgreSQL:', err);
+      }
+    }
+    res.json(serverTasks);
+  });
+
+  app.post('/api/tasks', async (req, res) => {
+    const task = req.body;
+    if (!task || !task.id || !task.title) {
+      return res.status(400).json({ error: 'ID et titre requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO tasks (id, enterprise_id, title, category, due_date, assignee, priority, completed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [task.id, 'ka_farm', task.title, task.category, task.dueDate, task.assignee, task.priority, task.completed]
+        );
+        res.json({ success: true, task });
+        return;
+      } catch (err) {
+        console.error('Error saving task to PostgreSQL:', err);
+      }
+    }
+    
+    const existing = serverTasks.find(t => t.id === task.id);
+    if (existing) {
+      const idx = serverTasks.findIndex(t => t.id === task.id);
+      serverTasks[idx] = { ...existing, ...task };
+    } else {
+      serverTasks.push(task);
+    }
+    res.json({ success: true, task });
+  });
+
+  // ==================== FINANCES ====================
+  app.get('/api/finances', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM finances WHERE enterprise_id = $1 ORDER BY date DESC', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching finances from PostgreSQL:', err);
+      }
+    }
+    res.json(serverFinances);
+  });
+
+  app.post('/api/finances', async (req, res) => {
+    const finance = req.body;
+    if (!finance || !finance.id || !finance.description) {
+      return res.status(400).json({ error: 'ID et description requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO finances (id, enterprise_id, description, category, type, amount, date) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [finance.id, 'ka_farm', finance.description, finance.category, finance.type, finance.amount, finance.date]
+        );
+        res.json({ success: true, finance });
+        return;
+      } catch (err) {
+        console.error('Error saving finance to PostgreSQL:', err);
+      }
+    }
+    
+    const existing = serverFinances.find(f => f.id === finance.id);
+    if (existing) {
+      const idx = serverFinances.findIndex(f => f.id === finance.id);
+      serverFinances[idx] = { ...existing, ...finance };
+    } else {
+      serverFinances.push(finance);
+    }
+    res.json({ success: true, finance });
+  });
+
+  // ==================== EMPLOYEES ====================
+  app.get('/api/employees', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM employees WHERE enterprise_id = $1 ORDER BY name', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching employees from PostgreSQL:', err);
+      }
+    }
+    res.json(serverEmployees);
+  });
+
+  app.post('/api/employees', async (req, res) => {
+    const employee = req.body;
+    if (!employee || !employee.id || !employee.name) {
+      return res.status(400).json({ error: 'ID et nom requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO employees (id, enterprise_id, name, phone, role, daily_rate, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [employee.id, 'ka_farm', employee.name, employee.phone, employee.role, employee.dailyRate, employee.status]
+        );
+        res.json({ success: true, employee });
+        return;
+      } catch (err) {
+        console.error('Error saving employee to PostgreSQL:', err);
+      }
+    }
+    
+    const existing = serverEmployees.find(e => e.id === employee.id);
+    if (existing) {
+      const idx = serverEmployees.findIndex(e => e.id === employee.id);
+      serverEmployees[idx] = { ...existing, ...employee };
+    } else {
+      serverEmployees.push(employee);
+    }
+    res.json({ success: true, employee });
+  });
+
+  // ==================== ELEVAGE / CHEPTEL ====================
+  app.get('/api/cheptel', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM cheptel WHERE enterprise_id = $1 ORDER BY name', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching cheptel from PostgreSQL:', err);
+      }
+    }
+    res.json(serverCheptel);
+  });
+
+  app.post('/api/cheptel', async (req, res) => {
+    const group = req.body;
+    if (!group || !group.id || !group.name) {
+      return res.status(400).json({ error: 'ID et nom requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO cheptel (id, enterprise_id, name, type, breed, quantity, unit, status, purpose) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+          [group.id, 'ka_farm', group.name, group.type, group.breed, group.quantity, group.unit, group.status, group.purpose]
+        );
+        res.json({ success: true, group });
+        return;
+      } catch (err) {
+        console.error('Error saving cheptel to PostgreSQL:', err);
+      }
+    }
+    
+    const existing = serverCheptel.find(c => c.id === group.id);
+    if (existing) {
+      const idx = serverCheptel.findIndex(c => c.id === group.id);
+      serverCheptel[idx] = { ...existing, ...group };
+    } else {
+      serverCheptel.push(group);
+    }
+    res.json({ success: true, group });
+  });
+
+  // ==================== ELEVAGE PRODUCTION ====================
+  app.get('/api/elevage/production', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM elevage_production WHERE enterprise_id = $1 ORDER BY date DESC', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching elevage production from PostgreSQL:', err);
+      }
+    }
+    const sorted = serverElevageProduction.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json(sorted);
+  });
+
+  app.post('/api/elevage/production', async (req, res) => {
+    const log = req.body;
+    if (!log || !log.id || !log.type) {
+      return res.status(400).json({ error: 'ID et type requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO elevage_production (id, enterprise_id, date, type, quantity, unit, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [log.id, 'ka_farm', log.date, log.type, log.quantity, log.unit, log.notes]
+        );
+        res.json({ success: true, log });
+        return;
+      } catch (err) {
+        console.error('Error saving elevage production to PostgreSQL:', err);
+      }
+    }
+    
+    serverElevageProduction.push(log);
+    res.json({ success: true, log });
+  });
+
+  // ==================== ELEVAGE HEALTH ====================
+  app.get('/api/elevage/health', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM elevage_health WHERE enterprise_id = $1 ORDER BY date DESC', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching elevage health from PostgreSQL:', err);
+      }
+    }
+    const sorted = serverElevageHealth.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json(sorted);
+  });
+
+  app.post('/api/elevage/health', async (req, res) => {
+    const log = req.body;
+    if (!log || !log.id || !log.intervention) {
+      return res.status(400).json({ error: 'ID et intervention requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO elevage_health (id, enterprise_id, date, target, intervention, practitioner, cost, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [log.id, 'ka_farm', log.date, log.target, log.intervention, log.practitioner, log.cost, log.notes]
+        );
+        res.json({ success: true, log });
+        return;
+      } catch (err) {
+        console.error('Error saving elevage health to PostgreSQL:', err);
+      }
+    }
+    
+    serverElevageHealth.push(log);
+    res.json({ success: true, log });
+  });
+
+  // ==================== GEMINI AI ====================
   app.post('/api/gemini', async (req, res) => {
     try {
       const { prompt, history } = req.body;
@@ -119,7 +537,7 @@ async function startServer() {
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ error: 'GEMINI_API_KEY non configurée dans les Secrets d\'AI Studio.' });
+        return res.status(500).json({ error: 'Clé GEMINI_API_KEY non configurée' });
       }
 
       const ai = new GoogleGenAI({
@@ -135,7 +553,6 @@ async function startServer() {
 
       let contents = prompt;
       if (history && Array.isArray(history) && history.length > 0) {
-        // Build contents showing recent history
         const formattedHistory = history.map((m) => `${m.role === 'user' ? 'Utilisateur' : 'Conseiller'}: ${m.text}`).join('\n');
         contents = `${formattedHistory}\nUtilisateur: ${prompt}\nConseiller:`;
       }
@@ -147,7 +564,6 @@ async function startServer() {
       for (let attempt = 1; attempt <= 2; attempt++) {
         for (const model of modelsToTry) {
           try {
-            console.log(`Trying Gemini with model: ${model} (attempt ${attempt}/2)`);
             response = await ai.models.generateContent({
               model: model,
               contents: contents,
@@ -157,12 +573,10 @@ async function startServer() {
               }
             });
             if (response && response.text) {
-              break; // Success!
+              break;
             }
           } catch (err) {
-            console.error(`Error with model ${model} on attempt ${attempt}:`, err);
             lastError = err;
-            // Short backoff before next try
             await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
           }
         }
@@ -172,17 +586,17 @@ async function startServer() {
       }
 
       if (!response || !response.text) {
-        throw lastError || new Error('Impossible de générer une réponse après plusieurs tentatives');
+        throw lastError || new Error('Impossible de générer une réponse de l\'IA après plusieurs tentatives');
       }
 
       return res.json({ text: response.text });
     } catch (error) {
       console.error('Error calling Gemini API:', error);
-      return res.status(500).json({ error: error.message || 'Erreur interne du serveur' });
+      return res.status(500).json({ error: error.message || 'Erreur interne de l\'API' });
     }
   });
 
-  // API router for real weather proxy
+  // ==================== WEATHER ====================
   app.get('/api/weather', async (req, res) => {
     try {
       const { lat, lon } = req.query;
@@ -204,8 +618,8 @@ async function startServer() {
         wind_speed: data.current.wind_speed_10m
       });
     } catch (error) {
-      console.error('Error fetching weather from Open-Meteo:', error);
-      return res.status(500).json({ error: 'Erreur lors de la récupération des données météo en temps réel' });
+      console.error('Error fetching weather:', error);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des données météo' });
     }
   });
 
@@ -218,16 +632,16 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static files from dist with html extensions support
     app.use(express.static(path.resolve('dist'), { extensions: ['html'] }));
     app.get('*', (req, res) => {
       res.sendFile(path.resolve('dist/index.html'));
     });
   }
 
-  const port = 3000;
+  const port = process.env.PORT || 3000;
   app.listen(port, '0.0.0.0', () => {
     console.log(`Server running at http://0.0.0.0:${port}`);
+    console.log(`Mode: ${usePostgres ? 'PostgreSQL' : 'Fallback mémoire (localStorage)'}`);
   });
 }
 
