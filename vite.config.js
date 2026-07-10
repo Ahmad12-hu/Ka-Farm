@@ -19,21 +19,28 @@ export default defineConfig(() => {
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
-          login: path.resolve(__dirname, 'pages/auth/login.html'),
-          signup: path.resolve(__dirname, 'pages/auth/signup.html'),
-          alerts: path.resolve(__dirname, 'pages/shared/alerts.html'),
-          crops: path.resolve(__dirname, 'pages/shared/crops.html'),
-          dashboard: path.resolve(__dirname, 'pages/shared/dashboard.html'),
-          finances: path.resolve(__dirname, 'pages/shared/finances.html'),
-          harvest: path.resolve(__dirname, 'pages/shared/harvest.html'),
-          irrigation: path.resolve(__dirname, 'pages/shared/irrigation.html'),
-          parcelles: path.resolve(__dirname, 'pages/shared/parcelles.html'),
-          employees: path.resolve(__dirname, 'pages/shared/employees.html'),
-          stocks: path.resolve(__dirname, 'pages/shared/stocks.html'),
-          sales: path.resolve(__dirname, 'pages/personal/my-sales.html'),
-          tasks: path.resolve(__dirname, 'pages/personal/my-tasks.html'),
-          profile: path.resolve(__dirname, 'pages/personal/profile.html'),
-          settings: path.resolve(__dirname, 'pages/personal/settings.html'),
+          // Pages auth
+          'pages/auth/login': path.resolve(__dirname, 'pages/auth/login.html'),
+          'pages/auth/signup': path.resolve(__dirname, 'pages/auth/signup.html'),
+          // Pages shared
+          'pages/shared/alerts': path.resolve(__dirname, 'pages/shared/alerts.html'),
+          'pages/shared/crops': path.resolve(__dirname, 'pages/shared/crops.html'),
+          'pages/shared/dashboard': path.resolve(__dirname, 'pages/shared/dashboard.html'),
+          'pages/shared/finances': path.resolve(__dirname, 'pages/shared/finances.html'),
+          'pages/shared/harvest': path.resolve(__dirname, 'pages/shared/harvest.html'),
+          'pages/shared/irrigation': path.resolve(__dirname, 'pages/shared/irrigation.html'),
+          'pages/shared/parcelles': path.resolve(__dirname, 'pages/shared/parcelles.html'),
+          'pages/shared/employees': path.resolve(__dirname, 'pages/shared/employees.html'),
+          'pages/shared/stocks': path.resolve(__dirname, 'pages/shared/stocks.html'),
+          'pages/shared/elevage': path.resolve(__dirname, 'pages/shared/elevage.html'),
+          'pages/shared/training': path.resolve(__dirname, 'pages/shared/training.html'),
+          'pages/shared/discussion': path.resolve(__dirname, 'pages/shared/discussion.html'),
+          'pages/shared/calendar': path.resolve(__dirname, 'pages/shared/calendar.html'),
+          // Pages personal
+          'pages/personal/my-sales': path.resolve(__dirname, 'pages/personal/my-sales.html'),
+          'pages/personal/my-tasks': path.resolve(__dirname, 'pages/personal/my-tasks.html'),
+          'pages/personal/profile': path.resolve(__dirname, 'pages/personal/profile.html'),
+          'pages/personal/settings': path.resolve(__dirname, 'pages/personal/settings.html'),
         }
       }
     },
