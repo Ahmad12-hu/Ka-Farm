@@ -683,7 +683,7 @@ export const App = {
       footer.innerHTML = `
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-7xl mx-auto px-6">
           <div class="flex items-center gap-1.5">
-            <span>&copy; 2024 <span class="font-black text-emerald-600 dark:text-emerald-400 tracking-wider uppercase">KA Farm</span> - Créé par <span class="font-bold text-slate-700 dark:text-emerald-300">Amadou KA</span>. Tous droits réservés</span>
+            <span>&copy; 2024 <span class="font-black text-emerald-600 dark:text-emerald-400 tracking-wider uppercase">KA Farm</span>. Tous droits réservés</span>
           </div>
           <div class="flex items-center gap-2 bg-slate-50 dark:bg-[#051108] border border-slate-100 dark:border-[#143E23]/20 px-3 py-1.5 rounded-full text-[10px] text-slate-400 dark:text-[#5F8369]">
             <span class="relative flex h-1.5 w-1.5">
