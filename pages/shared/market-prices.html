@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prix du Marché - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .trend-up { color: #10B981; }
+    .trend-down { color: #EF4444; }
+    .trend-stable { color: #3B82F6; }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+    
+    .modal-backdrop {
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-gray-100">
+  <!-- Include Navigation -->
+  <div id="nav-placeholder"></div>
+  <script>
+    fetch('/pages/shared/nav.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('nav-placeholder').innerHTML = html;
+      });
+  </script>
+
+  <main class="min-h-screen p-4 md:p-6 lg:p-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+      <div class="flex-1">
+        <h1 class="text-2xl md:text-3xl font-bold text-brand-green mb-2">
+          <i data-lucide="trending-up" class="inline-block w-6 h-6 mr-2"></i>
+          Prix du Marché & Tendances
+        </h1>
+        <p class="text-gray-400 text-sm">
+          Suivi des prix en temps réel et analyse des tendances saisonnières
+        </p>
+      </div>
+      
+      <div class="flex items-center gap-4 mt-4 md:mt-0">
+        <!-- View Toggle -->
+        <div class="flex bg-brand-slate rounded-lg p-1">
+          <button id="view-prices" class="px-4 py-2 text-sm font-medium rounded-md bg-brand-green text-white transition-colors">
+            Prix
+          </button>
+          <button id="view-trends" class="px-4 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
+            Tendances
+          </button>
+          <button id="view-alerts" class="px-4 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
+            Alertes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-brand-slate rounded-xl p-6 border border-gray-700">
+        <div class="flex items-center gap-4">
+          <div class="bg-brand-green/20 p-3 rounded-lg">
+            <i data-lucide="bar-chart-3" class="w-6 h-6 text-brand-green"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">Prix Enregistrés</p>
+            <p id="stat-total-prices" class="text-2xl font-bold text-white">0</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-6 border border-gray-700">
+        <div class="flex items-center gap-4">
+          <div class="bg-green-600/20 p-3 rounded-lg">
+            <i data-lucide="trending-up" class="w-6 h-6 text-green-500"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">Prix Moyen</p>
+            <p id="stat-avg-price" class="text-2xl font-bold text-white">0</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-6 border border-gray-700">
+        <div class="flex items-center gap-4">
+          <div class="bg-yellow-600/20 p-3 rounded-lg">
+            <i data-lucide="bell" class="w-6 h-6 text-yellow-500"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">Alertes Actives</p>
+            <p id="stat-active-alerts" class="text-2xl font-bold text-white">0</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-6 border border-gray-700">
+        <div class="flex items-center gap-4">
+          <div class="bg-blue-600/20 p-3 rounded-lg">
+            <i data-lucide="activity" class="w-6 h-6 text-blue-500"></i>
+          </div>
+          <div>
+            <p class="text-gray-400 text-sm">Tendances</p>
+            <p id="stat-trends-count" class="text-2xl font-bold text-white">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="bg-brand-slate rounded-xl p-4 border border-gray-700 mb-6">
+      <div class="flex flex-col md:flex-row gap-4 items-center">
+        <div class="flex-1">
+          <label class="sr-only">Rechercher</label>
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+            <input 
+              id="market-search" 
+              type="text" 
+              placeholder="Rechercher par culture, marché ou région..."
+              class="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green"
+            >
+          </div>
+        </div>
+        
+        <select id="filter-region" class="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green min-w-[150px]">
+          <option value="">Toutes Régions</option>
+          <option value="Niayes">Niayes</option>
+          <option value="Dakar">Dakar</option>
+          <option value="Thiès">Thiès</option>
+          <option value="Saint-Louis">Saint-Louis</option>
+          <option value="Kaolack">Kaolack</option>
+          <option value="Mbour">Mbour</option>
+          <option value="Fatick">Fatick</option>
+          <option value="Diourbel">Diourbel</option>
+        </select>
+        
+        <select id="filter-crop" class="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green min-w-[150px]">
+          <option value="">Toutes Cultures</option>
+          <option value="Tomate Mongal F1">Tomate Mongal F1</option>
+          <option value="Oignon Rouge de Galmi">Oignon Rouge de Galmi</option>
+          <option value="Chou Cabus">Chou Cabus</option>
+          <option value="Menthe de Thiès">Menthe de Thiès</option>
+          <option value="Piment Oiseau">Piment Oiseau</option>
+          <option value="Aubergine">Aubergine</option>
+        </select>
+        
+        <select id="filter-season" class="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green min-w-[150px]">
+          <option value="">Toutes Saisons</option>
+          <option value="Hivernage">Hivernage</option>
+          <option value="Sèche">Sèche</option>
+          <option value="Contre-saison">Contre-saison</option>
+          <option value="Toute l'année">Toute l'année</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="bg-brand-slate rounded-xl p-6 border border-gray-700">
+        <h3 class="text-lg font-semibold text-white mb-4">
+          <i data-lucide="line-chart" class="inline-block w-5 h-5 mr-2"></i>
+          Évolution des Prix
+        </h3>
+        <div class="chart-container">
+          <canvas id="price-trend-chart"></canvas>
+        </div>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-6 border border-gray-700">
+        <h3 class="text-lg font-semibold text-white mb-4">
+          <i data-lucide="bar-chart-3" class="inline-block w-5 h-5 mr-2"></i>
+          Comparaison par Région
+        </h3>
+        <div class="chart-container">
+          <canvas id="season-comparison-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prices Section -->
+    <div id="prices-section" class="mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="tag" class="inline-block w-5 h-5 mr-2"></i>
+          Prix du Marché
+        </h2>
+        <button id="add-price-btn" class="bg-brand-green hover:bg-brand-hover text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+          Ajouter Prix
+        </button>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-gray-800 text-gray-300 text-sm uppercase">
+            <tr>
+              <th class="px-4 py-3">Culture</th>
+              <th class="px-4 py-3">Marché</th>
+              <th class="px-4 py-3">Région</th>
+              <th class="px-4 py-3 text-right">Prix (FCFA)</th>
+              <th class="px-4 py-3">Unité</th>
+              <th class="px-4 py-3">Date</th>
+              <th class="px-4 py-3">Offre</th>
+              <th class="px-4 py-3">Demande</th>
+              <th class="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="prices-table-body" class="divide-y divide-gray-700">
+            <!-- Prices will be dynamically inserted -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Trends Section -->
+    <div id="trends-section" class="hidden mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="activity" class="inline-block w-5 h-5 mr-2"></i>
+          Tendances Saisonnières
+        </h2>
+        <button id="add-trend-btn" class="bg-brand-green hover:bg-brand-hover text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+          Ajouter Tendance
+        </button>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-gray-800 text-gray-300 text-sm uppercase">
+            <tr>
+              <th class="px-4 py-3">Culture</th>
+              <th class="px-4 py-3">Région</th>
+              <th class="px-4 py-3">Saison</th>
+              <th class="px-4 py-3 text-right">Prix Moyen</th>
+              <th class="px-4 py-3 text-right">Min</th>
+              <th class="px-4 py-3 text-right">Max</th>
+              <th class="px-4 py-3">Tendance</th>
+              <th class="px-4 py-3 text-right">Force</th>
+              <th class="px-4 py-3 text-right">Prévision</th>
+              <th class="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="trends-table-body" class="divide-y divide-gray-700">
+            <!-- Trends will be dynamically inserted -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div id="alerts-section" class="hidden mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="bell" class="inline-block w-5 h-5 mr-2"></i>
+          Alertes de Prix
+        </h2>
+        <button id="add-alert-btn" class="bg-brand-green hover:bg-brand-hover text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+          Ajouter Alerte
+        </button>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-gray-800 text-gray-300 text-sm uppercase">
+            <tr>
+              <th class="px-4 py-3 w-12">Vu</th>
+              <th class="px-4 py-3">Culture</th>
+              <th class="px-4 py-3">Marché</th>
+              <th class="px-4 py-3">Type</th>
+              <th class="px-4 py-3 text-right">Seuil</th>
+              <th class="px-4 py-3 text-right">Prix Actuel</th>
+              <th class="px-4 py-3">Date Déclenchement</th>
+              <th class="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="alerts-table-body" class="divide-y divide-gray-700">
+            <!-- Alerts will be dynamically inserted -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Price Modal -->
+  <div id="price-modal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center z-50 hidden">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="tag" class="inline-block w-5 h-5 mr-2"></i>
+          Ajouter/Modifier Prix
+        </h2>
+        <button data-close-price class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Culture *</label>
+          <select id="price-crop" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="">Sélectionner une culture</option>
+            <option value="Tomate Mongal F1">Tomate Mongal F1</option>
+            <option value="Oignon Rouge de Galmi">Oignon Rouge de Galmi</option>
+            <option value="Chou Cabus">Chou Cabus</option>
+            <option value="Menthe de Thiès">Menthe de Thiès</option>
+            <option value="Piment Oiseau">Piment Oiseau</option>
+            <option value="Aubergine">Aubergine</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Marché *</label>
+          <select id="price-market" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="">Sélectionner un marché</option>
+            <option value="Marché Sandika">Marché Sandika</option>
+            <option value="Marché Tilène">Marché Tilène</option>
+            <option value="Marché de Mbour">Marché de Mbour</option>
+            <option value="Marché de Thiès">Marché de Thiès</option>
+            <option value="Marché HLM">Marché HLM</option>
+            <option value="Marché de Kaolack">Marché de Kaolack</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
+          <select id="price-region" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="Niayes">Niayes</option>
+            <option value="Dakar">Dakar</option>
+            <option value="Thiès">Thiès</option>
+            <option value="Saint-Louis">Saint-Louis</option>
+            <option value="Kaolack">Kaolack</option>
+            <option value="Mbour">Mbour</option>
+            <option value="Fatick">Fatick</option>
+            <option value="Diourbel">Diourbel</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Prix (FCFA) *</label>
+          <input id="price-value" type="number" min="0" placeholder="0" 
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Date *</label>
+          <input id="price-date" type="date" 
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Unité *</label>
+          <select id="price-unit" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="kg">kg</option>
+            <option value="tonne">tonne</option>
+            <option value="sac">sac</option>
+            <option value="caisse">caisse</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Saison *</label>
+          <select id="price-season" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="Hivernage">Hivernage</option>
+            <option value="Sèche">Sèche</option>
+            <option value="Contre-saison">Contre-saison</option>
+            <option value="Toute l'année">Toute l'année</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Niveau Offre</label>
+          <select id="price-supply" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="Faible">Faible</option>
+            <option value="Normale" selected>Normale</option>
+            <option value="Élevée">Élevée</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Niveau Demande</label>
+          <select id="price-demand" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="Faible">Faible</option>
+            <option value="Normale" selected>Normale</option>
+            <option value="Élevée">Élevée</option>
+          </select>
+        </div>
+        
+        <div class="md:col-span-2 lg:col-span-3">
+          <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+          <textarea id="price-notes" rows="3" placeholder="Notes supplémentaires..."
+                    class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green resize-none"></textarea>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-4">
+        <button data-close-price class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+          Annuler
+        </button>
+        <button data-save-price class="px-6 py-2 bg-brand-green hover:bg-brand-hover text-white rounded-lg transition-colors">
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trend Modal -->
+  <div id="trend-modal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center z-50 hidden">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="activity" class="inline-block w-5 h-5 mr-2"></i>
+          Ajouter/Modifier Tendance
+        </h2>
+        <button data-close-trend class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Culture *</label>
+          <select id="trend-crop" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="">Sélectionner une culture</option>
+            <option value="Tomate">Tomate</option>
+            <option value="Oignon">Oignon</option>
+            <option value="Chou">Chou</option>
+            <option value="Menthe">Menthe</option>
+            <option value="Piment">Piment</option>
+            <option value="Aubergine">Aubergine</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
+          <select id="trend-region" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="Niayes">Niayes</option>
+            <option value="Dakar">Dakar</option>
+            <option value="Thiès">Thiès</option>
+            <option value="Saint-Louis">Saint-Louis</option>
+            <option value="Kaolack">Kaolack</option>
+            <option value="Mbour">Mbour</option>
+            <option value="Fatick">Fatick</option>
+            <option value="Diourbel">Diourbel</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Saison *</label>
+          <select id="trend-season" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="Hivernage">Hivernage</option>
+            <option value="Sèche">Sèche</option>
+            <option value="Contre-saison">Contre-saison</option>
+            <option value="Toute l'année">Toute l'année</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Prix Moyen (FCFA) *</label>
+          <input id="trend-avg-price" type="number" min="0" placeholder="0"
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Prix Min (FCFA)</label>
+          <input id="trend-min-price" type="number" min="0" placeholder="0"
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Prix Max (FCFA)</label>
+          <input id="trend-max-price" type="number" min="0" placeholder="0"
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Direction Tendance</label>
+          <select id="trend-direction" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="Hausse">Hausse</option>
+            <option value="Baisse">Baisse</option>
+            <option value="Stable" selected>Stable</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Force (0-1)</label>
+          <input id="trend-strength" type="number" min="0" max="1" step="0.1" value="0.5"
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Prévision Mois Prochain (FCFA)</label>
+          <input id="trend-prediction" type="number" min="0" placeholder="0"
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Confiance (%)</label>
+          <input id="trend-confidence" type="number" min="0" max="100" value="80"
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Points de Données</label>
+          <input id="trend-data-points" type="number" min="0" value="10"
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div class="md:col-span-2 lg:col-span-3">
+          <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+          <textarea id="trend-notes" rows="3" placeholder="Notes supplémentaires..."
+                    class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green resize-none"></textarea>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-4">
+        <button data-close-trend class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+          Annuler
+        </button>
+        <button data-save-trend class="px-6 py-2 bg-brand-green hover:bg-brand-hover text-white rounded-lg transition-colors">
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal -->
+  <div id="alert-modal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center z-50 hidden">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="bell" class="inline-block w-5 h-5 mr-2"></i>
+          Ajouter/Modifier Alerte
+        </h2>
+        <button data-close-alert class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Culture *</label>
+          <select id="alert-crop" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="">Sélectionner une culture</option>
+            <option value="Tomate Mongal F1">Tomate Mongal F1</option>
+            <option value="Oignon Rouge de Galmi">Oignon Rouge de Galmi</option>
+            <option value="Chou Cabus">Chou Cabus</option>
+            <option value="Menthe de Thiès">Menthe de Thiès</option>
+            <option value="Piment Oiseau">Piment Oiseau</option>
+            <option value="Aubergine">Aubergine</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Marché *</label>
+          <select id="alert-market" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="">Sélectionner un marché</option>
+            <option value="Marché Sandika">Marché Sandika</option>
+            <option value="Marché Tilène">Marché Tilène</option>
+            <option value="Marché de Mbour">Marché de Mbour</option>
+            <option value="Marché de Thiès">Marché de Thiès</option>
+            <option value="Marché HLM">Marché HLM</option>
+            <option value="Marché de Kaolack">Marché de Kaolack</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Type d'Alerte *</label>
+          <select id="alert-type" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+            <option value="Haut">Prix Élevé (au-dessus du seuil)</option>
+            <option value="Bas">Prix Bas (en dessous du seuil)</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Seuil (FCFA) *</label>
+          <input id="alert-threshold" type="number" min="0" placeholder="0"
+                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+        </div>
+        
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-300 mb-2">Message *</label>
+          <textarea id="alert-message" rows="2" placeholder="Message de l'alerte..."
+                    class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green resize-none"></textarea>
+        </div>
+        
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+          <textarea id="alert-notes" rows="2" placeholder="Notes supplémentaires..."
+                    class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green resize-none"></textarea>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-4">
+        <button data-close-alert class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+          Annuler
+        </button>
+        <button data-save-alert class="px-6 py-2 bg-brand-green hover:bg-brand-hover text-white rounded-lg transition-colors">
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Module -->
+  <script type="module">
+    import { MarketPricesModule } from '/js/modules/market-prices.js';
+    window.MarketPricesModule = MarketPricesModule;
+  </script>
+
+  <!-- Render Lucide Icons -->
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -473,9 +473,23 @@ export const App = {
               <i data-lucide="sprout" class="h-4 w-4"></i>
               Journal des Récoltes
             </a>
+            <a href="/pages/shared/treatments.html" data-tab="treatments" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
+              <div class="flex items-center gap-3">
+                <i data-lucide="shield-alert" class="h-4 w-4"></i>
+                Carnet Phytosanitaire
+              </div>
+              <span id="treatments-badge" class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.2 rounded-full font-bold">0</span>
+            </a>
             <a href="/pages/shared/finances.html" data-tab="finances" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
               <i data-lucide="landmark" class="h-4 w-4"></i>
               Gestion des Finances
+            </a>
+            <a href="/pages/shared/profitability.html" data-tab="profitability" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
+              <div class="flex items-center gap-3">
+                <i data-lucide="calculator" class="h-4 w-4"></i>
+                Rentabilité par Culture
+              </div>
+              <span id="profitability-badge" class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded-full font-bold">0</span>
             </a>
             <a href="/pages/shared/stocks.html" data-tab="stocks" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
               <div class="flex items-center gap-3">
@@ -483,6 +497,10 @@ export const App = {
                 Inventaire & Stocks
               </div>
               <span id="stocks-badge" class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded-full font-bold">0</span>
+            </a>
+            <a href="/pages/shared/market-prices.html" data-tab="market-prices" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-orange-300">
+              <i data-lucide="trending-up" class="h-4 w-4 text-orange-400"></i>
+              Prix du Marché
             </a>
             <a href="/pages/shared/elevage.html" data-tab="elevage" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-[#ffedd5]">
               <div class="flex items-center gap-3">

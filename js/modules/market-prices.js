@@ -1,0 +1,909 @@
+// KA Farm - Module Prix du Marché et Tendances Saisonnières
+// Fonctionnalité 2.5 : Suivi des prix du marché et analyse des tendances
+
+import { KAStorage } from '../storage.js';
+
+// ============================================================
+// MAIN MODULE EXPORT
+// ============================================================
+
+export const MarketPricesModule = {
+  // State management
+  state: {
+    selectedRegion: 'Niayes',
+    selectedCrop: '',
+    selectedSeason: 'Hivernage',
+    priceAlertThreshold: 0,
+    alertType: 'Haut',
+    searchQuery: '',
+    viewMode: 'prices' // 'prices', 'trends', 'alerts'
+  },
+
+  // Available regions in Senegal
+  regions: ['Niayes', 'Dakar', 'Thiès', 'Saint-Louis', 'Kaolack', 'Mbour', 'Fatick', 'Diourbel'],
+
+  // Available seasons
+  seasons: ['Hivernage', 'Sèche', 'Contre-saison', 'Toute l\'année'],
+
+  // Available crops
+  crops: ['Tomate Mongal F1', 'Oignon Rouge de Galmi', 'Chou Cabus', 'Menthe de Thiès', 'Piment Oiseau', 'Aubergine'],
+
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
+
+  init() {
+    this.storage = KAStorage;
+    this.cacheElements();
+    this.setupListeners();
+    this.render();
+    this.loadInitialData();
+    console.log('MarketPricesModule initialized');
+  },
+
+  cacheElements() {
+    this.elements = {
+      // Statistics
+      statTotalPrices: document.getElementById('stat-total-prices'),
+      statAvgPrice: document.getElementById('stat-avg-price'),
+      statActiveAlerts: document.getElementById('stat-active-alerts'),
+      statTrendsCount: document.getElementById('stat-trends-count'),
+
+      // View tabs
+      viewPricesBtn: document.getElementById('view-prices'),
+      viewTrendsBtn: document.getElementById('view-trends'),
+      viewAlertsBtn: document.getElementById('view-alerts'),
+
+      // Price form
+      cropSelect: document.getElementById('price-crop'),
+      marketSelect: document.getElementById('price-market'),
+      regionSelect: document.getElementById('price-region'),
+      priceInput: document.getElementById('price-value'),
+      priceDateInput: document.getElementById('price-date'),
+      unitSelect: document.getElementById('price-unit'),
+      seasonSelect: document.getElementById('price-season'),
+      supplySelect: document.getElementById('price-supply'),
+      demandSelect: document.getElementById('price-demand'),
+      priceNotesInput: document.getElementById('price-notes'),
+
+      // Trend form
+      trendCropSelect: document.getElementById('trend-crop'),
+      trendRegionSelect: document.getElementById('trend-region'),
+      trendSeasonSelect: document.getElementById('trend-season'),
+      trendAvgPriceInput: document.getElementById('trend-avg-price'),
+      trendMinPriceInput: document.getElementById('trend-min-price'),
+      trendMaxPriceInput: document.getElementById('trend-max-price'),
+      trendDirectionSelect: document.getElementById('trend-direction'),
+      trendStrengthInput: document.getElementById('trend-strength'),
+      trendPredictionInput: document.getElementById('trend-prediction'),
+      trendConfidenceInput: document.getElementById('trend-confidence'),
+      trendDataPointsInput: document.getElementById('trend-data-points'),
+      trendNotesInput: document.getElementById('trend-notes'),
+
+      // Alert form
+      alertCropSelect: document.getElementById('alert-crop'),
+      alertMarketSelect: document.getElementById('alert-market'),
+      alertTypeSelect: document.getElementById('alert-type'),
+      alertThresholdInput: document.getElementById('alert-threshold'),
+      alertMessageInput: document.getElementById('alert-message'),
+      alertNotesInput: document.getElementById('alert-notes'),
+
+      // Tables
+      pricesTableBody: document.getElementById('prices-table-body'),
+      trendsTableBody: document.getElementById('trends-table-body'),
+      alertsTableBody: document.getElementById('alerts-table-body'),
+
+      // Modals
+      priceModal: document.getElementById('price-modal'),
+      trendModal: document.getElementById('trend-modal'),
+      alertModal: document.getElementById('alert-modal'),
+
+      // Charts
+      priceTrendChart: document.getElementById('price-trend-chart'),
+      seasonComparisonChart: document.getElementById('season-comparison-chart')
+    };
+  },
+
+  setupListeners() {
+    // View tabs
+    if (this.elements.viewPricesBtn) {
+      this.elements.viewPricesBtn.addEventListener('click', () => this.switchView('prices'));
+    }
+    if (this.elements.viewTrendsBtn) {
+      this.elements.viewTrendsBtn.addEventListener('click', () => this.switchView('trends'));
+    }
+    if (this.elements.viewAlertsBtn) {
+      this.elements.viewAlertsBtn.addEventListener('click', () => this.switchView('alerts'));
+    }
+
+    // Price form
+    if (this.elements.priceModal) {
+      const savePriceBtn = this.elements.priceModal.querySelector('[data-save-price]');
+      if (savePriceBtn) {
+        savePriceBtn.addEventListener('click', () => this.savePrice());
+      }
+      const closePriceBtn = this.elements.priceModal.querySelector('[data-close-price]');
+      if (closePriceBtn) {
+        closePriceBtn.addEventListener('click', () => this.closePriceModal());
+      }
+    }
+
+    // Trend form
+    if (this.elements.trendModal) {
+      const saveTrendBtn = this.elements.trendModal.querySelector('[data-save-trend]');
+      if (saveTrendBtn) {
+        saveTrendBtn.addEventListener('click', () => this.saveTrend());
+      }
+      const closeTrendBtn = this.elements.trendModal.querySelector('[data-close-trend]');
+      if (closeTrendBtn) {
+        closeTrendBtn.addEventListener('click', () => this.closeTrendModal());
+      }
+    }
+
+    // Alert form
+    if (this.elements.alertModal) {
+      const saveAlertBtn = this.elements.alertModal.querySelector('[data-save-alert]');
+      if (saveAlertBtn) {
+        saveAlertBtn.addEventListener('click', () => this.saveAlert());
+      }
+      const closeAlertBtn = this.elements.alertModal.querySelector('[data-close-alert]');
+      if (closeAlertBtn) {
+        closeAlertBtn.addEventListener('click', () => this.closeAlertModal());
+      }
+    }
+
+    // Add new buttons
+    const addPriceBtn = document.getElementById('add-price-btn');
+    if (addPriceBtn) {
+      addPriceBtn.addEventListener('click', () => this.openPriceModal());
+    }
+
+    const addTrendBtn = document.getElementById('add-trend-btn');
+    if (addTrendBtn) {
+      addTrendBtn.addEventListener('click', () => this.openTrendModal());
+    }
+
+    const addAlertBtn = document.getElementById('add-alert-btn');
+    if (addAlertBtn) {
+      addAlertBtn.addEventListener('click', () => this.openAlertModal());
+    }
+
+    // Search
+    const searchInput = document.getElementById('market-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.state.searchQuery = e.target.value;
+        this.render();
+      });
+    }
+
+    // Filters
+    const regionFilter = document.getElementById('filter-region');
+    if (regionFilter) {
+      regionFilter.addEventListener('change', (e) => {
+        this.state.selectedRegion = e.target.value;
+        this.render();
+      });
+    }
+
+    const cropFilter = document.getElementById('filter-crop');
+    if (cropFilter) {
+      cropFilter.addEventListener('change', (e) => {
+        this.state.selectedCrop = e.target.value;
+        this.render();
+      });
+    }
+
+    const seasonFilter = document.getElementById('filter-season');
+    if (seasonFilter) {
+      seasonFilter.addEventListener('change', (e) => {
+        this.state.selectedSeason = e.target.value;
+        this.render();
+      });
+    }
+  },
+
+  // ============================================================
+  // DATA LOADING
+  // ============================================================
+
+  loadInitialData() {
+    this.marketPrices = this.storage.getMarketPrices();
+    this.seasonTrends = this.storage.getSeasonTrends();
+    this.priceAlerts = this.storage.getPriceAlerts();
+    this.updateStats();
+  },
+
+  updateStats() {
+    const prices = this.storage.getMarketPrices();
+    const trends = this.storage.getSeasonTrends();
+    const alerts = this.storage.getActivePriceAlerts();
+
+    const totalPrices = prices.length;
+    const avgPrice = totalPrices > 0 ? prices.reduce((sum, p) => sum + (p.price_fcfa || 0), 0) / totalPrices : 0;
+    const totalTrends = trends.length;
+    const activeAlertsCount = alerts.length;
+
+    if (this.elements.statTotalPrices) {
+      this.elements.statTotalPrices.textContent = totalPrices;
+    }
+    if (this.elements.statAvgPrice) {
+      this.elements.statAvgPrice.textContent = Math.round(avgPrice).toLocaleString('fr-FR');
+    }
+    if (this.elements.statActiveAlerts) {
+      this.elements.statActiveAlerts.textContent = activeAlertsCount;
+    }
+    if (this.elements.statTrendsCount) {
+      this.elements.statTrendsCount.textContent = totalTrends;
+    }
+  },
+
+  // ============================================================
+  // VIEW MANAGEMENT
+  // ============================================================
+
+  switchView(mode) {
+    this.state.viewMode = mode;
+    
+    // Update active tab
+    if (this.elements.viewPricesBtn) {
+      this.elements.viewPricesBtn.classList.toggle('bg-brand-green', mode === 'prices');
+      this.elements.viewPricesBtn.classList.toggle('bg-brand-slate', mode !== 'prices');
+    }
+    if (this.elements.viewTrendsBtn) {
+      this.elements.viewTrendsBtn.classList.toggle('bg-brand-green', mode === 'trends');
+      this.elements.viewTrendsBtn.classList.toggle('bg-brand-slate', mode !== 'trends');
+    }
+    if (this.elements.viewAlertsBtn) {
+      this.elements.viewAlertsBtn.classList.toggle('bg-brand-green', mode === 'alerts');
+      this.elements.viewAlertsBtn.classList.toggle('bg-brand-slate', mode !== 'alerts');
+    }
+
+    // Show/hide sections
+    const pricesSection = document.getElementById('prices-section');
+    const trendsSection = document.getElementById('trends-section');
+    const alertsSection = document.getElementById('alerts-section');
+
+    if (pricesSection) pricesSection.classList.toggle('hidden', mode !== 'prices');
+    if (trendsSection) trendsSection.classList.toggle('hidden', mode !== 'trends');
+    if (alertsSection) alertsSection.classList.toggle('hidden', mode !== 'alerts');
+
+    this.render();
+  },
+
+  // ============================================================
+  // RENDERING
+  // ============================================================
+
+  render() {
+    this.updateStats();
+    
+    switch (this.state.viewMode) {
+      case 'prices':
+        this.renderPrices();
+        break;
+      case 'trends':
+        this.renderTrends();
+        break;
+      case 'alerts':
+        this.renderAlerts();
+        break;
+    }
+
+    this.renderCharts();
+  },
+
+  renderPrices() {
+    if (!this.elements.pricesTableBody) return;
+
+    let prices = this.storage.getMarketPrices();
+    
+    // Apply filters
+    if (this.state.selectedRegion) {
+      prices = prices.filter(p => p.region === this.state.selectedRegion);
+    }
+    if (this.state.selectedCrop) {
+      prices = prices.filter(p => p.crop_name === this.state.selectedCrop);
+    }
+    if (this.state.searchQuery) {
+      const query = this.state.searchQuery.toLowerCase();
+      prices = prices.filter(p => 
+        p.crop_name.toLowerCase().includes(query) ||
+        p.market_name.toLowerCase().includes(query) ||
+        p.region.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort by date descending
+    prices.sort((a, b) => new Date(b.price_date) - new Date(a.price_date));
+
+    this.elements.pricesTableBody.innerHTML = prices.map(price => `
+      <tr class="border-b border-gray-700 hover:bg-gray-800/50">
+        <td class="px-4 py-3 whitespace-nowrap">${price.crop_name}</td>
+        <td class="px-4 py-3">${price.market_name}</td>
+        <td class="px-4 py-3">${price.region}</td>
+        <td class="px-4 py-3 text-right">${price.price_fcfa.toLocaleString('fr-FR')}</td>
+        <td class="px-4 py-3">${price.unit}</td>
+        <td class="px-4 py-3">${new Date(price.price_date).toLocaleDateString('fr-FR')}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded-full text-xs ${this.getSupplyLevelColor(price.supply_level)}">
+            ${price.supply_level}
+          </span>
+        </td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded-full text-xs ${this.getDemandLevelColor(price.demand_level)}">
+            ${price.demand_level}
+          </span>
+        </td>
+        <td class="px-4 py-3 whitespace-nowrap">
+          <button onclick="MarketPricesModule.editPrice('${price.id}')" 
+                  class="text-yellow-400 hover:text-yellow-300 mr-2">
+            <i data-lucide="pencil"></i>
+          </button>
+          <button onclick="MarketPricesModule.deletePrice('${price.id}')" 
+                  class="text-red-400 hover:text-red-300">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    this.renderLucideIcons();
+  },
+
+  renderTrends() {
+    if (!this.elements.trendsTableBody) return;
+
+    let trends = this.storage.getSeasonTrends();
+    
+    // Apply filters
+    if (this.state.selectedRegion) {
+      trends = trends.filter(t => t.region === this.state.selectedRegion);
+    }
+    if (this.state.selectedCrop) {
+      trends = trends.filter(t => t.crop_name === this.state.selectedCrop);
+    }
+    if (this.state.selectedSeason) {
+      trends = trends.filter(t => t.season === this.state.selectedSeason);
+    }
+    if (this.state.searchQuery) {
+      const query = this.state.searchQuery.toLowerCase();
+      trends = trends.filter(t => 
+        t.crop_name.toLowerCase().includes(query) ||
+        t.region.toLowerCase().includes(query)
+      );
+    }
+
+    trends.sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+
+    this.elements.trendsTableBody.innerHTML = trends.map(trend => `
+      <tr class="border-b border-gray-700 hover:bg-gray-800/50">
+        <td class="px-4 py-3 whitespace-nowrap">${trend.crop_name}</td>
+        <td class="px-4 py-3">${trend.region}</td>
+        <td class="px-4 py-3">${trend.season}</td>
+        <td class="px-4 py-3 text-right">${trend.avg_price.toLocaleString('fr-FR')}</td>
+        <td class="px-4 py-3 text-right">${trend.min_price.toLocaleString('fr-FR')}</td>
+        <td class="px-4 py-3 text-right">${trend.max_price.toLocaleString('fr-FR')}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded-full text-xs ${this.getTrendDirectionColor(trend.trend_direction)}">
+            ${trend.trend_direction}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-right">${(trend.trend_strength * 100).toFixed(0)}%</td>
+        <td class="px-4 py-3 text-right">${trend.prediction_next_month.toLocaleString('fr-FR')}</td>
+        <td class="px-4 py-3 whitespace-nowrap">
+          <button onclick="MarketPricesModule.editTrend('${trend.id}')" 
+                  class="text-yellow-400 hover:text-yellow-300 mr-2">
+            <i data-lucide="pencil"></i>
+          </button>
+          <button onclick="MarketPricesModule.deleteTrend('${trend.id}')" 
+                  class="text-red-400 hover:text-red-300">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    this.renderLucideIcons();
+  },
+
+  renderAlerts() {
+    if (!this.elements.alertsTableBody) return;
+
+    let alerts = this.storage.getPriceAlerts();
+    
+    // Apply filters
+    if (this.state.selectedCrop) {
+      alerts = alerts.filter(a => a.crop_name === this.state.selectedCrop);
+    }
+    if (this.state.searchQuery) {
+      const query = this.state.searchQuery.toLowerCase();
+      alerts = alerts.filter(a => 
+        a.crop_name.toLowerCase().includes(query) ||
+        a.market_name.toLowerCase().includes(query)
+      );
+    }
+
+    alerts.sort((a, b) => {
+      if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+      if (a.acknowledged !== b.acknowledged) return a.acknowledged ? 1 : -1;
+      return new Date(b.trigger_date || b.created_at) - new Date(a.trigger_date || a.created_at);
+    });
+
+    this.elements.alertsTableBody.innerHTML = alerts.map(alert => `
+      <tr class="border-b border-gray-700 hover:bg-gray-800/50 ${!alert.is_active ? 'opacity-50' : ''}">
+        <td class="px-4 py-3">
+          <input type="checkbox" ${alert.acknowledged ? 'checked' : ''} 
+                 onclick="MarketPricesModule.toggleAcknowledgeAlert('${alert.id}')"
+                 class="rounded border-gray-600 bg-gray-800">
+        </td>
+        <td class="px-4 py-3 whitespace-nowrap">${alert.crop_name}</td>
+        <td class="px-4 py-3">${alert.market_name}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded-full text-xs ${alert.alert_type === 'Haut' ? 'bg-green-800 text-green-200' : 'bg-red-800 text-red-200'}">
+            ${alert.alert_type}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-right">${alert.threshold_price.toLocaleString('fr-FR')}</td>
+        <td class="px-4 py-3 text-right">${(alert.current_price || 0).toLocaleString('fr-FR')}</td>
+        <td class="px-4 py-3">${alert.trigger_date ? new Date(alert.trigger_date).toLocaleDateString('fr-FR') : '-'}</td>
+        <td class="px-4 py-3 whitespace-nowrap">
+          <button onclick="MarketPricesModule.editAlert('${alert.id}')" 
+                  class="text-yellow-400 hover:text-yellow-300 mr-2">
+            <i data-lucide="pencil"></i>
+          </button>
+          <button onclick="MarketPricesModule.deleteAlert('${alert.id}')" 
+                  class="text-red-400 hover:text-red-300">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    this.renderLucideIcons();
+  },
+
+  renderCharts() {
+    this.renderPriceTrendChart();
+    this.renderSeasonComparisonChart();
+  },
+
+  renderPriceTrendChart() {
+    if (!this.elements.priceTrendChart) return;
+
+    const prices = this.storage.getMarketPrices();
+    const selectedCrop = this.state.selectedCrop || 'Tomate Mongal F1';
+    const cropPrices = prices.filter(p => p.crop_name === selectedCrop);
+    
+    if (cropPrices.length === 0) return;
+
+    cropPrices.sort((a, b) => new Date(a.price_date) - new Date(b.price_date));
+
+    const dates = cropPrices.map(p => new Date(p.price_date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }));
+    const priceValues = cropPrices.map(p => p.price_fcfa);
+
+    const ctx = this.elements.priceTrendChart.getContext('2d');
+    
+    // Destroy previous chart if exists
+    if (this.priceTrendChartInstance) {
+      this.priceTrendChartInstance.destroy();
+    }
+
+    this.priceTrendChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [{
+          label: `Prix de ${selectedCrop}`,
+          data: priceValues,
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: '#E5E7EB' }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: { color: '#E5E7EB' },
+            grid: { color: '#374151' }
+          },
+          x: {
+            ticks: { color: '#E5E7EB' },
+            grid: { color: '#374151' }
+          }
+        }
+      }
+    });
+  },
+
+  renderSeasonComparisonChart() {
+    if (!this.elements.seasonComparisonChart) return;
+
+    const trends = this.storage.getSeasonTrends();
+    const regions = [...new Set(trends.map(t => t.region))];
+    const selectedSeason = this.state.selectedSeason || 'Hivernage';
+    
+    const seasonTrends = trends.filter(t => t.season === selectedSeason);
+    
+    if (seasonTrends.length === 0) return;
+
+    // Group by crop
+    const crops = [...new Set(seasonTrends.map(t => t.crop_name))];
+    const datasets = crops.map(crop => {
+      const cropData = seasonTrends.filter(t => t.crop_name === crop);
+      return {
+        label: crop,
+        data: regions.map(region => {
+          const trend = cropData.find(t => t.region === region);
+          return trend ? trend.avg_price : 0;
+        }),
+        backgroundColor: this.getRandomColor()
+      };
+    });
+
+    const ctx = this.elements.seasonComparisonChart.getContext('2d');
+    
+    // Destroy previous chart if exists
+    if (this.seasonComparisonChartInstance) {
+      this.seasonComparisonChartInstance.destroy();
+    }
+
+    this.seasonComparisonChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: regions,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#E5E7EB' }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#E5E7EB' },
+            grid: { color: '#374151' }
+          },
+          x: {
+            ticks: { color: '#E5E7EB' },
+            grid: { color: '#374151' }
+          }
+        }
+      }
+    });
+  },
+
+  getRandomColor() {
+    const colors = [
+      '#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#EAB308'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  },
+
+  getSupplyLevelColor(level) {
+    const colors = {
+      'Faible': 'bg-red-800 text-red-200',
+      'Normale': 'bg-blue-800 text-blue-200',
+      'Élevée': 'bg-green-800 text-green-200'
+    };
+    return colors[level] || 'bg-gray-800 text-gray-200';
+  },
+
+  getDemandLevelColor(level) {
+    const colors = {
+      'Faible': 'bg-red-800 text-red-200',
+      'Normale': 'bg-blue-800 text-blue-200',
+      'Élevée': 'bg-green-800 text-green-200'
+    };
+    return colors[level] || 'bg-gray-800 text-gray-200';
+  },
+
+  getTrendDirectionColor(direction) {
+    const colors = {
+      'Hausse': 'bg-green-800 text-green-200',
+      'Baisse': 'bg-red-800 text-red-200',
+      'Stable': 'bg-blue-800 text-blue-200'
+    };
+    return colors[direction] || 'bg-gray-800 text-gray-200';
+  },
+
+  renderLucideIcons() {
+    if (typeof lucide === 'undefined') return;
+    document.querySelectorAll('[data-lucide]').forEach(el => {
+      const iconName = el.getAttribute('data-lucide');
+      el.innerHTML = lucide.create(iconName);
+    });
+  },
+
+  // ============================================================
+  // PRICE MANAGEMENT
+  // ============================================================
+
+  openPriceModal(priceId = null) {
+    this.currentPriceId = priceId;
+    
+    if (priceId) {
+      const price = this.storage.getMarketPriceById(priceId);
+      if (price) {
+        if (this.elements.cropSelect) this.elements.cropSelect.value = price.crop_name;
+        if (this.elements.marketSelect) this.elements.marketSelect.value = price.market_name;
+        if (this.elements.regionSelect) this.elements.regionSelect.value = price.region;
+        if (this.elements.priceInput) this.elements.priceInput.value = price.price_fcfa;
+        if (this.elements.priceDateInput) this.elements.priceDateInput.value = price.price_date;
+        if (this.elements.unitSelect) this.elements.unitSelect.value = price.unit || 'kg';
+        if (this.elements.seasonSelect) this.elements.seasonSelect.value = price.season || 'Hivernage';
+        if (this.elements.supplySelect) this.elements.supplySelect.value = price.supply_level || 'Normale';
+        if (this.elements.demandSelect) this.elements.demandSelect.value = price.demand_level || 'Normale';
+        if (this.elements.priceNotesInput) this.elements.priceNotesInput.value = price.notes || '';
+      }
+    } else {
+      // Reset form
+      if (this.elements.cropSelect) this.elements.cropSelect.value = '';
+      if (this.elements.marketSelect) this.elements.marketSelect.value = '';
+      if (this.elements.regionSelect) this.elements.regionSelect.value = 'Niayes';
+      if (this.elements.priceInput) this.elements.priceInput.value = '';
+      if (this.elements.priceDateInput) this.elements.priceDateInput.value = new Date().toISOString().split('T')[0];
+      if (this.elements.unitSelect) this.elements.unitSelect.value = 'kg';
+      if (this.elements.seasonSelect) this.elements.seasonSelect.value = 'Hivernage';
+      if (this.elements.supplySelect) this.elements.supplySelect.value = 'Normale';
+      if (this.elements.demandSelect) this.elements.demandSelect.value = 'Normale';
+      if (this.elements.priceNotesInput) this.elements.priceNotesInput.value = '';
+    }
+
+    if (this.elements.priceModal) {
+      this.elements.priceModal.classList.remove('hidden');
+    }
+  },
+
+  closePriceModal() {
+    if (this.elements.priceModal) {
+      this.elements.priceModal.classList.add('hidden');
+    }
+    this.currentPriceId = null;
+  },
+
+  savePrice() {
+    const price = {
+      id: this.currentPriceId || `MP-${Date.now()}`,
+      crop_name: this.elements.cropSelect.value,
+      market_name: this.elements.marketSelect.value,
+      region: this.elements.regionSelect.value,
+      price_fcfa: parseFloat(this.elements.priceInput.value) || 0,
+      price_date: this.elements.priceDateInput.value,
+      unit: this.elements.unitSelect.value,
+      season: this.elements.seasonSelect.value,
+      supply_level: this.elements.supplySelect.value,
+      demand_level: this.elements.demandSelect.value,
+      notes: this.elements.priceNotesInput.value,
+      price_source: 'SIM',
+      is_estimated: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (this.currentPriceId) {
+      this.storage.updateMarketPrice(this.currentPriceId, price);
+    } else {
+      this.storage.addMarketPrice(price);
+    }
+
+    this.closePriceModal();
+    this.loadInitialData();
+    this.render();
+  },
+
+  editPrice(priceId) {
+    this.openPriceModal(priceId);
+  },
+
+  deletePrice(priceId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce prix ?')) {
+      this.storage.deleteMarketPrice(priceId);
+      this.loadInitialData();
+      this.render();
+    }
+  },
+
+  // ============================================================
+  // TREND MANAGEMENT
+  // ============================================================
+
+  openTrendModal(trendId = null) {
+    this.currentTrendId = trendId;
+    
+    if (trendId) {
+      const trend = this.storage.getSeasonTrendById(trendId);
+      if (trend) {
+        if (this.elements.trendCropSelect) this.elements.trendCropSelect.value = trend.crop_name;
+        if (this.elements.trendRegionSelect) this.elements.trendRegionSelect.value = trend.region;
+        if (this.elements.trendSeasonSelect) this.elements.trendSeasonSelect.value = trend.season;
+        if (this.elements.trendAvgPriceInput) this.elements.trendAvgPriceInput.value = trend.avg_price;
+        if (this.elements.trendMinPriceInput) this.elements.trendMinPriceInput.value = trend.min_price;
+        if (this.elements.trendMaxPriceInput) this.elements.trendMaxPriceInput.value = trend.max_price;
+        if (this.elements.trendDirectionSelect) this.elements.trendDirectionSelect.value = trend.trend_direction;
+        if (this.elements.trendStrengthInput) this.elements.trendStrengthInput.value = trend.trend_strength;
+        if (this.elements.trendPredictionInput) this.elements.trendPredictionInput.value = trend.prediction_next_month;
+        if (this.elements.trendConfidenceInput) this.elements.trendConfidenceInput.value = trend.confidence_percent;
+        if (this.elements.trendDataPointsInput) this.elements.trendDataPointsInput.value = trend.data_points;
+        if (this.elements.trendNotesInput) this.elements.trendNotesInput.value = trend.notes || '';
+      }
+    } else {
+      // Reset form
+      if (this.elements.trendCropSelect) this.elements.trendCropSelect.value = '';
+      if (this.elements.trendRegionSelect) this.elements.trendRegionSelect.value = 'Niayes';
+      if (this.elements.trendSeasonSelect) this.elements.trendSeasonSelect.value = 'Hivernage';
+      if (this.elements.trendAvgPriceInput) this.elements.trendAvgPriceInput.value = '';
+      if (this.elements.trendMinPriceInput) this.elements.trendMinPriceInput.value = '';
+      if (this.elements.trendMaxPriceInput) this.elements.trendMaxPriceInput.value = '';
+      if (this.elements.trendDirectionSelect) this.elements.trendDirectionSelect.value = 'Stable';
+      if (this.elements.trendStrengthInput) this.elements.trendStrengthInput.value = 0.5;
+      if (this.elements.trendPredictionInput) this.elements.trendPredictionInput.value = '';
+      if (this.elements.trendConfidenceInput) this.elements.trendConfidenceInput.value = 80;
+      if (this.elements.trendDataPointsInput) this.elements.trendDataPointsInput.value = 10;
+      if (this.elements.trendNotesInput) this.elements.trendNotesInput.value = '';
+    }
+
+    if (this.elements.trendModal) {
+      this.elements.trendModal.classList.remove('hidden');
+    }
+  },
+
+  closeTrendModal() {
+    if (this.elements.trendModal) {
+      this.elements.trendModal.classList.add('hidden');
+    }
+    this.currentTrendId = null;
+  },
+
+  saveTrend() {
+    const trend = {
+      id: this.currentTrendId || `ST-${Date.now()}`,
+      crop_name: this.elements.trendCropSelect.value,
+      region: this.elements.trendRegionSelect.value,
+      season: this.elements.trendSeasonSelect.value,
+      avg_price: parseFloat(this.elements.trendAvgPriceInput.value) || 0,
+      min_price: parseFloat(this.elements.trendMinPriceInput.value) || 0,
+      max_price: parseFloat(this.elements.trendMaxPriceInput.value) || 0,
+      std_deviation: 0,
+      trend_direction: this.elements.trendDirectionSelect.value,
+      trend_strength: parseFloat(this.elements.trendStrengthInput.value) || 0.5,
+      prediction_next_month: parseFloat(this.elements.trendPredictionInput.value) || 0,
+      confidence_percent: parseFloat(this.elements.trendConfidenceInput.value) || 80,
+      data_points: parseInt(this.elements.trendDataPointsInput.value) || 10,
+      last_updated: new Date().toISOString().split('T')[0],
+      notes: this.elements.trendNotesInput.value,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (this.currentTrendId) {
+      this.storage.updateSeasonTrend(this.currentTrendId, trend);
+    } else {
+      this.storage.addSeasonTrend(trend);
+    }
+
+    this.closeTrendModal();
+    this.loadInitialData();
+    this.render();
+  },
+
+  editTrend(trendId) {
+    this.openTrendModal(trendId);
+  },
+
+  deleteTrend(trendId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette tendance ?')) {
+      this.storage.deleteSeasonTrend(trendId);
+      this.loadInitialData();
+      this.render();
+    }
+  },
+
+  // ============================================================
+  // ALERT MANAGEMENT
+  // ============================================================
+
+  openAlertModal(alertId = null) {
+    this.currentAlertId = alertId;
+    
+    if (alertId) {
+      const alert = this.storage.getPriceAlertById(alertId);
+      if (alert) {
+        if (this.elements.alertCropSelect) this.elements.alertCropSelect.value = alert.crop_name;
+        if (this.elements.alertMarketSelect) this.elements.alertMarketSelect.value = alert.market_name;
+        if (this.elements.alertTypeSelect) this.elements.alertTypeSelect.value = alert.alert_type;
+        if (this.elements.alertThresholdInput) this.elements.alertThresholdInput.value = alert.threshold_price;
+        if (this.elements.alertMessageInput) this.elements.alertMessageInput.value = alert.message;
+        if (this.elements.alertNotesInput) this.elements.alertNotesInput.value = alert.notes || '';
+      }
+    } else {
+      // Reset form
+      if (this.elements.alertCropSelect) this.elements.alertCropSelect.value = '';
+      if (this.elements.alertMarketSelect) this.elements.alertMarketSelect.value = '';
+      if (this.elements.alertTypeSelect) this.elements.alertTypeSelect.value = 'Haut';
+      if (this.elements.alertThresholdInput) this.elements.alertThresholdInput.value = '';
+      if (this.elements.alertMessageInput) this.elements.alertMessageInput.value = '';
+      if (this.elements.alertNotesInput) this.elements.alertNotesInput.value = '';
+    }
+
+    if (this.elements.alertModal) {
+      this.elements.alertModal.classList.remove('hidden');
+    }
+  },
+
+  closeAlertModal() {
+    if (this.elements.alertModal) {
+      this.elements.alertModal.classList.add('hidden');
+    }
+    this.currentAlertId = null;
+  },
+
+  saveAlert() {
+    const alert = {
+      id: this.currentAlertId || `PA-${Date.now()}`,
+      market_name: this.elements.alertMarketSelect.value,
+      crop_name: this.elements.alertCropSelect.value,
+      alert_type: this.elements.alertTypeSelect.value,
+      threshold_price: parseFloat(this.elements.alertThresholdInput.value) || 0,
+      current_price: 0,
+      trigger_date: null,
+      message: this.elements.alertMessageInput.value,
+      is_active: true,
+      acknowledged: false,
+      acknowledged_by: '',
+      acknowledged_at: null,
+      notes: this.elements.alertNotesInput.value,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (this.currentAlertId) {
+      this.storage.updatePriceAlert(this.currentAlertId, alert);
+    } else {
+      this.storage.addPriceAlert(alert);
+    }
+
+    this.closeAlertModal();
+    this.loadInitialData();
+    this.render();
+  },
+
+  editAlert(alertId) {
+    this.openAlertModal(alertId);
+  },
+
+  deleteAlert(alertId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')) {
+      this.storage.deletePriceAlert(alertId);
+      this.loadInitialData();
+      this.render();
+    }
+  },
+
+  toggleAcknowledgeAlert(alertId) {
+    const userName = 'Utilisateur Actuel'; // TODO: Get from session
+    this.storage.acknowledgePriceAlert(alertId, userName);
+    this.loadInitialData();
+    this.render();
+  }
+};
+
+// Initialize module when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  MarketPricesModule.init();
+});
