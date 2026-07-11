@@ -710,7 +710,7 @@ async function startServer() {
   // ==================== GEMINI AI ====================
   app.post('/api/gemini', async (req, res) => {
     try {
-      const { prompt, history } = req.body;
+      const { prompt, history, image } = req.body;
       if (!prompt) {
         return res.status(400).json({ error: 'Prompt requis' });
       }
@@ -720,14 +720,7 @@ async function startServer() {
         return res.status(500).json({ error: 'Clé GEMINI_API_KEY non configurée' });
       }
 
-      const ai = new GoogleGenAI({
-        apiKey: apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
-      });
+      const ai = new GoogleGenAI(apiKey);
 
       const systemInstruction = "Tu es KA-Farm Agro-Advisor, un conseiller horticole et maraîcher expert d'Afrique de l'Ouest (Sénégal), chaleureux, pragmatique, direct et scientifique. Tu réponds en français. Tu es spécialisé exclusivement dans le maraîchage (cultures de légumes, fines herbes, fruits de jardin, pépinières, irrigation goutte-à-goutte ou aspersion, maladies horticoles comme la mineuse de la tomate Tuta absoluta, le mildiou, l'oïdium, les thrips, et l'usage de biopesticides locaux comme le neem ou le piment). Tu aides à diagnostiquer les ravageurs et maladies des légumes, planifier les pépinières maraîchères et le repiquage, optimiser l'arrosage et les amendements (compost organique, fumier) de manière écologique et agroécologique. Donne des réponses concises, claires, structurées et adaptées aux conditions locales ouest-africaines.";
 
@@ -742,8 +735,12 @@ async function startServer() {
         });
       }
 
-      // Utilisation du bon nom de modèle et de la bonne méthode d'appel
-      const modelName = 'gemini-1.5-flash';
+      // Choisir le modèle en fonction de la présence d'une image
+      const modelName = image ? 'gemini-1.5-flash' : 'gemini-1.5-flash'; // gemini-pro-vision is also an option
+      if (image && !modelName.includes('vision') && !modelName.includes('flash')) {
+        console.warn("Attention: Le modèle utilisé ne supporte peut-être pas les images. Utilisation de gemini-1.5-flash.");
+      }
+
       const model = ai.getGenerativeModel({
         model: modelName,
         systemInstruction: {
@@ -759,7 +756,20 @@ async function startServer() {
         }
       });
 
-      const result = await chat.sendMessage(prompt);
+      let result;
+      if (image) {
+        // Handle image input
+        const imagePart = {
+          inlineData: {
+            mimeType: image.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/)[1],
+            data: image.split(',')[1]
+          }
+        };
+        result = await model.generateContent([prompt, imagePart]);
+      } else {
+        // Handle text-only input
+        result = await chat.sendMessage(prompt);
+      }
       const response = result.response;
       const text = response.text();
 

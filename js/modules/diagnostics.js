@@ -4,6 +4,7 @@ import { KAStorage } from '../storage.js';
 let diagnostics = [];
 let diagnosticHistory = [];
 let currentDiagnostic = null;
+let aiImageBase64 = null;
 
 // Severity color and style mapping
 const SEVERITY_COLORS = {
@@ -655,6 +656,7 @@ export const DiagnosticsModule = {
     
     this.render();
     this.setupListeners();
+    this.setupAIDiagnosticListeners();
     this.loadDiseaseLibrary();
   },
 
@@ -1074,23 +1076,28 @@ export const DiagnosticsModule = {
   },
 
   saveDiagnostic() {
+    if (!currentDiagnostic || !currentDiagnostic.cropType) {
+      alert("Impossible d'enregistrer un diagnostic incomplet.");
+      return;
+    }
+
     // Set final data
     currentDiagnostic.status = 'En cours';
     currentDiagnostic.updatedAt = new Date().toISOString();
-    
+
     // Add to diagnostics
     diagnostics.push(currentDiagnostic);
     KAStorage.setDiagnostics(diagnostics);
-    
+
     // Also add to history
     diagnosticHistory.push(currentDiagnostic);
     KAStorage.setDiagnosticHistory(diagnosticHistory);
-    
+
     this.render();
-    this.resetWizard();
-    
-    alert(`Diagnostic enregistré avec succès ! Maladie suspectée : ${currentDiagnostic.diseaseName} (${currentDiagnostic.confidence}% de confiance)`);
-    
+    window.closeDiagnosticWizard();
+
+    alert(`Diagnostic pour "${currentDiagnostic.cropType}" enregistré avec succès ! Vous pouvez le consulter dans l'historique.`);
+
     currentDiagnostic = null;
   },
 
@@ -1475,6 +1482,158 @@ export const DiagnosticsModule = {
         this.renderDiseaseLibrary();
       });
     }
+  },
+
+  parseMarkdown(text) {
+    // Bold: **text** -> <strong>text</strong>
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Titles: 1. **Title** -> <h4>...</h4>
+    text = text.replace(/^\d+\.\s*\*\*(.*?)\*\*/gm, '<h4 class="text-xs font-black text-emerald-500 uppercase tracking-wider mt-3 mb-1">$1</h4>');
+    // List items: * item -> <li>item</li>
+    text = text.replace(/^\s*\*\s(.*?)$/gm, '<li class="ml-4 list-disc">$1</li>');
+    // Simple paragraphs
+    text = text.split('\n').map(line => {
+      if (line.trim() === '' || line.startsWith('<h4') || line.startsWith('<li')) return line;
+      return `<p class="text-slate-600 dark:text-slate-300">${line}</p>`;
+    }).join('');
+    return text;
+  },
+
+  setupAIDiagnosticListeners() {
+    const form = document.getElementById('ai-diagnostic-form');
+    const fileInput = document.getElementById('ai-image-input');
+
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleAIDiagnosticSubmit();
+      });
+    }
+
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 4 * 1024 * 1024) { // Gemini 4MB limit
+            alert("L'image est trop volumineuse (max 4MB).");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            aiImageBase64 = event.target.result;
+            document.getElementById('ai-image-preview-img').src = aiImageBase64;
+            document.getElementById('ai-image-preview-filename').textContent = file.name;
+            document.getElementById('ai-image-preview-container').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  },
+
+  async handleAIDiagnosticSubmit() {
+    const promptInput = document.getElementById('ai-prompt-input');
+    const resultContainer = document.getElementById('ai-result-container');
+    const submitBtn = document.querySelector('#ai-diagnostic-form button[type="submit"]');
+
+    if (!aiImageBase64) {
+        alert("Veuillez sélectionner une image pour l'analyse.");
+        return;
+    }
+
+    const userPrompt = promptInput.value.trim() || "Identifie le problème sur cette plante et donne des conseils.";
+
+    // Show loading state
+    resultContainer.classList.remove('hidden');
+    resultContainer.innerHTML = `
+        <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl border border-slate-200 dark:border-[#1A4525] animate-pulse">
+            <div class="flex items-center gap-2">
+                <i data-lucide="loader" class="h-5 w-5 text-emerald-500 animate-spin"></i>
+                <p class="text-sm font-bold text-slate-600 dark:text-slate-300">Analyse par l'IA en cours...</p>
+            </div>
+        </div>
+    `;
+    if(window.lucide) window.lucide.createIcons();
+    submitBtn.disabled = true;
+
+    try {
+        const fullPrompt = `Analyse cette image d'une plante agricole. ${userPrompt}. Réponds en Markdown structuré avec : 1. **Diagnostic probable** (nom de la maladie/ravageur), 2. **Niveau de confiance** (Élevé, Moyen, Faible), 3. **Symptômes visibles sur l'image**, 4. **Recommandations de traitement** (séparer bio et chimique avec les noms de produits locaux si possible).`;
+
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                prompt: fullPrompt,
+                image: aiImageBase64, // The backend needs to handle this
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erreur de l'API: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        // A more robust parsing of the AI's markdown response
+        const sections = {
+          diagnostic: 'Non spécifié',
+          confiance: 'Non spécifié',
+          symptomes: 'Non spécifié',
+          recommandations: 'Non spécifié'
+        };
+
+        const text = result.text;
+        const diagMatch = text.match(/1\.\s*\*\*Diagnostic probable\*\*:\s*(.*)/i);
+        if (diagMatch) sections.diagnostic = diagMatch[1].trim();
+
+        const confMatch = text.match(/2\.\s*\*\*Niveau de confiance\*\*:\s*(.*)/i);
+        if (confMatch) sections.confiance = confMatch[1].trim();
+
+        const sympMatch = text.match(/3\.\s*\*\*Symptômes visibles sur l'image\*\*([\s\S]*?)4\.\s*\*\*/i);
+        if (sympMatch) sections.symptomes = sympMatch[1].trim().replace(/^\s*\*\s/gm, '<li>').replace(/$/gm, '</li>');
+
+        const recoMatch = text.match(/4\.\s*\*\*Recommandations de traitement\*\*([\s\S]*)/i);
+        if (recoMatch) sections.recommandations = recoMatch[1].trim().replace(/^\s*\*\s/gm, '<li>').replace(/$/gm, '</li>');
+
+        resultContainer.innerHTML = `
+            <div class="p-4 bg-emerald-500/5 dark:bg-[#0D2615] rounded-xl border border-emerald-500/20 space-y-4">
+                <div class="pb-2 border-b border-emerald-500/10">
+                    <h4 class="text-xs font-black text-emerald-500 uppercase tracking-wider">Diagnostic Probable</h4>
+                    <p class="text-lg font-bold text-slate-800 dark:text-white mt-1">${sections.diagnostic}</p>
+                    <p class="text-[10px] text-slate-400 font-semibold">Niveau de confiance : <span class="font-bold text-emerald-400">${sections.confiance}</span></p>
+                </div>
+                <div class="space-y-2">
+                    <h5 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Symptômes Visibles</h5>
+                    <ul class="text-xs text-slate-600 dark:text-slate-300 list-disc list-inside space-y-1">
+                        ${sections.symptomes}
+                    </ul>
+                </div>
+                <div class="space-y-2">
+                    <h5 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recommandations</h5>
+                    <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1 prose prose-sm dark:prose-invert max-w-none">
+                        ${this.parseMarkdown(sections.recommandations)}
+                    </div>
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Erreur du diagnostic IA:', error);
+        resultContainer.innerHTML = `
+            <div class="p-4 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                <p class="text-sm font-bold text-rose-500">Erreur d'analyse</p>
+                <p class="text-xs text-rose-400 mt-1">${error.message}</p>
+            </div>
+        `;
+    } finally {
+        submitBtn.disabled = false;
+        // Reset form
+        aiImageBase64 = null;
+        document.getElementById('ai-image-input').value = '';
+        document.getElementById('ai-image-preview-container').classList.add('hidden');
+        promptInput.value = '';
+    }
   }
 };
 
@@ -1529,6 +1688,14 @@ window.deleteDiagnostic = (id) => {
 
 window.closeDiagnosticDeleteModal = () => {
   DiagnosticsModule.closeDiagnosticDeleteModal();
+};
+
+window.openDiagnosticWizard = () => {
+    document.getElementById('diagnostic-wizard-modal').classList.remove('hidden');
+    DiagnosticsModule.startNewDiagnostic();
+};
+window.closeDiagnosticWizard = () => {
+    document.getElementById('diagnostic-wizard-modal').classList.add('hidden');
 };
 
 // Start module when DOM is loaded

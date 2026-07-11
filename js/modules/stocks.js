@@ -230,68 +230,82 @@ export const StocksModule = {
       return;
     }
 
-    container.innerHTML = filteredStocks.map(s => {
-      const percent = s.maxQuantity > 0 ? Math.round((s.quantity / s.maxQuantity) * 100) : 0;
-      
-      // Visual statuses
-      let barColor = 'bg-emerald-500';
-      let textColor = 'text-emerald-500';
-      let badgeColor = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-      let statusText = 'Optimal';
-
-      if (percent <= 20) {
-        barColor = 'bg-rose-500';
-        textColor = 'text-rose-500';
-        badgeColor = 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-        statusText = 'Alerte Bas';
-      } else if (percent <= 50) {
-        barColor = 'bg-amber-500';
-        textColor = 'text-amber-500';
-        badgeColor = 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-        statusText = 'Moyen';
+    // Group stocks by category
+    const groupedStocks = filteredStocks.reduce((acc, stock) => {
+      const category = stock.category || 'Autres';
+      if (!acc[category]) {
+        acc[category] = [];
       }
+      acc[category].push(stock);
+      return acc;
+    }, {});
 
-      // Icon matching category
-      let catIcon = 'package';
-      if (s.category === 'Amendements') catIcon = 'leaf';
-      else if (s.category === 'Semences') catIcon = 'sprout';
-      else if (s.category === 'Traitements') catIcon = 'shield-check';
-      else if (s.category === 'Alimentation') catIcon = 'wheat';
+    container.innerHTML = Object.entries(groupedStocks).map(([category, items]) => {
+      const itemsHtml = items.map(s => {
+        const percent = s.maxQuantity > 0 ? Math.round((s.quantity / s.maxQuantity) * 100) : 0;
+        let fillColor = '#10b981'; // emerald-500
+        if (percent <= 20) fillColor = '#ef4444'; // rose-500
+        else if (percent <= 50) fillColor = '#f59e0b'; // amber-500
+
+        const isBag = s.unit.toLowerCase() === 'kg' || s.unit.toLowerCase() === 'sacs';
+        const isBottle = s.unit.toLowerCase() === 'l' || s.unit.toLowerCase() === 'litres';
+
+        let itemSvg = '';
+        if (isBag) {
+          itemSvg = `
+            <svg viewBox="0 0 80 100" class="w-full h-full drop-shadow-md">
+              <defs>
+                <linearGradient id="grad-${s.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="${fillColor}" stop-opacity="0.5" />
+                  <stop offset="${100 - percent}%" stop-color="${fillColor}" stop-opacity="0.5" />
+                  <stop offset="${100 - percent}%" stop-color="#475569" stop-opacity="0.1" />
+                  <stop offset="100%" stop-color="#475569" stop-opacity="0.1" />
+                </linearGradient>
+              </defs>
+              <path d="M10 100 C 10 90, 0 90, 0 80 L 0 20 C 0 0, 10 0, 20 0 L 60 0 C 70 0, 80 0, 80 20 L 80 80 C 80 90, 70 90, 70 100 Z" fill="url(#grad-${s.id})" stroke="#475569" stroke-width="1.5"/>
+              <path d="M20 12 L 60 12" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          `;
+        } else if (isBottle) {
+          itemSvg = `
+            <svg viewBox="0 0 60 100" class="w-full h-full drop-shadow-md">
+               <defs>
+                <linearGradient id="grad-${s.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="${100 - percent}%" stop-color="#374151" stop-opacity="0.1" />
+                  <stop offset="${100 - percent}%" stop-color="${fillColor}" stop-opacity="0.6" />
+                  <stop offset="100%" stop-color="${fillColor}" stop-opacity="0.6" />
+                </linearGradient>
+              </defs>
+              <rect x="5" y="15" width="50" height="85" rx="10" fill="url(#grad-${s.id})" stroke="#475569" stroke-width="1.5"/>
+              <rect x="15" y="0" width="30" height="15" rx="3" fill="#374151" stroke="#475569" stroke-width="1.5"/>
+            </svg>
+          `;
+        } else { // Default box
+          itemSvg = `
+            <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+              <rect x="5" y="5" width="90" height="90" rx="5" fill="${fillColor}" stroke="#475569" stroke-width="1.5"/>
+            </svg>
+          `;
+        }
+
+        return `
+          <div class="flex flex-col items-center gap-2 group cursor-pointer" onclick="window.openAdjustModal('${s.id}', '${s.name.replace(/'/g, "\\'")}', ${s.quantity}, '${s.unit}')">
+            <div class="w-16 h-20 relative">
+              ${itemSvg}
+            </div>
+            <div class="text-center">
+              <p class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-500 transition-colors truncate w-24">${s.name}</p>
+              <p class="text-[10px] font-mono text-slate-500 dark:text-slate-400">${s.quantity.toLocaleString('fr-FR')} ${s.unit}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
 
       return `
-        <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 shadow-sm hover:border-[#143E23]/50 transition-all">
-          <div class="flex justify-between items-start gap-3">
-            <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 flex-shrink-0">
-                <i data-lucide="${catIcon}" class="h-5 w-5"></i>
-              </div>
-              <div>
-                <h4 class="text-xs font-black text-slate-850 dark:text-white leading-tight">${s.name}</h4>
-                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">${s.category}</p>
-              </div>
-            </div>
-            <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${badgeColor}">${statusText}</span>
-          </div>
-
-          <!-- Quantity level display bar -->
-          <div class="space-y-1.5">
-            <div class="flex justify-between items-baseline text-xs font-semibold">
-              <span class="text-slate-400 text-[10px]">Niveau de remplissage : <strong class="${textColor} font-mono">${percent}%</strong></span>
-              <span class="text-slate-800 dark:text-slate-200 font-mono font-black">${s.quantity.toLocaleString('fr-FR')} / ${s.maxQuantity.toLocaleString('fr-FR')} ${s.unit}</span>
-            </div>
-            <div class="w-full bg-slate-100 dark:bg-emerald-950/20 h-2 rounded-full overflow-hidden">
-              <div class="h-full ${barColor} transition-all duration-500" style="width: ${Math.min(100, percent)}%"></div>
-            </div>
-          </div>
-
-          <!-- Actions footer -->
-          <div class="pt-2 border-t border-slate-50 dark:border-emerald-950/10 flex justify-between items-center">
-            <button onclick="window.openAdjustModal('${s.id}', '${s.name.replace(/'/g, "\\'")}', ${s.quantity}, '${s.unit}')" class="px-3.5 py-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 font-black text-[10px] rounded-lg cursor-pointer transition-colors flex items-center gap-1">
-              <i data-lucide="sliders" class="h-3.5 w-3.5"></i> Ajuster Quantité
-            </button>
-            <button onclick="window.deleteStockItem('${s.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg transition-colors cursor-pointer">
-              <i data-lucide="trash-2" class="h-4 w-4"></i>
-            </button>
+        <div class="space-y-4">
+          <h3 class="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider pb-2 border-b-2 border-slate-100 dark:border-slate-800">${category}</h3>
+          <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-x-4 gap-y-6">
+            ${itemsHtml}
           </div>
         </div>
       `;
@@ -300,6 +314,42 @@ export const StocksModule = {
     if (window.lucide) {
       window.lucide.createIcons();
     }
+  },
+
+  renderStockUsageHistory(productName) {
+    const historyContainer = document.getElementById('stock-usage-history');
+    if (!historyContainer) return;
+
+    const treatments = KAStorage.getTreatments();
+    const usageHistory = treatments.filter(t => 
+      (t.productName || t.product_name || '').toLowerCase() === productName.toLowerCase()
+    ).sort((a, b) => new Date(b.dateApplied || b.date_applied) - new Date(a.dateApplied || a.date_applied));
+
+    if (usageHistory.length === 0) {
+      historyContainer.innerHTML = `
+        <div class="p-3 text-center bg-slate-50 dark:bg-[#0D2615]/20 rounded-lg">
+          <p class="text-xs text-slate-400 font-semibold">Aucune utilisation enregistrée dans le carnet phytosanitaire.</p>
+        </div>
+      `;
+      return;
+    }
+
+    historyContainer.innerHTML = usageHistory.map(t => {
+      const quantityUsed = t.quantityUsed || 'N/A';
+      const unit = t.unit || '';
+      const date = t.dateApplied || t.date_applied;
+      const parcelName = t.parcelName || t.parcel_name || 'Parcelle inconnue';
+
+      return `
+        <div class="p-2.5 bg-slate-50 dark:bg-[#0D2615]/20 rounded-lg border border-slate-100 dark:border-[#143E23]/30">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-700 dark:text-slate-300">${parcelName}</span>
+            <span class="font-mono font-bold text-rose-500">-${quantityUsed} ${unit}</span>
+          </div>
+          <p class="text-[9px] text-slate-400 font-semibold mt-0.5">${new Date(date).toLocaleDateString('fr-FR')} - Cible: ${t.target || 'Non spécifié'}</p>
+        </div>
+      `;
+    }).join('');
   },
 
   setupListeners() {
@@ -636,6 +686,9 @@ export const StocksModule = {
       document.getElementById('adjust-op-type').value = 'add';
 
       modal.classList.remove('hidden');
+
+      // Render usage history for this item
+      this.renderStockUsageHistory(name);
     };
 
     // 4. Handle Adjust Stock Form Submit

@@ -382,8 +382,10 @@ window.submitAddTreatment = (e) => {
   const darInput = document.getElementById('form-treat-dar');
   const targetInput = document.getElementById('form-treat-target');
   const notesInput = document.getElementById('form-treat-notes');
+  const quantityInput = document.getElementById('form-treat-quantity');
+  const unitInput = document.getElementById('form-treat-unit');
   
-  if (!parcelSelect || !productInput || !dateInput || !darInput) return;
+  if (!parcelSelect || !productInput || !dateInput || !darInput || !quantityInput || !unitInput) return;
   
   const parcelId = parcelSelect.value;
   const cropId = cropSelect ? cropSelect.value : '';
@@ -393,12 +395,39 @@ window.submitAddTreatment = (e) => {
   const dar = parseInt(darInput.value) || 0;
   const target = targetInput ? targetInput.value : '';
   const notes = notesInput ? notesInput.value : '';
+  const quantityUsed = parseFloat(quantityInput.value);
+  const unit = unitInput.value;
   
-  if (!parcelId || !productName || !dateApplied) {
-    alert('Veuillez remplir les champs obligatoires: Parcelle, Produit et Date.');
+  if (!parcelId || !productName || !dateApplied || !quantityUsed || quantityUsed <= 0) {
+    alert('Veuillez remplir les champs obligatoires: Parcelle, Produit, Quantité et Date.');
     return;
   }
   
+  // --- Stock Deduction Logic ---
+  const stocks = KAStorage.getStocks();
+  const stockItemIndex = stocks.findIndex(s => s.name.toLowerCase() === productName.toLowerCase());
+
+  if (stockItemIndex !== -1) {
+    const stockItem = stocks[stockItemIndex];
+    // Basic unit conversion for simplicity (g->kg, ml->L)
+    let quantityToDeduct = quantityUsed;
+    if (stockItem.unit.toLowerCase() === 'kg' && unit.toLowerCase() === 'g') quantityToDeduct /= 1000;
+    if (stockItem.unit.toLowerCase() === 'l' && unit.toLowerCase() === 'ml') quantityToDeduct /= 1000;
+
+    if (stockItem.quantity < quantityToDeduct) {
+      alert(`Stock insuffisant pour "${productName}".\nStock actuel: ${stockItem.quantity} ${stockItem.unit}\nQuantité demandée: ${quantityToDeduct.toFixed(2)} ${stockItem.unit}`);
+      return;
+    }
+    stocks[stockItemIndex].quantity -= quantityToDeduct;
+    KAStorage.saveStocks(stocks);
+  } else {
+    // If product not in stock, ask user if they want to proceed
+    if (!confirm(`Le produit "${productName}" n'a pas été trouvé dans vos stocks. Voulez-vous quand même enregistrer ce traitement ?`)) {
+      return;
+    }
+  }
+  // --- End of Stock Deduction ---
+
   // Get parcel and crop names
   const parcel = parcelles.find(p => p.id === parcelId);
   const crop = crops.find(c => c.id === cropId);
@@ -422,6 +451,8 @@ window.submitAddTreatment = (e) => {
     dar,
     target,
     notes,
+    quantityUsed: quantityUsed,
+    unit: unit,
     harvestReady: false, // Will be calculated based on DAR
     enterprise_id: 'ka_farm'
   };
