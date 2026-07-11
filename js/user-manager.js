@@ -48,24 +48,13 @@ export const UserManager = {
     return true;
   },
 
-  // Require login helper. If not logged in, automatically logs in default user.
+  // Require login helper. Redirect to login if not authenticated
   requireAuth() {
     if (!this.isLoggedIn()) {
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('login.html') && !currentPath.includes('signup.html')) {
-        // Automatically log in as default user Amadou KA (contact@kafarm.sn)
-        KAStorage.setCurrentUser({
-          email: 'contact@kafarm.sn',
-          name: 'Amadou KA',
-          role: 'Bureau',
-          enterpriseId: 'ka_farm',
-          enterpriseName: 'KA Farm',
-          enterpriseCode: 'KA-FARM'
-        }, true);
-
-        // No reload needed; continue loading the current page with auth applied
-      }
+      window.location.href = '/pages/auth/login.html';
+      return false;
     }
+    return true;
   },
 
   // Redirect if logged in (e.g., from login page to dashboard)

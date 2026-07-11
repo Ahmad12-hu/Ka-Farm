@@ -82,11 +82,7 @@ const DEFAULT_EMPLOYEE_PAYMENTS = [
   { id: 'PAY-004', employeeId: 'E-004', amount: 80000, date: '2026-06-15', periodStart: '2026-06-01', periodEnd: '2026-06-15', paymentMethod: 'Wave', status: 'Payé' }
 ];
 
-const DEFAULT_USERS = [
-  { email: 'moussa@kafarm.sn', name: 'Moussa KA', role: 'Terrain', password: 'moussa-village' },
-  { email: 'aly@kafarm.sn', name: 'Aly KA', role: 'Bureau', password: 'aly-dakar' },
-  { email: 'contact@kafarm.sn', name: 'Amadou KA', role: 'Bureau', password: 'password' }
-];
+const DEFAULT_USERS = [];
 
 const DEFAULT_CHEPTEL = [
   { id: 'CH-001', name: 'Génisses Laitières Holstein', type: 'Bovins', breed: 'Holstein/Guzera', quantity: 12, unit: 'têtes', status: 'Sain', purpose: 'Lait' },
@@ -106,12 +102,7 @@ const DEFAULT_ELEVAGE_HEALTH = [
   { id: 'HEA-002', date: '2026-06-18', target: 'Génisses Laitières', intervention: 'Déparasitage systématique', practitioner: 'Samba Sow (Interne)', cost: 8000, notes: 'Administration orale de vermifuge.' }
 ];
 
-const DEFAULT_MESSAGES = [
-  { id: 'msg-1', senderEmail: 'moussa@kafarm.sn', senderName: 'Moussa KA', text: 'Salam Aly ! J\'ai fini de vérifier le système de goutte-à-goutte sur la parcelle A. Tout fonctionne bien pour les tomates 🍅.', timestamp: '2026-06-25T08:30:00.000Z' },
-  { id: 'msg-2', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'Wa alaykoum salam Moussa. Alhamdoulilah ! Et qu\'en est-il du stock de compost bio ? Est-ce qu\'on a assez pour la pépinière de poivrons ?', timestamp: '2026-06-25T09:15:00.000Z' },
-  { id: 'msg-3', senderEmail: 'moussa@kafarm.sn', senderName: 'Moussa KA', text: 'On a encore environ 350 kg en réserve, mais ce serait bien d\'en commander 500 kg supplémentaires pour juillet 🌱.', timestamp: '2026-06-25T09:40:00.000Z' },
-  { id: 'msg-4', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'D\'accord, c\'est noté. Je passe la commande aujourd\'hui depuis le bureau de Dakar 💻.', timestamp: '2026-06-25T10:00:00.000Z' }
-];
+const DEFAULT_MESSAGES = [];
 
 const DEFAULT_TREATMENTS = [
   { id: 'TR-001', parcelId: 'P-001', parcelName: 'Parcelle Nord - Planche 2', cropId: 'C-101', cropName: 'Tomate Mongal F1', category: 'bio-phytosanitaire', productName: 'Purin de Neem', dateApplied: '2026-06-20', dar: 3, target: 'Chenilles et pucerons', notes: 'Traitement préventif appliqué le matin. Respecter le DAR de 3 jours.', harvestReady: true, enterprise_id: 'ka_farm' },

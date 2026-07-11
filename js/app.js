@@ -597,37 +597,8 @@ export const App = {
           
           <!-- User Switcher Dropdown (Hidden by default) -->
           <div id="user-switcher-dropdown" class="hidden p-2 bg-[#06130B]/90 border border-[#143E23]/60 rounded-xl space-y-1 animate-fadeIn">
-            <p class="text-[8px] font-black text-[#4F6D58] uppercase tracking-wider px-1 pb-1 border-b border-[#143E23]/30 mb-1">Accéder au compte d'un associé :</p>
-            <button onclick="window.switchUser('moussa@kafarm.sn')" class="w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold hover:bg-[#0E2F19] flex items-center justify-between transition-colors cursor-pointer">
-              <div class="flex items-center gap-2">
-                <div class="h-5 w-5 bg-emerald-500/20 text-emerald-400 rounded-md flex items-center justify-center font-black">M</div>
-                <div>
-                  <p class="text-white">Moussa KA</p>
-                  <p class="text-[8px] text-[#819888]">Terrain</p>
-                </div>
-              </div>
-              <i data-lucide="arrow-right" class="h-3 w-3 text-emerald-500"></i>
-            </button>
-            <button onclick="window.switchUser('aly@kafarm.sn')" class="w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold hover:bg-[#0E2F19] flex items-center justify-between transition-colors cursor-pointer">
-              <div class="flex items-center gap-2">
-                <div class="h-5 w-5 bg-emerald-500/20 text-emerald-400 rounded-md flex items-center justify-center font-black">A</div>
-                <div>
-                  <p class="text-white">Aly KA</p>
-                  <p class="text-[8px] text-[#819888]">Bureau</p>
-                </div>
-              </div>
-              <i data-lucide="arrow-right" class="h-3 w-3 text-emerald-500"></i>
-            </button>
-            <button onclick="window.switchUser('contact@kafarm.sn')" class="w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold hover:bg-[#0E2F19] flex items-center justify-between transition-colors cursor-pointer">
-              <div class="flex items-center gap-2">
-                <div class="h-5 w-5 bg-emerald-500/20 text-emerald-400 rounded-md flex items-center justify-center font-black">A</div>
-                <div>
-                  <p class="text-white">Amadou KA</p>
-                  <p class="text-[8px] text-[#819888]">Bureau</p>
-                </div>
-              </div>
-              <i data-lucide="arrow-right" class="h-3 w-3 text-emerald-500"></i>
-            </button>
+            <p class="text-[8px] font-black text-[#4F6D58] uppercase tracking-wider px-1 pb-1 border-b border-[#143E23]/30 mb-1">Changer de compte :</p>
+            <p class="text-[10px] text-slate-400 px-1">Utilisez la déconnexion pour vous connecter avec un autre compte.</p>
           </div>
           
           <div class="flex items-center justify-between text-[11px] font-bold text-[#819888] px-1 pt-1 border-t border-[#143E23]/40">

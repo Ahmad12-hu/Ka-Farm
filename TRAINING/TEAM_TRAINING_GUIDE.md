@@ -479,7 +479,7 @@ Quantité actuelle ≤ 20% de Quantité Maximale
 **En cas de problème** :
 
 1. **Contacter l'administrateur** :
-   - Email : `admin@kafarm.sn`
+   - Email : `[VOTRE_EMAIL_ADMIN]`
    - Téléphone : [À compléter par l'admin]
 
 2. **Message types** :
@@ -630,7 +630,7 @@ R : Notez le message d'erreur et contactez l'administrateur.
 **Contact Support** :
 
 - 📧 Email : support@kafarm.sn
-- 📱 Téléphone : [À compléter]
+- 📱 Téléphone : [À compléter par l'admin]
 - 💬 Discussion interne : Section "Discussions" de KA Farm
 
 **Temps de réponse garanti** : 24-48h

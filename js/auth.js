@@ -10,12 +10,7 @@ export const Auth = {
       const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
       
       if (!user) {
-        const isPredefined = ['moussa@kafarm.sn', 'aly@kafarm.sn', 'contact@kafarm.sn'].includes(email.toLowerCase());
-        if (isPredefined) {
-          alert("Mot de passe incorrect. Indices :\n- moussa@kafarm.sn -> moussa-village\n- aly@kafarm.sn -> aly-dakar\n- contact@kafarm.sn -> password");
-        } else {
-          alert("Identifiants incorrects. Si vous n'avez pas de compte, veuillez vous inscrire via le lien d'inscription.");
-        }
+        alert("Identifiants incorrects. Si vous n'avez pas de compte, veuillez vous inscrire via le lien d'inscription.");
         return false;
       }
 
