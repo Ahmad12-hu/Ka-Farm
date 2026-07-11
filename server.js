@@ -812,7 +812,18 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
+    // Servir les fichiers statiques depuis le dossier pages/ (pour les pages HTML partagées)
+    app.use('/pages', express.static(path.resolve('pages'), { extensions: ['html'] }));
+    
+    // Servir les fichiers statiques du build Vite (dist/)
     app.use(express.static(path.resolve('dist'), { extensions: ['html'] }));
+    
+    // Servir les assets (images, CSS, JS) depuis la racine
+    app.use('/assets', express.static(path.resolve('assets')));
+    app.use('/css', express.static(path.resolve('css')));
+    app.use('/js', express.static(path.resolve('js')));
+    
+    // Route par défaut pour les requêtes non correspondantes
     app.get('*', (req, res) => {
       res.sendFile(path.resolve('dist/index.html'));
     });
