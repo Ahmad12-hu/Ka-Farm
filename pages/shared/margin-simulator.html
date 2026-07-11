@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulateur de Marge Brute - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .margin-excellent { background-color: #dcfce7; border-color: #86efac; }
+    .margin-good { background-color: #fef3c7; border-color: #fde68a; }
+    .margin-poor { background-color: #fee2e2; border-color: #fca5a5; }
+    
+    .comparison-card {
+      transition: all 0.2s ease;
+    }
+    .comparison-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+              <i data-lucide="truck" class="h-7 w-7 text-amber-500"></i>
+              Simulateur de Marge Brute
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-[#819888] mt-1">
+              Calculez votre marge nette en intégrant les coûts de transport entre régions
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="window.refreshMarginData()" class="px-4 py-2 bg-amber-500/10 dark:bg-amber-950/20 hover:bg-amber-500/20 dark:hover:bg-amber-950/30 border border-amber-500/20 text-amber-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+              Actualiser
+            </button>
+            <button onclick="window.openSimulatorModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-emerald-500/25">
+              <i data-lucide="calculator" class="h-4 w-4"></i>
+              Nouvelle Simulation
+            </button>
+            <button onclick="window.openTransportRatesModal()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-cyan-500/25">
+              <i data-lucide="truck" class="h-4 w-4"></i>
+              Gérer les Tarifs
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-amber-500/10 rounded-xl">
+                <i data-lucide="bar-chart-3" class="h-5 w-5 text-amber-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Simulations Totales</p>
+                <p id="stat-total-simulations" class="text-xl font-black text-slate-800 dark:text-white font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-emerald-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                <i data-lucide="package" class="h-5 w-5 text-emerald-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Revenu Total</p>
+                <p id="stat-total-revenue" class="text-xl font-black text-emerald-500 font-mono">0 F</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-purple-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-purple-500/10 rounded-xl">
+                <i data-lucide="percent" class="h-5 w-5 text-purple-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Marge Moyenne</p>
+                <p id="stat-avg-margin" class="text-xl font-black text-purple-500 font-mono">0%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Left Column - Margin Simulator -->
+          <div class="lg:col-span-2">
+            <!-- Simulator Card -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-amber-500/20">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="calculator" class="h-4 w-4 text-amber-500"></i>
+                  Simulateur de Marge
+                </h3>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Culture *</label>
+                  <select id="simulator-crop" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                    <option value="">-- Sélectionner une culture --</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Quantité (kg) *</label>
+                  <input id="simulator-quantity" type="number" value="1000" min="1" step="10" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                </div>
+                
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Prix de vente (F/kg) *</label>
+                  <input id="simulator-price" type="number" value="500" min="1" step="10" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                </div>
+                
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Région de départ *</label>
+                  <select id="simulator-from-region" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                    <option value="">-- Région de départ --</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Destination *</label>
+                  <select id="simulator-to-region" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                    <option value="">-- Région de destination --</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type de véhicule</label>
+                  <select id="simulator-vehicle" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                    <option value="Camion">Camion</option>
+                    <option value="Clando">Clando (Ndiaga Ndiaye)</option>
+                    <option value="Pickup">Pickup</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Autres coûts (F)</label>
+                  <input id="simulator-other-costs" type="number" value="0" min="0" step="1000" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                </div>
+              </div>
+              
+              <!-- Results -->
+              <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+                <h4 class="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">Résultats du calcul</h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500 dark:text-[#819888]">Revenu brut:</span>
+                    <span id="result-gross-revenue" class="font-bold text-emerald-500">0 F</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500 dark:text-[#819888]">Coût transport:</span>
+                    <span id="result-transport-cost" class="font-bold text-rose-500">0 F</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500 dark:text-[#819888]">Autres coûts:</span>
+                    <span id="result-other-costs" class="font-bold text-rose-500">0 F</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500 dark:text-[#819888]">Coûts totaux:</span>
+                    <span id="result-total-costs" class="font-bold text-rose-500">0 F</span>
+                  </div>
+                  <div class="flex items-center justify-between col-span-2 pt-2 border-t border-slate-200 dark:border-[#143E23]/40">
+                    <span class="text-slate-500 dark:text-[#819888]">Revenu net:</span>
+                    <span id="result-net-revenue" class="font-bold text-emerald-500 text-lg">0 F</span>
+                  </div>
+                  <div class="flex items-center justify-between col-span-2">
+                    <span class="text-slate-500 dark:text-[#819888]">Marge:</span>
+                    <span id="result-margin-percent" class="text-xl font-black text-slate-800 dark:text-white">0%</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Comparison -->
+              <div id="comparison-results" class="mt-6"></div>
+              
+              <!-- Actions -->
+              <div class="flex gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-[#143E23]/40">
+                <button onclick="window.clearMarginForm()" class="flex-1 px-4 py-2 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+                  Effacer
+                </button>
+                <button onclick="window.saveSimulation()" class="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
+                  <i data-lucide="save" class="h-4 w-4"></i>
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column - Quick Stats & Actions -->
+          <div class="lg:col-span-1 space-y-6">
+            <!-- Quick Transport Cost Calculator -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-cyan-500/20">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="map-pin" class="h-4 w-4 text-cyan-500"></i>
+                Calcul rapide de transport
+              </h3>
+              <div class="space-y-3">
+                <div class="text-center">
+                  <p class="text-2xl font-black text-cyan-500" id="quick-transport-cost">0 F</p>
+                  <p class="text-[10px] text-slate-500 dark:text-[#819888] uppercase tracking-wider mt-1">Coût estimé pour le trajet sélectionné</p>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="window.openTransportRatesModal()" class="flex-1 px-3 py-2 bg-cyan-500/10 dark:bg-cyan-950/20 hover:bg-cyan-500/20 text-cyan-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1">
+                    <i data-lucide="settings" class="h-3 w-3"></i>
+                    Tarifs
+                  </button>
+                  <button onclick="window.openSimulatorModal()" class="flex-1 px-3 py-2 bg-emerald-500/10 dark:bg-emerald-950/20 hover:bg-emerald-500/20 text-emerald-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1">
+                    <i data-lucide="plus" class="h-3 w-3"></i>
+                    Nouvelle
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Best/Worst Margins -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="trending-up" class="h-4 w-4 text-amber-500"></i>
+                Meilleurs/Moins bons
+              </h3>
+              <div class="space-y-3">
+                <div class="p-3 bg-emerald-500/10 dark:bg-emerald-950/20 rounded-xl border border-emerald-500/20">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="award" class="h-4 w-4 text-emerald-500"></i>
+                    <div>
+                      <p class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">MEILLEURE MARGE</p>
+                      <p id="best-margin" class="font-bold text-slate-800 dark:text-white">--</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3 bg-rose-500/10 dark:bg-rose-950/20 rounded-xl border border-rose-500/20">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="h-4 w-4 text-rose-500"></i>
+                    <div>
+                      <p class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">MARGE LA PLUS FAIBLE</p>
+                      <p id="worst-margin" class="font-bold text-slate-800 dark:text-white">--</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulations History -->
+        <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="history" class="h-4 w-4"></i>
+              Historique des Simulations
+            </h3>
+            <div class="flex items-center gap-2">
+              <input 
+                id="simulations-search" 
+                type="text" 
+                placeholder="Rechercher..." 
+                class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-xs font-bold w-48 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              >
+              <button onclick="window.filterSimulations()" class="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-950/20 hover:bg-amber-500/20 dark:hover:bg-amber-950/30 border border-amber-500/20 text-amber-500 font-extrabold text-[9px] rounded-lg cursor-pointer transition-all flex items-center gap-1">
+                <i data-lucide="filter" class="h-3 w-3"></i>
+                Filtrer
+              </button>
+            </div>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b border-slate-200 dark:border-[#143E23]/40">
+                  <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Culture</th>
+                  <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Quantité</th>
+                  <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Prix/kg</th>
+                  <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Trajet</th>
+                  <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Coût Transport</th>
+                  <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Marge</th>
+                  <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="simulations-table-body" class="">
+                <!-- Will be populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Margin Simulator Modal -->
+  <div id="margin-simulator-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="calculator" class="h-5 w-5 text-amber-500"></i>
+          Simulateur de Marge Brute
+        </h3>
+        <button onclick="window.closeSimulatorModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Culture *</label>
+            <select id="modal-simulator-crop" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+              <option value="">-- Sélectionner une culture --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Quantité (kg) *</label>
+            <input id="modal-simulator-quantity" type="number" value="1000" min="1" step="10" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Prix/kg (F) *</label>
+            <input id="modal-simulator-price" type="number" value="500" min="1" step="10" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">De *</label>
+            <select id="modal-simulator-from-region" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+              <option value="">-- Région --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">À *</label>
+            <select id="modal-simulator-to-region" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+              <option value="">-- Région --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Véhicule</label>
+            <select id="modal-simulator-vehicle" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+              <option value="Camion">Camion</option>
+              <option value="Clando">Clando</option>
+              <option value="Pickup">Pickup</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Autres coûts (F)</label>
+            <input id="modal-simulator-other-costs" type="number" value="0" min="0" step="1000" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+          </div>
+        </div>
+        
+        <!-- Results in modal -->
+        <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+          <h4 class="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">Résultats</h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 dark:text-[#819888]">Revenu brut:</span>
+              <span id="modal-result-gross" class="font-bold text-emerald-500">0 F</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 dark:text-[#819888]">Transport:</span>
+              <span id="modal-result-transport" class="font-bold text-rose-500">0 F</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 dark:text-[#819888]">Autres:</span>
+              <span id="modal-result-other" class="font-bold text-rose-500">0 F</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 dark:text-[#819888]">Total coûts:</span>
+              <span id="modal-result-total-costs" class="font-bold text-rose-500">0 F</span>
+            </div>
+            <div class="flex items-center justify-between col-span-2 pt-2 border-t border-slate-200 dark:border-[#143E23]/40">
+              <span class="text-slate-500 dark:text-[#819888]">Revenu net:</span>
+              <span id="modal-result-net" class="font-bold text-emerald-500 text-lg">0 F</span>
+            </div>
+            <div class="flex items-center justify-between col-span-2">
+              <span class="text-slate-500 dark:text-[#819888]">Marge:</span>
+              <span id="modal-result-margin" class="text-xl font-black text-slate-800 dark:text-white">0%</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Comparison in modal -->
+        <div id="modal-comparison-results"></div>
+        
+        <div class="flex justify-end gap-3 pt-4">
+          <button onclick="window.closeSimulatorModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button onclick="window.saveSimulationFromModal()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+            <i data-lucide="save" class="h-4 w-4"></i>
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transport Rates Modal -->
+  <div id="transport-rates-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="truck" class="h-5 w-5 text-cyan-500"></i>
+          Gestion des Tarifs de Transport
+        </h3>
+        <button onclick="window.closeTransportRatesModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div class="flex items-center gap-2 mb-4">
+        <button onclick="window.showAddRateForm()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+          <i data-lucide="plus" class="h-4 w-4"></i>
+          Ajouter un Tarif
+        </button>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-[#143E23]/40">
+              <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Trajet</th>
+              <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Véhicule</th>
+              <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Prix/tonne</th>
+              <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Prix/km</th>
+              <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Distance</th>
+              <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rates-table-body" class="">
+            <!-- Will be populated by JS -->
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4">
+        <button onclick="window.closeTransportRatesModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Transport Rate Form (inside modal) -->
+  <div id="add-rate-form" class="hidden p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40 mt-4">
+    <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">Ajouter/Modifier un Tarif de Transport</h4>
+    <form id="rate-form" onsubmit="window.saveTransportRate(event)" class="space-y-4">
+      <input type="hidden" id="rate-id">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Région de départ *</label>
+          <input id="rate-from" type="text" placeholder="Niayes" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Région de destination *</label>
+          <input id="rate-to" type="text" placeholder="Dakar" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type de véhicule</label>
+          <select id="rate-vehicle" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+            <option value="Camion">Camion</option>
+            <option value="Clando">Clando (Ndiaga Ndiaye)</option>
+            <option value="Pickup">Pickup</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Prix/tonne (F)</label>
+          <input id="rate-per-ton" type="number" value="25000" min="0" step="100" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Prix/km (F)</label>
+          <input id="rate-per-km" type="number" value="150" min="0" step="10" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Distance (km)</label>
+          <input id="rate-distance" type="number" value="50" min="0" step="1" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Charge min (kg)</label>
+          <input id="rate-min-load" type="number" value="500" min="0" step="100" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Charge max (kg)</label>
+          <input id="rate-max-load" type="number" value="10000" min="0" step="100" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
+        <textarea id="rate-notes" rows="2" placeholder="Description du tarif..." class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20 resize-none"></textarea>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button type="button" onclick="window.cancelRateForm()" class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Annuler
+        </button>
+        <button type="submit" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1">
+          <i data-lucide="check" class="h-3 w-3"></i>
+          Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Simulation Detail Modal -->
+  <div id="simulation-detail-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="h-5 w-5 text-emerald-500"></i>
+          Détail de la Simulation
+        </h3>
+        <button onclick="window.closeSimulationDetailModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div id="simulation-detail-content" class="space-y-4">
+        <!-- Will be populated by JS -->
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4">
+        <button onclick="window.closeSimulationDetailModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-simulation-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-md p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="text-center">
+        <div class="p-4 bg-rose-500/10 rounded-2xl mb-4">
+          <i data-lucide="trash-2" class="h-8 w-8 text-rose-500 mx-auto"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">
+          Supprimer cette simulation ?
+        </h3>
+        <p id="delete-simulation-message" class="text-sm text-slate-500 dark:text-[#819888] mb-6">
+          Cette action est irréversible.
+        </p>
+        <div class="flex justify-center gap-3">
+          <button onclick="window.closeDeleteSimulationModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button onclick="window.confirmDeleteSimulation()" class="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Sidebar & Header -->
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/margin-simulator.js"></script>
+  <script>
+    // Update modal form to use same functionality as main form
+    window.saveSimulationFromModal = function() {
+      // Copy values from modal to main form
+      const mainForm = {
+        crop: document.getElementById('simulator-crop'),
+        quantity: document.getElementById('simulator-quantity'),
+        price: document.getElementById('simulator-price'),
+        fromRegion: document.getElementById('simulator-from-region'),
+        toRegion: document.getElementById('simulator-to-region'),
+        vehicle: document.getElementById('simulator-vehicle'),
+        otherCosts: document.getElementById('simulator-other-costs')
+      };
+      const modalForm = {
+        crop: document.getElementById('modal-simulator-crop'),
+        quantity: document.getElementById('modal-simulator-quantity'),
+        price: document.getElementById('modal-simulator-price'),
+        fromRegion: document.getElementById('modal-simulator-from-region'),
+        toRegion: document.getElementById('modal-simulator-to-region'),
+        vehicle: document.getElementById('modal-simulator-vehicle'),
+        otherCosts: document.getElementById('modal-simulator-other-costs')
+      };
+      
+      if (mainForm.crop && modalForm.crop) mainForm.crop.value = modalForm.crop.value;
+      if (mainForm.quantity && modalForm.quantity) mainForm.quantity.value = modalForm.quantity.value;
+      if (mainForm.price && modalForm.price) mainForm.price.value = modalForm.price.value;
+      if (mainForm.fromRegion && modalForm.fromRegion) mainForm.fromRegion.value = modalForm.fromRegion.value;
+      if (mainForm.toRegion && modalForm.toRegion) mainForm.toRegion.value = modalForm.toRegion.value;
+      if (mainForm.vehicle && modalForm.vehicle) mainForm.vehicle.value = modalForm.vehicle.value;
+      if (mainForm.otherCosts && modalForm.otherCosts) mainForm.otherCosts.value = modalForm.otherCosts.value;
+      
+      // Trigger calculation and save
+      window.calculateMargin();
+      window.saveSimulation();
+    };
+    
+    // Sync modal form with main form when opening
+    const originalOpen = window.openSimulatorModal;
+    window.openSimulatorModal = function() {
+      originalOpen();
+      // Copy values from main to modal
+      setTimeout(() => {
+        const mainForm = {
+          crop: document.getElementById('simulator-crop'),
+          quantity: document.getElementById('simulator-quantity'),
+          price: document.getElementById('simulator-price'),
+          fromRegion: document.getElementById('simulator-from-region'),
+          toRegion: document.getElementById('simulator-to-region'),
+          vehicle: document.getElementById('simulator-vehicle'),
+          otherCosts: document.getElementById('simulator-other-costs')
+        };
+        const modalForm = {
+          crop: document.getElementById('modal-simulator-crop'),
+          quantity: document.getElementById('modal-simulator-quantity'),
+          price: document.getElementById('modal-simulator-price'),
+          fromRegion: document.getElementById('modal-simulator-from-region'),
+          toRegion: document.getElementById('modal-simulator-to-region'),
+          vehicle: document.getElementById('modal-simulator-vehicle'),
+          otherCosts: document.getElementById('modal-simulator-other-costs')
+        };
+        
+        if (mainForm.crop && modalForm.crop) modalForm.crop.value = mainForm.crop.value;
+        if (mainForm.quantity && modalForm.quantity) modalForm.quantity.value = mainForm.quantity.value;
+        if (mainForm.price && modalForm.price) modalForm.price.value = mainForm.price.value;
+        if (mainForm.fromRegion && modalForm.fromRegion) modalForm.fromRegion.value = mainForm.fromRegion.value;
+        if (mainForm.toRegion && modalForm.toRegion) modalForm.toRegion.value = mainForm.toRegion.value;
+        if (mainForm.vehicle && modalForm.vehicle) modalForm.vehicle.value = mainForm.vehicle.value;
+        if (mainForm.otherCosts && modalForm.otherCosts) modalForm.otherCosts.value = mainForm.otherCosts.value;
+        
+        // Set up modal listeners
+        const inputs = [
+          'modal-simulator-crop', 'modal-simulator-quantity', 'modal-simulator-price',
+          'modal-simulator-from-region', 'modal-simulator-to-region', 'modal-simulator-vehicle',
+          'modal-simulator-other-costs'
+        ];
+        inputs.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener('input', () => {
+            const from = document.getElementById('modal-simulator-from-region')?.value;
+            const to = document.getElementById('modal-simulator-to-region')?.value;
+            const quantity = parseFloat(document.getElementById('modal-simulator-quantity')?.value) || 0;
+            const price = parseFloat(document.getElementById('modal-simulator-price')?.value) || 0;
+            const vehicle = document.getElementById('modal-simulator-vehicle')?.value || 'Camion';
+            const otherCosts = parseFloat(document.getElementById('modal-simulator-other-costs')?.value) || 0;
+            
+            if (from && to && quantity > 0 && price > 0) {
+              const transportCost = window.MarginSimulatorModule.storage.calculateTransportCost(quantity, from, to, vehicle);
+              const margin = window.MarginSimulatorModule.storage.calculateNetMargin(price, quantity, transportCost, otherCosts);
+              
+              document.getElementById('modal-result-gross').textContent = `${window.MarginSimulatorModule.formatNumber(margin.grossRevenue)} F`;
+              document.getElementById('modal-result-transport').textContent = `${window.MarginSimulatorModule.formatNumber(transportCost)} F`;
+              document.getElementById('modal-result-other').textContent = `${window.MarginSimulatorModule.formatNumber(otherCosts)} F`;
+              document.getElementById('modal-result-total-costs').textContent = `${window.MarginSimulatorModule.formatNumber(transportCost + otherCosts)} F`;
+              document.getElementById('modal-result-net').textContent = `${window.MarginSimulatorModule.formatNumber(margin.netRevenue)} F`;
+              document.getElementById('modal-result-margin').textContent = `${margin.marginPercent}%`;
+            }
+          });
+        });
+      }, 100);
+    };
+    
+    // Update best/worst margins on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const simulations = window.MarginSimulatorModule.storage.getMarginSimulations();
+        if (simulations.length > 0) {
+          const sorted = [...simulations].sort((a, b) => b.margin_percent - a.margin_percent);
+          const best = sorted[0];
+          const worst = sorted[simulations.length - 1];
+          
+          document.getElementById('best-margin').textContent = best ? `${best.crop_name}: ${best.margin_percent}%` : '--';
+          document.getElementById('worst-margin').textContent = worst ? `${worst.crop_name}: ${worst.margin_percent}%` : '--';
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>
