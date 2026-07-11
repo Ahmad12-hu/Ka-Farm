@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commandes Groupées - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .modal-backdrop {
+      backdrop-filter: blur(4px);
+    }
+    
+    .status-en-cours {
+      background-color: #1e40af;
+      color: #93c5fd;
+    }
+    .status-confirmee {
+      background-color: #0891b2;
+      color: #67e8f9;
+    }
+    .status-livree {
+      background-color: #166534;
+      color: #86efac;
+    }
+    .status-annulee {
+      background-color: #7f1d1d;
+      color: #fca5a5;
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-gray-100">
+  <!-- Include Navigation -->
+  <div id="nav-placeholder"></div>
+  <script>
+    fetch('/pages/shared/nav.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('nav-placeholder').innerHTML = html;
+      });
+  </script>
+
+  <main class="min-h-screen p-4 md:p-6 lg:p-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+      <div class="flex-1">
+        <h1 class="text-2xl md:text-3xl font-bold text-brand-green mb-2">
+          <i data-lucide="users" class="inline-block w-6 h-6 mr-2"></i>
+          Commandes Groupées d'Intrants
+        </h1>
+        <p class="text-gray-400 text-sm">
+          Module coopératif pour achats groupés et économies d'échelle
+        </p>
+      </div>
+      
+      <div class="flex items-center gap-4 mt-4 md:mt-0">
+        <!-- View Toggle -->
+        <div class="flex bg-brand-slate rounded-lg p-1">
+          <button id="view-orders" class="px-4 py-2 text-sm font-medium rounded-md bg-brand-green text-white transition-colors">
+            Commandes
+          </button>
+          <button id="view-items" class="px-4 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
+            Articles
+          </button>
+          <button id="view-farms" class="px-4 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
+            Fermes
+          </button>
+        </div>
+        
+        <button id="create-order-btn" class="bg-brand-green hover:bg-brand-hover text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+          Nouvelle Commande
+        </button>
+        
+        <button id="add-farm-btn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          Ajouter Ferme
+        </button>
+        
+        <button id="add-item-btn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+          <i data-lucide="package-plus" class="w-5 h-5"></i>
+          Ajouter Article
+        </button>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+      <div class="bg-brand-slate rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3 mb-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-brand-green"></i>
+          <span class="text-gray-400 text-sm">Commandes</span>
+        </div>
+        <p id="stat-total-orders" class="text-xl font-bold text-white">0</p>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3 mb-2">
+          <i data-lucide="loader-2" class="w-5 h-5 text-blue-400"></i>
+          <span class="text-gray-400 text-sm">En Cours</span>
+        </div>
+        <p id="stat-active-orders" class="text-xl font-bold text-white">0</p>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3 mb-2">
+          <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+          <span class="text-gray-400 text-sm">Livrées</span>
+        </div>
+        <p id="stat-delivered-orders" class="text-xl font-bold text-white">0</p>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3 mb-2">
+          <i data-lucide="coins" class="w-5 h-5 text-amber-400"></i>
+          <span class="text-gray-400 text-sm">Montant Total</span>
+        </div>
+        <p id="stat-total-amount" class="text-xl font-bold text-white">0 FCFA</p>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3 mb-2">
+          <i data-lucide="home" class="w-5 h-5 text-cyan-400"></i>
+          <span class="text-gray-400 text-sm">Fermes</span>
+        </div>
+        <p id="stat-total-farms" class="text-xl font-bold text-white">0</p>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3 mb-2">
+          <i data-lucide="activity" class="w-5 h-5 text-purple-400"></i>
+          <span class="text-gray-400 text-sm">Actives</span>
+        </div>
+        <p id="stat-active-farms" class="text-xl font-bold text-white">0</p>
+      </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="bg-brand-slate rounded-xl p-4 border border-gray-700 mb-6">
+      <div class="flex flex-col md:flex-row gap-4 items-center">
+        <div class="flex-1">
+          <label class="sr-only">Rechercher</label>
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+            <input 
+              id="group-search" 
+              type="text" 
+              placeholder="Rechercher..."
+              class="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-brand-green"
+            >
+          </div>
+        </div>
+        
+        <select id="filter-region" class="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green min-w-[150px]">
+          <option value="">Toutes Régions</option>
+          <option value="Niayes">Niayes</option>
+          <option value="Dakar">Dakar</option>
+          <option value="Thiès">Thiès</option>
+          <option value="Saint-Louis">Saint-Louis</option>
+          <option value="Kaolack">Kaolack</option>
+          <option value="Mbour">Mbour</option>
+          <option value="Fatick">Fatick</option>
+          <option value="Diourbel">Diourbel</option>
+        </select>
+        
+        <select id="filter-status" class="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green min-w-[150px]">
+          <option value="">Tous Statuts</option>
+          <option value="En cours">En cours</option>
+          <option value="Confirmée">Confirmée</option>
+          <option value="Livrée">Livrée</option>
+          <option value="Annulée">Annulée</option>
+          <option value="Terminée">Terminée</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Orders Section -->
+    <div id="orders-section" class="mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="file-text" class="inline-block w-5 h-5 mr-2"></i>
+          Liste des Commandes Groupées
+        </h2>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-gray-800 text-gray-300 text-sm uppercase">
+            <tr>
+              <th class="px-4 py-3">Nom de la Commande</th>
+              <th class="px-4 py-3">Fournisseur</th>
+              <th class="px-4 py-3">Région</th>
+              <th class="px-4 py-3">Date</th>
+              <th class="px-4 py-3">Livraison</th>
+              <th class="px-4 py-3 text-right">Montant</th>
+              <th class="px-4 py-3">Statut</th>
+              <th class="px-4 py-3 text-center">Livraison</th>
+              <th class="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orders-table-body" class="divide-y divide-gray-700">
+            <!-- Orders will be dynamically inserted -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Items Section -->
+    <div id="items-section" class="hidden mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="package" class="inline-block w-5 h-5 mr-2"></i>
+          Articles Commandés
+        </h2>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-gray-800 text-gray-300 text-sm uppercase">
+            <tr>
+              <th class="px-4 py-3">Article</th>
+              <th class="px-4 py-3">Commande</th>
+              <th class="px-4 py-3">Ferme</th>
+              <th class="px-4 py-3">Quantité</th>
+              <th class="px-4 py-3 text-right">Prix Unitaire</th>
+              <th class="px-4 py-3 text-right">Total</th>
+              <th class="px-4 py-3 text-center">Statut</th>
+              <th class="px-4 py-3 text-center">Reçu</th>
+              <th class="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="items-table-body" class="divide-y divide-gray-700">
+            <!-- Items will be dynamically inserted -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Farms Section -->
+    <div id="farms-section" class="hidden mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="home" class="inline-block w-5 h-5 mr-2"></i>
+          Fermes de la Communauté
+        </h2>
+      </div>
+      
+      <div class="bg-brand-slate rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-gray-800 text-gray-300 text-sm uppercase">
+            <tr>
+              <th class="px-4 py-3">Nom de la Ferme</th>
+              <th class="px-4 py-3">Contact</th>
+              <th class="px-4 py-3">Téléphone</th>
+              <th class="px-4 py-3">Région</th>
+              <th class="px-4 py-3">Localisation</th>
+              <th class="px-4 py-3 text-center">Statut</th>
+              <th class="px-4 py-3 text-center">Commandes</th>
+              <th class="px-4 py-3">Dernière Cde</th>
+              <th class="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="farms-table-body" class="divide-y divide-gray-700">
+            <!-- Farms will be dynamically inserted -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Create Order Modal -->
+  <div id="create-order-modal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center z-50 hidden">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="file-text" class="inline-block w-5 h-5 mr-2"></i>
+          Créer/Modifier une Commande Groupée
+        </h2>
+        <button data-close-order class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      
+      <form class="space-y-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Nom de la Commande *</label>
+            <input name="order-name" type="text" placeholder="Ex: Commande Groupée Niayes - Juillet" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Fournisseur *</label>
+            <input name="order-supplier" type="text" placeholder="Ex: Agro-Sénégal" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
+            <select name="order-region" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+              <option value="">Sélectionner...</option>
+              <option value="Niayes">Niayes</option>
+              <option value="Dakar">Dakar</option>
+              <option value="Thiès">Thiès</option>
+              <option value="Saint-Louis">Saint-Louis</option>
+              <option value="Kaolack">Kaolack</option>
+              <option value="Mbour">Mbour</option>
+              <option value="Fatick">Fatick</option>
+              <option value="Diourbel">Diourbel</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Statut</label>
+            <select name="order-status" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+              <option value="En cours">En cours</option>
+              <option value="Confirmée">Confirmée</option>
+              <option value="Livrée">Livrée</option>
+              <option value="Annulée">Annulée</option>
+              <option value="Terminée">Terminée</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Date de Commande *</label>
+            <input name="order-date" type="date" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Date de Livraison Prévue</label>
+            <input name="order-delivery-date" type="date" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Adresse de Livraison *</label>
+            <input name="order-address" type="text" placeholder="Ex: Zone Maraîchère de Pout" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+            <textarea name="order-notes" rows="3" placeholder="Détails supplémentaires..."
+                      class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green resize-none"></textarea>
+          </div>
+        </div>
+      </form>
+      
+      <div class="flex justify-end gap-4">
+        <button data-close-order class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+          Annuler
+        </button>
+        <button data-save-order class="px-6 py-2 bg-brand-green hover:bg-brand-hover text-white rounded-lg transition-colors">
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Farm Modal -->
+  <div id="add-farm-modal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center z-50 hidden">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="home" class="inline-block w-5 h-5 mr-2"></i>
+          Ajouter/Modifier une Ferme
+        </h2>
+        <button data-close-farm class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      
+      <form class="space-y-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Nom de la Ferme *</label>
+            <input name="farm-name" type="text" placeholder="Ex: Fermes KA - Niayes" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
+            <select name="farm-region" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+              <option value="">Sélectionner...</option>
+              <option value="Niayes">Niayes</option>
+              <option value="Dakar">Dakar</option>
+              <option value="Thiès">Thiès</option>
+              <option value="Saint-Louis">Saint-Louis</option>
+              <option value="Kaolack">Kaolack</option>
+              <option value="Mbour">Mbour</option>
+              <option value="Fatick">Fatick</option>
+              <option value="Diourbel">Diourbel</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Nom du Contact *</label>
+            <input name="farm-contact" type="text" placeholder="Ex: Moussa KA" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Téléphone *</label>
+            <input name="farm-phone" type="tel" placeholder="Ex: 77 123 45 67" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+            <input name="farm-email" type="email" placeholder="Ex: contact@ferme.sn" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green">
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Localisation *</label>
+            <input name="farm-location" type="text" placeholder="Ex: Zone Maraîchère de Pout" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+            <textarea name="farm-notes" rows="3" placeholder="Informations supplémentaires..."
+                      class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green resize-none"></textarea>
+          </div>
+          
+          <div class="md:col-span-2 flex items-center gap-2">
+            <input name="farm-active" type="checkbox" id="farm-active" checked 
+                   class="w-4 h-4 bg-gray-800 border-gray-600 rounded">
+            <label for="farm-active" class="text-sm text-gray-300">Ferme active</label>
+          </div>
+        </div>
+      </form>
+      
+      <div class="flex justify-end gap-4">
+        <button data-close-farm class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+          Annuler
+        </button>
+        <button data-save-farm class="px-6 py-2 bg-brand-green hover:bg-brand-hover text-white rounded-lg transition-colors">
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Item Modal -->
+  <div id="add-item-modal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center z-50 hidden">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">
+          <i data-lucide="package-plus" class="inline-block w-5 h-5 mr-2"></i>
+          Ajouter un Article à la Commande
+        </h2>
+        <button data-close-item class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      
+      <form class="space-y-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Commande *</label>
+            <select name="item-order" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+              <option value="">Sélectionner une commande...</option>
+              <!-- Will be populated dynamically -->
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Ferme *</label>
+            <select name="item-farm" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+              <option value="">Sélectionner une ferme...</option>
+              <!-- Will be populated dynamically -->
+            </select>
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Intrant *</label>
+            <input name="item-intrant" type="text" placeholder="Ex: Engrais NPK 15-15-15" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Quantité *</label>
+            <input name="item-quantity" type="number" min="0" step="0.01" placeholder="50" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Unité *</label>
+            <select name="item-unit" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+              <option value="">Sélectionner...</option>
+              <option value="sac">sac</option>
+              <option value="kg">kg</option>
+              <option value="tonne">tonne</option>
+              <option value="litre">litre</option>
+              <option value="sachet">sachet</option>
+              <option value="boîte">boîte</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Prix Unitaire (FCFA) *</label>
+            <input name="item-unit-price" type="number" min="0" placeholder="12000" 
+                   class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green" required>
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+            <textarea name="item-notes" rows="2" placeholder="Ex: Pour culture de tomates..."
+                      class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-brand-green resize-none"></textarea>
+          </div>
+        </div>
+      </form>
+      
+      <div class="flex justify-end gap-4">
+        <button data-close-item class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+          Annuler
+        </button>
+        <button data-save-item class="px-6 py-2 bg-brand-green hover:bg-brand-hover text-white rounded-lg transition-colors">
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Module -->
+  <script type="module">
+    import { GroupOrdersModule } from '/js/modules/group-orders.js';
+    window.GroupOrdersModule = GroupOrdersModule;
+    
+    // Populate dropdowns dynamically
+    document.addEventListener('DOMContentLoaded', () => {
+      // Populate order dropdown in item modal
+      const orderSelect = document.querySelector('[name="item-order"]');
+      if (orderSelect) {
+        const orders = window.KAStorage.getGroupOrders();
+        orders.forEach(order => {
+          const option = document.createElement('option');
+          option.value = order.id;
+          option.textContent = `${order.group_name} (${order.supplier_name})`;
+          orderSelect.appendChild(option);
+        });
+      }
+      
+      // Populate farm dropdown in item modal
+      const farmSelect = document.querySelector('[name="item-farm"]');
+      if (farmSelect) {
+        const farms = window.KAStorage.getFarmsCommunity();
+        farms.forEach(farm => {
+          const option = document.createElement('option');
+          option.value = farm.id;
+          option.textContent = `${farm.farm_name} (${farm.contact_name})`;
+          farmSelect.appendChild(option);
+        });
+      }
+    });
+  </script>
+
+  <!-- Render Lucide Icons -->
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

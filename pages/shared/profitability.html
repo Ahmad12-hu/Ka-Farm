@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculateur de Rentabilité par Culture - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom animations */
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+    
+    /* Gradient backgrounds */
+    .bg-gradient-emerald {
+      background: linear-gradient(135deg, #065f46 0%, #10b981 50%, #34d399 100%);
+    }
+    .bg-gradient-rose {
+      background: linear-gradient(135deg, #7f1d1d 0%, #f87171 50%, #fca5a5 100%);
+    }
+    .bg-gradient-amber {
+      background: linear-gradient(135deg, #78350f 0%, #fbbf24 50%, #fcd34d 100%);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+              <i data-lucide="calculator" class="h-7 w-7 text-emerald-500"></i>
+              Calculateur de Rentabilité
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-[#819888] mt-1">
+              Analyse détaillée des marges nettes par culture horticole pour optimiser vos choix de plantation
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="window.exportProfitability()" class="px-4 py-2 bg-emerald-500/10 dark:bg-emerald-950/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-950/30 border border-emerald-500/20 text-emerald-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+              <i data-lucide="download" class="h-4 w-4"></i>
+              Exporter
+            </button>
+            <button onclick="window.openAddProfitModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-emerald-500/25">
+              <i data-lucide="plus" class="h-4 w-4"></i>
+              Ajouter des coûts
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                <i data-lucide="trending-up" class="h-5 w-5 text-emerald-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Cultures</p>
+                <p id="stat-total-crops" class="text-xl font-black text-slate-800 dark:text-white font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-amber-500/10 rounded-xl">
+                <i data-lucide="coins" class="h-5 w-5 text-amber-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Marge Totale</p>
+                <p id="stat-total-margin" class="text-xl font-black text-slate-800 dark:text-white font-mono">0 F</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-emerald-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                <i data-lucide="sprout" class="h-5 w-5 text-emerald-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Meilleure Marge</p>
+                <p id="stat-best-crop" class="text-lg font-black text-emerald-500 font-mono">Aucune</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-rose-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-rose-500/10 rounded-xl">
+                <i data-lucide="alert-triangle" class="h-5 w-5 text-rose-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Culture à risque</p>
+                <p id="stat-worst-crop" class="text-lg font-black text-rose-500 font-mono">Aucune</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-slate-500/10 rounded-xl">
+                <i data-lucide="database" class="h-5 w-5 text-slate-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Production Totale</p>
+                <p id="stat-total-yield" class="text-xl font-black text-slate-800 dark:text-white font-mono">0 kg</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Left Column - Pie Chart -->
+          <div class="lg:col-span-1 space-y-6">
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="pie-chart" class="h-4 w-4 text-emerald-500"></i>
+                  Répartition des Marges
+                </h3>
+                <span id="chart-type-selector" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Marge Nette</span>
+              </div>
+              <div class="relative h-64">
+                <canvas id="profitability-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Top Crops -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="award" class="h-4 w-4 text-amber-500"></i>
+                Classements Cultures
+              </h3>
+              <div id="top-crops-list" class="space-y-3">
+                <!-- Will be populated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column - Main Table -->
+          <div class="lg:col-span-2 space-y-6">
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="table" class="h-4 w-4"></i>
+                  Analyse par Culture
+                </h3>
+                <div class="relative">
+                  <input 
+                    id="profitability-search" 
+                    type="text" 
+                    placeholder="Rechercher une culture..." 
+                    class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-xs font-bold w-48 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  >
+                  <i data-lucide="search" class="h-4 w-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2"></i>
+                </div>
+              </div>
+              
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="border-b border-slate-200 dark:border-[#143E23]/40">
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Culture</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Production (kg)</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Revenu (F)</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Coût (F)</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Marge Nette (F)</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Rentabilité (%)</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="profitability-table-body" class="">
+                    <!-- Will be populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div id="add-profit-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="plus-circle" class="h-5 w-5 text-emerald-500"></i>
+          Ajouter des Coûts par Culture
+        </h3>
+        <button onclick="window.closeAddProfitModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <form id="add-profit-form" onsubmit="window.submitAddProfit(event)" class="space-y-4">
+        <input type="hidden" id="form-profit-id">
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Culture *</label>
+            <select id="form-profit-crop" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+              <option value="">-- Sélectionner une culture --</option>
+              <option value="Tomate">Tomate</option>
+              <option value="Oignon">Oignon</option>
+              <option value="Piment">Piment</option>
+              <option value="Gombo">Gombo</option>
+              <option value="Aubergine">Aubergine</option>
+              <option value="Chou">Chou</option>
+              <option value="Poivron">Poivron</option>
+              <option value="Laitue">Laitue</option>
+              <option value="Menthe">Menthe</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Parcelle</label>
+            <select id="form-profit-parcel" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+              <option value="">-- Sélectionner une parcelle --</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Production (kg) *</label>
+            <input 
+              id="form-profit-yield" 
+              type="number" 
+              placeholder="0" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            >
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Prix de vente (F/kg) *</label>
+            <input 
+              id="form-profit-price" 
+              type="number" 
+              placeholder="0" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            >
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Coûts par Culture (F) *</label>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="relative">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[8px] font-bold text-slate-400 bg-slate-50 dark:bg-[#0D2615]/50 px-1 rounded">Semences</span>
+                <input 
+                  id="form-profit-seeds" 
+                  type="number" 
+                  placeholder="0" 
+                  class="w-full px-3 py-2 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold pt-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                >
+              </div>
+              <div class="relative">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[8px] font-bold text-slate-400 bg-slate-50 dark:bg-[#0D2615]/50 px-1 rounded">Engrais</span>
+                <input 
+                  id="form-profit-fertilizer" 
+                  type="number" 
+                  placeholder="0" 
+                  class="w-full px-3 py-2 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold pt-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                >
+              </div>
+              <div class="relative">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[8px] font-bold text-slate-400 bg-slate-50 dark:bg-[#0D2615]/50 px-1 rounded">Eau</span>
+                <input 
+                  id="form-profit-water" 
+                  type="number" 
+                  placeholder="0" 
+                  class="w-full px-3 py-2 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold pt-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                >
+              </div>
+              <div class="relative">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[8px] font-bold text-slate-400 bg-slate-50 dark:bg-[#0D2615]/50 px-1 rounded">Main d'œuvre</span>
+                <input 
+                  id="form-profit-labor" 
+                  type="number" 
+                  placeholder="0" 
+                  class="w-full px-3 py-2 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold pt-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Période</label>
+          <input 
+            id="form-profit-period" 
+            type="date" 
+            class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+          >
+        </div>
+        
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
+          <textarea 
+            id="form-profit-notes" 
+            rows="2" 
+            placeholder="Détails sur les coûts ou conditions particulières..." 
+            class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"
+          ></textarea>
+        </div>
+        
+        <div class="p-4 bg-emerald-500/5 dark:bg-emerald-950/5 rounded-xl border border-emerald-500/20 mt-4">
+          <p class="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-wider mb-2">Calcul automatique</p>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <p class="text-slate-400">Revenu total:</p>
+              <p id="calc-revenue" class="text-lg font-black text-slate-800 dark:text-white font-mono">0 F</p>
+            </div>
+            <div>
+              <p class="text-slate-400">Coût total:</p>
+              <p id="calc-cost" class="text-lg font-black text-slate-800 dark:text-white font-mono">0 F</p>
+            </div>
+            <div>
+              <p class="text-slate-400">Marge nette:</p>
+              <p id="calc-margin" class="text-lg font-black text-emerald-500 font-mono">0 F</p>
+            </div>
+            <div>
+              <p class="text-slate-400">Rentabilité:</p>
+              <p id="calc-profitability" class="text-lg font-black text-emerald-500 font-mono">0%</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" onclick="window.closeAddProfitModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button type="submit" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+            <i data-lucide="check" class="h-4 w-4"></i>
+            Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="profit-detail-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="h-5 w-5 text-emerald-500"></i>
+          Détail de la Rentabilité
+        </h3>
+        <button onclick="window.closeProfitDetailModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div id="profit-detail-content" class="space-y-4">
+        <!-- Will be populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-confirm-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-md p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="text-center">
+        <div class="p-4 bg-rose-500/10 rounded-2xl mb-4">
+          <i data-lucide="trash-2" class="h-8 w-8 text-rose-500 mx-auto"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">
+          Supprimer cette analyse ?
+        </h3>
+        <p class="text-sm text-slate-500 dark:text-[#819888] mb-6">
+          Cette action est irréversible. Toutes les données de rentabilité pour cette culture seront supprimées.
+        </p>
+        <div class="flex justify-center gap-3">
+          <button onclick="window.closeDeleteModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button id="confirm-delete-btn" class="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Sidebar & Header -->
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/profitability.js"></script>
+</body>
+</html>

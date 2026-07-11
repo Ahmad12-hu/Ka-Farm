@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carnet Phytosanitaire & DAR - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
+          <div class="space-y-1">
+            <span class="text-[10px] text-rose-500 font-extrabold uppercase tracking-widest">Sécurité Alimentaire</span>
+            <h2 class="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+              <i data-lucide="shield-alert" class="h-6 w-6 text-rose-500"></i> Carnet Phytosanitaire & DAR
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              Suivi des traitements, délais de carence et statuts de récolte pour garantir la sécurité des consommateurs.
+            </p>
+          </div>
+          
+          <div class="flex gap-2">
+            <button onclick="window.openAddTreatmentModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="plus" class="h-3.5 w-3.5"></i> Nouveau traitement
+            </button>
+            <button onclick="window.exportTreatments()" class="px-4 py-2 bg-slate-100 dark:bg-[#0B2112] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="download" class="h-3.5 w-3.5"></i> Exporter
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Active DAR Alerts -->
+          <div class="bg-white dark:bg-[#0B2112]/40 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4 text-left space-y-1">
+            <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Traitements en DAR</p>
+            <div class="flex items-baseline gap-1">
+              <span id="stat-dar-active" class="text-xl font-black text-rose-500">0</span>
+            </div>
+            <p class="text-[9px] text-rose-400 font-semibold">Récolte interdite</p>
+          </div>
+
+          <!-- Ready for Harvest -->
+          <div class="bg-white dark:bg-[#0B2112]/40 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4 text-left space-y-1">
+            <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Prêts pour récolte</p>
+            <div class="flex items-baseline gap-1">
+              <span id="stat-dar-cleared" class="text-xl font-black text-emerald-500">0</span>
+            </div>
+            <p class="text-[9px] text-emerald-400 font-semibold">DAR terminé</p>
+          </div>
+
+          <!-- Chemical vs Bio -->
+          <div class="bg-white dark:bg-[#0B2112]/40 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4 text-left space-y-1">
+            <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Traitements Bio</p>
+            <div class="flex items-baseline gap-1">
+              <span id="stat-bio-count" class="text-xl font-black text-emerald-500">0</span>
+              <span class="text-[10px] text-slate-400">/</span>
+              <span id="stat-total-count" class="text-sm font-bold text-slate-500">0</span>
+            </div>
+            <p class="text-[9px] text-[#819888] font-semibold">Ratio durable</p>
+          </div>
+
+          <!-- Most Used Product -->
+          <div class="bg-white dark:bg-[#0B2112]/40 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4 text-left space-y-1">
+            <p class="text-[10px] font-black text-slate-400 dark:text-[#819888] uppercase tracking-wider">Produit le plus utilisé</p>
+            <div class="flex items-baseline gap-1">
+              <span id="stat-top-product" class="text-sm font-black text-slate-800 dark:text-white">Aucun</span>
+            </div>
+            <p class="text-[9px] text-[#819888] font-semibold" id="stat-top-product-count">0 applications</p>
+          </div>
+        </div>
+
+        <!-- DAR Status Overview -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Left: DAR Warning Panel -->
+          <div class="lg:col-span-4 bg-rose-500/5 dark:bg-rose-500/5 border border-rose-500/20 rounded-3xl p-6 space-y-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="h-6 w-6 text-rose-500"></i>
+              <h3 class="text-sm font-black text-rose-500 uppercase tracking-wider">⚠️ Alerte DAR Active</h3>
+            </div>
+            <p class="text-[11px] text-rose-400 font-semibold">
+              Les cultures ci-dessous ont un traitement récent. La récolte est INTERDITE jusqu'à expiration du Délai Avant Récolte.
+            </p>
+            <div id="dar-alert-list" class="space-y-2 pt-2 border-t border-rose-500/20">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Right: Clear for Harvest Panel -->
+          <div class="lg:col-span-8 bg-emerald-500/5 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-6 space-y-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="check-circle" class="h-6 w-6 text-emerald-500"></i>
+              <h3 class="text-sm font-black text-emerald-500 uppercase tracking-wider">✅ Prêt pour le Marché</h3>
+            </div>
+            <p class="text-[11px] text-emerald-400 font-semibold">
+              Ces cultures ont respecté tous leurs délais de carence. La récolte et la vente sont AUTORISÉES.
+            </p>
+            <div id="dar-cleared-list" class="space-y-2 pt-2 border-t border-emerald-500/20">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- All Treatments Table -->
+        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl p-6 text-left space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="list" class="h-4 w-4 text-rose-500"></i> Historique complet des traitements
+            </h3>
+            <div class="relative w-full sm:w-64">
+              <input type="text" id="treatments-search" placeholder="Rechercher un produit, culture, parcelle..." class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none">
+              <i data-lucide="search" class="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400"></i>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl">
+            <table class="w-full text-xs font-semibold border-collapse text-slate-800 dark:text-slate-300">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-[#0B2112]/40 text-[#819888] uppercase text-[10px] tracking-wider border-b border-slate-150 dark:border-[#143E23]/40">
+                  <th class="px-4 py-3.5 text-left font-black">ID</th>
+                  <th class="px-4 py-3.5 text-left font-black">Culture / Parcelle</th>
+                  <th class="px-4 py-3.5 text-left font-black">Produit</th>
+                  <th class="px-4 py-3.5 text-left font-black">Type</th>
+                  <th class="px-4 py-3.5 text-center font-black">Date</th>
+                  <th class="px-4 py-3.5 text-center font-black">DAR (jours)</th>
+                  <th class="px-4 py-3.5 text-center font-black">Statut Récolte</th>
+                  <th class="px-4 py-3.5 text-left font-black">Jours restants</th>
+                  <th class="px-4 py-3.5 text-center font-black">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="treatments-table-body" class="divide-y divide-slate-100 dark:divide-[#143E23]/20">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add Treatment -->
+  <div id="add-treatment-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="shield-plus" class="h-4 w-4 text-rose-500"></i> Enregistrer un traitement
+        </h3>
+        <button onclick="window.closeAddTreatmentModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="add-treatment-form" class="space-y-4 text-xs font-semibold" onsubmit="window.submitAddTreatment(event)">
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Parcelle</label>
+          <select id="form-treat-parcel" required class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+            <option value="">-- Sélectionner une parcelle --</option>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Culture associée</label>
+          <select id="form-treat-crop" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+            <option value="">-- Sélectionner une culture --</option>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Type de traitement</label>
+          <select id="form-treat-category" required class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none" onchange="window.onTreatmentCategoryChange(this.value)">
+            <option value="">-- Sélectionner un type --</option>
+            <option value="bio-phytosanitaire">🌿 Traitement Phytosanitaire Bio (Purin, Neem...)</option>
+            <option value="chimique-phytosanitaire">⚠️ Traitement Phytosanitaire Chimique (Pesticide)</option>
+            <option value="bio-engrais">🟤 Amendement / Engrais Organique</option>
+            <option value="chimique-engrais">🧪 Engrais Minéral (Urée, NPK...)</option>
+          </select>
+          <p class="text-[9px] text-[#819888]">Le DAR suggéré sera ajusté automatiquement selon le type</p>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Nom du produit</label>
+          <input type="text" id="form-treat-product" required placeholder="Ex: Purin de Neem, Décis F1, NPK 15-15-15" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Date d'application</label>
+            <input type="date" id="form-treat-date" required class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+          <div class="space-y-1">
+            <div class="flex justify-between items-center">
+              <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">DAR (jours)</label>
+              <span class="text-[9px] text-amber-500 font-bold" id="dar-suggest-label">Sélectionnez un type</span>
+            </div>
+            <input type="number" id="form-treat-dar" required min="0" max="60" value="7" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Cible / Ravageur</label>
+          <input type="text" id="form-treat-target" placeholder="Ex: Chenilles, Mildiou, Tuta Absoluta" class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none">
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider">Notes & Précautions</label>
+          <textarea id="form-treat-notes" rows="2" placeholder="Ex: Appliqué tôt le matin, éviter les heures chaudes, porter des équipements de protection..." class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 outline-none resize-none"></textarea>
+        </div>
+
+        <div class="p-3 bg-rose-500/5 dark:bg-rose-950/5 rounded-xl border border-rose-500/20">
+          <p class="text-[10px] font-bold text-rose-500 dark:text-rose-400 flex items-center gap-1.5">
+            <i data-lucide="info" class="h-3 w-3"></i> DAR (Délai Avant Récolte)
+          </p>
+          <p class="text-[10px] text-rose-400 mt-1">
+            Période minimale à respecter entre l'application d'un pesticide et la récolte pour garantir la sécurité des consommateurs.
+          </p>
+        </div>
+
+        <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs">
+          Enregistrer le traitement
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Treatment Details -->
+  <div id="treatment-detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="eye" class="h-4 w-4 text-rose-500"></i> Détails du traitement
+        </h3>
+        <button onclick="window.closeTreatmentDetailModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <div id="treatment-detail-content" class="space-y-4 text-xs font-semibold">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared App & Router Entry Points -->
+  <script type="module" src="/js/router.js"></script>
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/treatments.js"></script>
+  
+  <script>
+    // Initialize date to today
+    document.addEventListener('DOMContentLoaded', () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('form-treat-date');
+      if (dateInput) dateInput.value = todayStr;
+    });
+  </script>
+</body>
+</html>

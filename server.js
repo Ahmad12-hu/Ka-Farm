@@ -97,6 +97,20 @@ async function startServer() {
     { id: 'PEP-202', name: 'Pépinière Poivron Yolo Wonder', cropType: 'Poivron', sowingDate: '2026-06-10', plannedTransplantDate: '2026-07-15', quantityEst: 800, status: 'Semis', healthStatus: 'Excellent' }
   ];
 
+  let serverTreatments = [
+    { id: 'TR-001', enterprise_id: 'ka_farm', parcel_id: 'P-001', crop_id: 'C-101', crop_name: 'Tomate Mongal F1', parcel_name: 'Parcelle Nord - Planche 2', product_name: 'Purin de Neem', category: 'bio-phytosanitaire', date_applied: '2026-06-20', dar_days: 3, target: 'Chenilles et pucerons', notes: 'Traitement préventif appliqué le matin. Respecter le DAR de 3 jours.', harvest_ready: true },
+    { id: 'TR-002', enterprise_id: 'ka_farm', parcel_id: 'P-002', crop_id: 'C-102', crop_name: 'Oignon Rouge de Galmi', parcel_name: 'Parcelle Est - Grand Champ', product_name: 'Décis (Insecticide chimique)', category: 'chimique-phytosanitaire', date_applied: '2026-06-23', dar_days: 7, target: 'Tuta Absoluta', notes: 'Traitement curatif suite à l\'alerte sur les chenilles.', harvest_ready: false },
+    { id: 'TR-003', enterprise_id: 'ka_farm', parcel_id: 'P-001', crop_id: 'C-101', crop_name: 'Tomate Mongal F1', parcel_name: 'Parcelle Nord - Planche 2', product_name: 'Compost Organique Bio', category: 'bio-engrais', date_applied: '2026-06-15', dar_days: 0, target: 'Amendement du sol', notes: 'Application en fond pour améliorer la fertilité.', harvest_ready: true },
+    { id: 'TR-004', enterprise_id: 'ka_farm', parcel_id: 'P-003', crop_id: null, crop_name: 'Chou Cabus', parcel_name: 'Parcelle Sud - Planche 1', product_name: 'Ridomil Gold', category: 'chimique-phytosanitaire', date_applied: '2026-06-22', dar_days: 14, target: 'Mildiou', notes: 'Traitement fongicide préventif.', harvest_ready: false }
+  ];
+
+  let serverCropProfits = [
+    { id: 'PROF-001', enterprise_id: 'ka_farm', crop_name: 'Tomate Mongal F1', parcel_id: 'P-001', parcel_name: 'Parcelle Nord - Planche 2', yield_kg: 5000, price_per_kg: 650, revenue: 3250000, costs: { seeds: 150000, fertilizer: 200000, water: 100000, labor: 300000 }, total_cost: 750000, net_margin: 2500000, profitability_percent: 333.33, period: '2026-06-25', notes: 'Excellent rendement grâce au goutte-à-goutte. Marge exceptionnelle cette saison.' },
+    { id: 'PROF-002', enterprise_id: 'ka_farm', crop_name: 'Oignon Rouge de Galmi', parcel_id: 'P-002', parcel_name: 'Parcelle Est - Grand Champ', yield_kg: 8000, price_per_kg: 500, revenue: 4000000, costs: { seeds: 200000, fertilizer: 150000, water: 80000, labor: 400000 }, total_cost: 830000, net_margin: 3170000, profitability_percent: 382.05, period: '2026-06-20', notes: 'Culture très rentable. Prix stable sur le marché de Sandiara.' },
+    { id: 'PROF-003', enterprise_id: 'ka_farm', crop_name: 'Piment Oiseau', parcel_id: 'P-003', parcel_name: 'Parcelle Sud - Planche 1', yield_kg: 1500, price_per_kg: 1200, revenue: 1800000, costs: { seeds: 80000, fertilizer: 50000, water: 30000, labor: 150000 }, total_cost: 310000, net_margin: 1490000, profitability_percent: 480.65, period: '2026-06-28', notes: 'Petite surface mais très haut prix au kg. Culture stratégique.' },
+    { id: 'PROF-004', enterprise_id: 'ka_farm', crop_name: 'Chou Cabus', parcel_id: 'P-004', parcel_name: 'Zone Ombragée - Bac A', yield_kg: 3000, price_per_kg: 400, revenue: 1200000, costs: { seeds: 60000, fertilizer: 40000, water: 25000, labor: 200000 }, total_cost: 325000, net_margin: 875000, profitability_percent: 269.23, period: '2026-06-15', notes: 'Culture d\'hivernage. Bon rendement sous ombrage.' }
+  ];
+
   let serverAttendance = [
     { employeeId: 'E-001', date: '2026-06-25', status: 'Présent', notes: '' },
     { employeeId: 'E-002', date: '2026-06-25', status: 'Présent', notes: '' },
@@ -152,6 +166,172 @@ async function startServer() {
     
     serverMessages.push(newMsg);
     res.json({ success: true, message: newMsg });
+  });
+
+  // ==================== TRAITEMENTS PHYTOSANITAIRES ====================
+  app.get('/api/treatments', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM traitements_phytosanitaires WHERE enterprise_id = $1 ORDER BY date_applied DESC', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching treatments from PostgreSQL:', err);
+      }
+    }
+    res.json(serverTreatments);
+  });
+
+  app.post('/api/treatments', async (req, res) => {
+    const treatment = req.body;
+    if (!treatment || !treatment.id || !treatment.product_name) {
+      return res.status(400).json({ error: 'ID et nom du produit requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO traitements_phytosanitaires (id, enterprise_id, parcel_id, crop_id, crop_name, parcel_name, product_name, category, date_applied, dar_days, target, notes, harvest_ready) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
+          [treatment.id, treatment.enterprise_id || 'ka_farm', treatment.parcel_id, treatment.crop_id, treatment.crop_name, treatment.parcel_name, treatment.product_name, treatment.category, treatment.date_applied, treatment.dar_days, treatment.target, treatment.notes, treatment.harvest_ready]
+        );
+        res.json({ success: true, treatment });
+        return;
+      } catch (err) {
+        console.error('Error saving treatment to PostgreSQL:', err);
+      }
+    }
+    
+    const existing = serverTreatments.find(t => t.id === treatment.id);
+    if (existing) {
+      const idx = serverTreatments.findIndex(t => t.id === treatment.id);
+      serverTreatments[idx] = { ...existing, ...treatment };
+    } else {
+      serverTreatments.push(treatment);
+    }
+    res.json({ success: true, treatment });
+  });
+
+  app.post('/api/treatments/sync', async (req, res) => {
+    const { treatments } = req.body;
+    if (treatments && Array.isArray(treatments)) {
+      if (usePostgres && pool) {
+        try {
+          await pool.query('DELETE FROM traitements_phytosanitaires WHERE enterprise_id = $1', ['ka_farm']);
+          for (const treatment of treatments) {
+            await pool.query(
+              'INSERT INTO traitements_phytosanitaires (id, enterprise_id, parcel_id, crop_id, crop_name, parcel_name, product_name, category, date_applied, dar_days, target, notes, harvest_ready) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
+              [treatment.id, treatment.enterprise_id || 'ka_farm', treatment.parcel_id, treatment.crop_id, treatment.crop_name, treatment.parcel_name, treatment.product_name, treatment.category, treatment.date_applied, treatment.dar_days, treatment.target, treatment.notes, treatment.harvest_ready]
+            );
+          }
+          res.json({ success: true, message: 'Traitements synchronisés avec PostgreSQL', treatments });
+          return;
+        } catch (err) {
+          console.error('Error syncing treatments to PostgreSQL:', err);
+        }
+      }
+      serverTreatments = treatments;
+      res.json({ success: true, message: 'Traitements synchronisés en mémoire', treatments });
+    } else {
+      res.status(400).json({ error: 'Données de traitements invalides' });
+    }
+  });
+
+  // ==================== CROP PROFITABILITY ====================
+  app.get('/api/crop-profits', async (req, res) => {
+    if (usePostgres && pool) {
+      try {
+        const result = await pool.query('SELECT * FROM crop_profitability WHERE enterprise_id = $1 ORDER BY net_margin DESC', ['ka_farm']);
+        res.json(result.rows);
+        return;
+      } catch (err) {
+        console.error('Error fetching crop profits from PostgreSQL:', err);
+      }
+    }
+    res.json(serverCropProfits);
+  });
+
+  app.post('/api/crop-profits', async (req, res) => {
+    const profit = req.body;
+    if (!profit || !profit.id || !profit.crop_name) {
+      return res.status(400).json({ error: 'ID et nom de la culture requis' });
+    }
+    
+    if (usePostgres && pool) {
+      try {
+        await pool.query(
+          'INSERT INTO crop_profitability (id, enterprise_id, crop_name, parcel_id, parcel_name, yield_kg, price_per_kg, revenue, costs, total_cost, net_margin, profitability_percent, period, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)',
+          [
+            profit.id,
+            profit.enterprise_id || 'ka_farm',
+            profit.crop_name,
+            profit.parcel_id,
+            profit.parcel_name,
+            profit.yield_kg,
+            profit.price_per_kg,
+            profit.revenue,
+            profit.costs,
+            profit.total_cost,
+            profit.net_margin,
+            profit.profitability_percent,
+            profit.period,
+            profit.notes
+          ]
+        );
+        res.json({ success: true, profit });
+        return;
+      } catch (err) {
+        console.error('Error saving crop profit to PostgreSQL:', err);
+      }
+    }
+    
+    const existing = serverCropProfits.find(p => p.id === profit.id);
+    if (existing) {
+      const idx = serverCropProfits.findIndex(p => p.id === profit.id);
+      serverCropProfits[idx] = { ...existing, ...profit };
+    } else {
+      serverCropProfits.push(profit);
+    }
+    res.json({ success: true, profit });
+  });
+
+  app.post('/api/crop-profits/sync', async (req, res) => {
+    const { cropProfits } = req.body;
+    if (cropProfits && Array.isArray(cropProfits)) {
+      if (usePostgres && pool) {
+        try {
+          await pool.query('DELETE FROM crop_profitability WHERE enterprise_id = $1', ['ka_farm']);
+          for (const profit of cropProfits) {
+            await pool.query(
+              'INSERT INTO crop_profitability (id, enterprise_id, crop_name, parcel_id, parcel_name, yield_kg, price_per_kg, revenue, costs, total_cost, net_margin, profitability_percent, period, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)',
+              [
+                profit.id,
+                profit.enterprise_id || 'ka_farm',
+                profit.crop_name,
+                profit.parcel_id,
+                profit.parcel_name,
+                profit.yield_kg,
+                profit.price_per_kg,
+                profit.revenue,
+                profit.costs,
+                profit.total_cost,
+                profit.net_margin,
+                profit.profitability_percent,
+                profit.period,
+                profit.notes
+              ]
+            );
+          }
+          res.json({ success: true, message: 'Analyses de rentabilité synchronisées avec PostgreSQL', cropProfits });
+          return;
+        } catch (err) {
+          console.error('Error syncing crop profits to PostgreSQL:', err);
+        }
+      }
+      serverCropProfits = cropProfits;
+      res.json({ success: true, message: 'Analyses de rentabilité synchronisées en mémoire', cropProfits });
+    } else {
+      res.status(400).json({ error: 'Données de rentabilité invalides' });
+    }
   });
 
   // ==================== STOCKS ====================

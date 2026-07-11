@@ -2023,4 +2023,416 @@ CREATE TABLE IF NOT EXISTS investor_dashboard (
 CREATE INDEX IF NOT EXISTS idx_investor_dashboard_enterprise ON investor_dashboard(enterprise_id);
 CREATE INDEX IF NOT EXISTS idx_investor_dashboard_investor ON investor_dashboard(investor_id);
 
+-- ============================================
+-- VERSION 2.3 - NOUVELLES TABLES
+-- ============================================
+
+-- HISTORIQUE DES MODIFICATIONS (Audit Trail)
+CREATE TABLE IF NOT EXISTS audit_log (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  user_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL,
+  user_email VARCHAR(255) DEFAULT '',
+  action_type VARCHAR(100) NOT NULL,
+  table_name VARCHAR(100) NOT NULL,
+  record_id VARCHAR(100) NOT NULL,
+  old_values JSONB DEFAULT '{}',
+  new_values JSONB DEFAULT '{}',
+  ip_address VARCHAR(100) DEFAULT '',
+  user_agent TEXT DEFAULT '',
+  device_info TEXT DEFAULT '',
+  action_timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
+  status VARCHAR(50) DEFAULT 'Succès',
+  error_message TEXT DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_enterprise ON audit_log(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_table ON audit_log(enterprise_id, table_name);
+CREATE INDEX IF NOT EXISTS idx_audit_log_user ON audit_log(enterprise_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON audit_log(enterprise_id, action_timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_record ON audit_log(table_name, record_id);
+
+-- NOTIFICATIONS SYSTÈME
+CREATE TABLE IF NOT EXISTS notifications (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  recipient_id VARCHAR(100) NOT NULL,
+  recipient_email VARCHAR(255) NOT NULL,
+  recipient_type VARCHAR(50) NOT NULL DEFAULT 'user',
+  title VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  notification_type VARCHAR(100) NOT NULL,
+  priority VARCHAR(20) NOT NULL DEFAULT 'Normale',
+  related_table VARCHAR(100) DEFAULT '',
+  related_id VARCHAR(100) DEFAULT '',
+  action_url TEXT DEFAULT '',
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  read_at TIMESTAMPTZ,
+  is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+  archived_at TIMESTAMPTZ,
+  send_method VARCHAR(50) DEFAULT 'In-App',
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_enterprise ON notifications(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(enterprise_id, recipient_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(enterprise_id, is_read) WHERE is_read = FALSE;
+CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(enterprise_id, notification_type);
+CREATE INDEX IF NOT EXISTS idx_notifications_sent ON notifications(sent_at DESC);
+
+-- PRÉFÉRENCES UTILISATEUR
+CREATE TABLE IF NOT EXISTS user_settings (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  user_id VARCHAR(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  settings_key VARCHAR(100) NOT NULL,
+  settings_value TEXT,
+  data_type VARCHAR(50) DEFAULT 'string',
+  category VARCHAR(100) DEFAULT 'general',
+  is_default BOOLEAN DEFAULT FALSE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, settings_key)
+);
+CREATE INDEX IF NOT EXISTS idx_user_settings_enterprise ON user_settings(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_user_settings_user ON user_settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_settings_category ON user_settings(category);
+
+-- CONFIGURATION DU TABLEAU DE BORD
+CREATE TABLE IF NOT EXISTS dashboard_config (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  user_id VARCHAR(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  dashboard_name VARCHAR(255) NOT NULL DEFAULT 'Principal',
+  layout_json JSONB NOT NULL DEFAULT '{}',
+  widget_order TEXT[] DEFAULT '{}',
+  active_widgets TEXT[] DEFAULT '{}',
+  theme VARCHAR(50) DEFAULT 'Clair',
+  color_scheme VARCHAR(50) DEFAULT 'Vert',
+  refresh_interval_seconds INTEGER DEFAULT 300,
+  is_default BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_dashboard_config_enterprise ON dashboard_config(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_dashboard_config_user ON dashboard_config(user_id);
+
+-- WIDGETS DU TABLEAU DE BORD
+CREATE TABLE IF NOT EXISTS dashboard_widgets (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  widget_type VARCHAR(100) NOT NULL,
+  widget_name VARCHAR(255) NOT NULL,
+  description TEXT DEFAULT '',
+  config_json JSONB DEFAULT '{}',
+  data_source VARCHAR(100) DEFAULT '',
+  refresh_interval_seconds INTEGER DEFAULT 60,
+  is_active BOOLEAN DEFAULT TRUE,
+  position_x INTEGER DEFAULT 0,
+  position_y INTEGER DEFAULT 0,
+  width INTEGER DEFAULT 1,
+  height INTEGER DEFAULT 1,
+  order_index INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_dashboard_widgets_enterprise ON dashboard_widgets(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_dashboard_widgets_type ON dashboard_widgets(widget_type);
+
+-- HISTORIQUE DES APPELS API
+CREATE TABLE IF NOT EXISTS api_logs (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  request_id VARCHAR(100) DEFAULT '',
+  endpoint VARCHAR(255) NOT NULL,
+  method VARCHAR(10) NOT NULL,
+  user_id VARCHAR(100) DEFAULT '',
+  ip_address VARCHAR(100) DEFAULT '',
+  user_agent TEXT DEFAULT '',
+  request_body TEXT DEFAULT '',
+  response_body TEXT DEFAULT '',
+  status_code INTEGER,
+  response_time_ms INTEGER DEFAULT 0,
+  error_message TEXT DEFAULT '',
+  is_success BOOLEAN DEFAULT TRUE,
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  metadata JSONB DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS idx_api_logs_enterprise ON api_logs(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_api_logs_endpoint ON api_logs(endpoint);
+CREATE INDEX IF NOT EXISTS idx_api_logs_user ON api_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(requested_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_logs_status ON api_logs(is_success);
+
+-- HISTORIQUE DES SAUVEGARDES
+CREATE TABLE IF NOT EXISTS backup_history (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  backup_name VARCHAR(255) NOT NULL,
+  backup_type VARCHAR(50) NOT NULL DEFAULT 'Complete',
+  storage_location VARCHAR(255) NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size_bytes BIGINT DEFAULT 0,
+  status VARCHAR(50) NOT NULL DEFAULT 'Succès',
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  duration_seconds INTEGER DEFAULT 0,
+  tables_included TEXT[] DEFAULT '{}',
+  created_by VARCHAR(255) DEFAULT '',
+  notes TEXT DEFAULT '',
+  checksum VARCHAR(255) DEFAULT '',
+  is_verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_backup_history_enterprise ON backup_history(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_backup_history_status ON backup_history(status);
+CREATE INDEX IF NOT EXISTS idx_backup_history_timestamp ON backup_history(started_at DESC);
+
+-- SANTÉ DU SYSTÈME
+CREATE TABLE IF NOT EXISTS system_health (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  check_type VARCHAR(100) NOT NULL,
+  check_name VARCHAR(255) NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  status_code INTEGER DEFAULT 0,
+  message TEXT DEFAULT '',
+  details JSONB DEFAULT '{}',
+  checked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at TIMESTAMPTZ,
+  resolved_by VARCHAR(255) DEFAULT '',
+  severity VARCHAR(20) DEFAULT 'Info',
+  is_active BOOLEAN DEFAULT TRUE
+);
+CREATE INDEX IF NOT EXISTS idx_system_health_enterprise ON system_health(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_system_health_type ON system_health(check_type);
+CREATE INDEX IF NOT EXISTS idx_system_health_status ON system_health(status);
+CREATE INDEX IF NOT EXISTS idx_system_health_active ON system_health(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_system_health_timestamp ON system_health(checked_at DESC);
+
+-- HISTORIQUE DES EXPORTS DE DONNÉES
+CREATE TABLE IF NOT EXISTS data_export_history (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  export_name VARCHAR(255) NOT NULL,
+  export_type VARCHAR(100) NOT NULL,
+  format VARCHAR(20) NOT NULL DEFAULT 'CSV',
+  requested_by VARCHAR(255) NOT NULL,
+  file_path TEXT,
+  file_url TEXT,
+  file_size_bytes INTEGER DEFAULT 0,
+  record_count INTEGER DEFAULT 0,
+  status VARCHAR(50) NOT NULL DEFAULT 'En attente',
+  filters JSONB DEFAULT '{}',
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  download_count INTEGER DEFAULT 0,
+  last_downloaded_at TIMESTAMPTZ,
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_data_export_enterprise ON data_export_history(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_data_export_status ON data_export_history(status);
+CREATE INDEX IF NOT EXISTS idx_data_export_type ON data_export_history(export_type);
+CREATE INDEX IF NOT EXISTS idx_data_export_timestamp ON data_export_history(requested_at DESC);
+
+-- CONFIGURATION DE L'APPLICATION MOBILE
+CREATE TABLE IF NOT EXISTS mobile_app_settings (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  user_id VARCHAR(100) REFERENCES users(id) ON DELETE CASCADE,
+  device_id VARCHAR(255) DEFAULT '',
+  device_type VARCHAR(50) DEFAULT '',
+  device_os VARCHAR(50) DEFAULT '',
+  os_version VARCHAR(50) DEFAULT '',
+  app_version VARCHAR(50) DEFAULT '',
+  push_notifications_enabled BOOLEAN DEFAULT TRUE,
+  offline_mode_enabled BOOLEAN DEFAULT TRUE,
+  sync_frequency_minutes INTEGER DEFAULT 15,
+  last_sync_at TIMESTAMPTZ,
+  last_active_at TIMESTAMPTZ,
+  location_permission BOOLEAN DEFAULT FALSE,
+  camera_permission BOOLEAN DEFAULT FALSE,
+  biometric_auth_enabled BOOLEAN DEFAULT FALSE,
+  theme_preference VARCHAR(20) DEFAULT 'Système',
+  language_preference VARCHAR(20) DEFAULT 'fr',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_mobile_app_settings_enterprise ON mobile_app_settings(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_mobile_app_settings_user ON mobile_app_settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_mobile_app_settings_device ON mobile_app_settings(device_id);
+
+-- WEBHOOKS POUR INTÉGRATIONS
+CREATE TABLE IF NOT EXISTS webhooks (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  webhook_name VARCHAR(255) NOT NULL,
+  url TEXT NOT NULL,
+  secret_key VARCHAR(255) DEFAULT '',
+  events TEXT[] NOT NULL DEFAULT '{}',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  method VARCHAR(10) NOT NULL DEFAULT 'POST',
+  content_type VARCHAR(50) NOT NULL DEFAULT 'application/json',
+  headers JSONB DEFAULT '{}',
+  last_triggered_at TIMESTAMPTZ,
+  last_success_at TIMESTAMPTZ,
+  last_error TEXT DEFAULT '',
+  error_count INTEGER DEFAULT 0,
+  total_calls INTEGER DEFAULT 0,
+  created_by VARCHAR(255) DEFAULT '',
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_webhooks_enterprise ON webhooks(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(is_active) WHERE is_active = TRUE;
+
+-- HISTORIQUE DES WEBHOOKS
+CREATE TABLE IF NOT EXISTS webhook_logs (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  webhook_id VARCHAR(100) NOT NULL REFERENCES webhooks(id) ON DELETE CASCADE,
+  event_type VARCHAR(100) NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}',
+  response_status_code INTEGER,
+  response_body TEXT DEFAULT '',
+  is_success BOOLEAN DEFAULT TRUE,
+  error_message TEXT DEFAULT '',
+  triggered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  retry_count INTEGER DEFAULT 0,
+  next_retry_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_enterprise ON webhook_logs(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_webhook ON webhook_logs(webhook_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_timestamp ON webhook_logs(triggered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_success ON webhook_logs(is_success);
+
+-- FILE D'ATTENTE DES TÂCHES ASYNCHRONES
+CREATE TABLE IF NOT EXISTS async_jobs (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  job_type VARCHAR(100) NOT NULL,
+  job_name VARCHAR(255) NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}',
+  status VARCHAR(50) NOT NULL DEFAULT 'En attente',
+  priority INTEGER DEFAULT 0,
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  result JSONB DEFAULT '{}',
+  error_message TEXT DEFAULT '',
+  error_stack TEXT DEFAULT '',
+  created_by VARCHAR(255) DEFAULT '',
+  retry_count INTEGER DEFAULT 0,
+  max_retries INTEGER DEFAULT 3,
+  next_retry_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_async_jobs_enterprise ON async_jobs(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_async_jobs_status ON async_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_async_jobs_type ON async_jobs(job_type);
+CREATE INDEX IF NOT EXISTS idx_async_jobs_priority ON async_jobs(priority DESC);
+CREATE INDEX IF NOT EXISTS idx_async_jobs_next_retry ON async_jobs(next_retry_at);
+
+-- VERROUS DISTRIBUÉS (Pour éviter les conflits)
+CREATE TABLE IF NOT EXISTS distributed_locks (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  lock_name VARCHAR(255) NOT NULL,
+  locked_by VARCHAR(255) DEFAULT '',
+  locked_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '5 minutes',
+  metadata JSONB DEFAULT '{}',
+  UNIQUE (enterprise_id, lock_name)
+);
+CREATE INDEX IF NOT EXISTS idx_distributed_locks_enterprise ON distributed_locks(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_distributed_locks_name ON distributed_locks(lock_name);
+CREATE INDEX IF NOT EXISTS idx_distributed_locks_expires ON distributed_locks(expires_at);
+
+-- CONFIGURATIONS GLOBALES DE L'ENTREPRISE
+CREATE TABLE IF NOT EXISTS enterprise_settings (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  setting_key VARCHAR(100) NOT NULL,
+  setting_value TEXT,
+  data_type VARCHAR(50) DEFAULT 'string',
+  category VARCHAR(100) DEFAULT 'general',
+  description TEXT DEFAULT '',
+  is_editable BOOLEAN DEFAULT TRUE,
+  updated_by VARCHAR(255) DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (enterprise_id, setting_key)
+);
+CREATE INDEX IF NOT EXISTS idx_enterprise_settings_enterprise ON enterprise_settings(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_enterprise_settings_category ON enterprise_settings(category);
+
+-- JOURNAL DES ERREURS
+CREATE TABLE IF NOT EXISTS error_logs (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  error_code VARCHAR(100) DEFAULT '',
+  error_type VARCHAR(100) NOT NULL,
+  error_message TEXT NOT NULL,
+  stack_trace TEXT DEFAULT '',
+  context JSONB DEFAULT '{}',
+  user_id VARCHAR(100) DEFAULT '',
+  request_id VARCHAR(100) DEFAULT '',
+  endpoint VARCHAR(255) DEFAULT '',
+  ip_address VARCHAR(100) DEFAULT '',
+  user_agent TEXT DEFAULT '',
+  severity VARCHAR(20) DEFAULT 'Error',
+  status VARCHAR(50) DEFAULT 'Non résolu',
+  resolved_by VARCHAR(255) DEFAULT '',
+  resolved_at TIMESTAMPTZ,
+  resolved_notes TEXT DEFAULT '',
+  occurred_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_error_logs_enterprise ON error_logs(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_error_logs_type ON error_logs(error_type);
+CREATE INDEX IF NOT EXISTS idx_error_logs_severity ON error_logs(severity);
+CREATE INDEX IF NOT EXISTS idx_error_logs_status ON error_logs(status);
+CREATE INDEX IF NOT EXISTS idx_error_logs_timestamp ON error_logs(occurred_at DESC);
+
+-- STATISTIQUES D'UTILISATION
+CREATE TABLE IF NOT EXISTS usage_stats (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  stat_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  stat_type VARCHAR(100) NOT NULL,
+  stat_category VARCHAR(100) DEFAULT '',
+  count INTEGER DEFAULT 0,
+  unique_count INTEGER DEFAULT 0,
+  avg_value NUMERIC DEFAULT 0,
+  max_value NUMERIC DEFAULT 0,
+  min_value NUMERIC DEFAULT 0,
+  metadata JSONB DEFAULT '{}',
+  UNIQUE (enterprise_id, stat_date, stat_type, stat_category)
+);
+CREATE INDEX IF NOT EXISTS idx_usage_stats_enterprise ON usage_stats(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_usage_stats_date ON usage_stats(stat_date);
+CREATE INDEX IF NOT EXISTS idx_usage_stats_type ON usage_stats(stat_type);
+CREATE INDEX IF NOT EXISTS idx_usage_stats_category ON usage_stats(stat_category);
+
+-- CACHE DES DONNÉES
+CREATE TABLE IF NOT EXISTS data_cache (
+  id VARCHAR(100) PRIMARY KEY,
+  enterprise_id VARCHAR(100) NOT NULL DEFAULT 'ka_farm',
+  cache_key VARCHAR(255) NOT NULL,
+  cache_value TEXT,
+  data_type VARCHAR(50) DEFAULT 'json',
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (enterprise_id, cache_key)
+);
+CREATE INDEX IF NOT EXISTS idx_data_cache_enterprise ON data_cache(enterprise_id);
+CREATE INDEX IF NOT EXISTS idx_data_cache_key ON data_cache(cache_key);
+CREATE INDEX IF NOT EXISTS idx_data_cache_expires ON data_cache(expires_at);
+
 COMMIT;
