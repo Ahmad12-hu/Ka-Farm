@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rotation des Cultures - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .severity-critical { background-color: #ef4444; color: white; }
+    .severity-high { background-color: #f59e0b; color: white; }
+    .severity-medium { background-color: #fbbf24; color: #000; }
+    .severity-low { background-color: #10b981; color: white; }
+    .text-severity-critical { color: #ef4444; }
+    .text-severity-high { color: #f59e0b; }
+    .text-severity-medium { color: #fbbf24; }
+    .text-severity-low { color: #10b981; }
+    .family-solanaceae { border-left: 4px solid #ef4444; }
+    .family-fabaceae { border-left: 4px solid #10b981; }
+    .family-brassicaceae { border-left: 4px solid #06b6d4; }
+    .family-amaryllidaceae { border-left: 4px solid #8b5cf6; }
+    .family-cucurbitaceae { border-left: 4px solid #f59e0b; }
+    .family-apiaceae { border-left: 4px solid #10b981; }
+    .family-asteraceae { border-left: 4px solid #f97316; }
+    .family-gramineae { border-left: 4px solid #eab308; }
+    .family-lamiaceae { border-left: 4px solid #a855f7; }
+    .family-chenopodiaceae { border-left: 4px solid #3b82f6; }
+    .compatible { background-color: #dcfce7; border-color: #86efac; }
+    .incompatible { background-color: #fef2f2; border-color: #fecaca; }
+    .warning { background-color: #fef3c7; border-color: #fde68a; }
+    .rotation-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .crop-card-mini {
+      transition: all 0.2s ease;
+    }
+    .crop-card-mini:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+              <i data-lucide="rotate-ccw" class="h-7 w-7 text-emerald-500"></i>
+              Planificateur de Rotation des Cultures
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-[#819888] mt-1">
+              Planificateur intelligent anti-nématodes pour optimiser la rotation des cultures sur vos parcelles
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="window.refreshRotationData()" class="px-4 py-2 bg-emerald-500/10 dark:bg-emerald-950/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-950/30 border border-emerald-500/20 text-emerald-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+              Actualiser
+            </button>
+            <button onclick="window.openRotationPlannerModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-emerald-500/25">
+              <i data-lucide="plus" class="h-4 w-4"></i>
+              Nouveau Plan de Rotation
+            </button>
+            <button onclick="window.openFamilyManagerModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-amber-500/25">
+              <i data-lucide="layers" class="h-4 w-4"></i>
+              Gérer les Familles
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                <i data-lucide="rotate-ccw" class="h-5 w-5 text-emerald-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parcelles en Rotation</p>
+                <p id="stat-parcels-in-rotation" class="text-xl font-black text-slate-800 dark:text-white font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-rose-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-rose-500/10 rounded-xl">
+                <i data-lucide="alert-triangle" class="h-5 w-5 text-rose-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alertes de Rotation</p>
+                <p id="stat-rotation-warnings" class="text-xl font-black text-rose-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-amber-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-amber-500/10 rounded-xl">
+                <i data-lucide="layers" class="h-5 w-5 text-amber-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Familles de Plantes</p>
+                <p id="stat-plant-families" class="text-xl font-black text-amber-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-cyan-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-cyan-500/10 rounded-xl">
+                <i data-lucide="file-text" class="h-5 w-5 text-cyan-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Règles de Rotation</p>
+                <p id="stat-rotation-rules" class="text-xl font-black text-cyan-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-emerald-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                <i data-lucide="check-circle" class="h-5 w-5 text-emerald-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cultures en Cours</p>
+                <p id="stat-current-crops" class="text-xl font-black text-emerald-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-slate-500/10 rounded-xl">
+                <i data-lucide="history" class="h-5 w-5 text-slate-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Historique Total</p>
+                <p id="stat-rotation-history" class="text-xl font-black text-slate-800 dark:text-white font-mono">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Left Column - Rotation Warnings & Quick Actions -->
+          <div class="lg:col-span-1 space-y-6">
+            <!-- Rotation Warnings -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-rose-500/20">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="alert-triangle" class="h-4 w-4 text-rose-500"></i>
+                  Alertes de Rotation Actives
+                </h3>
+              </div>
+              <div id="rotation-warnings-list" class="space-y-3">
+                <!-- Will be populated by JS -->
+              </div>
+            </div>
+
+            <!-- Family Compatibility Matrix -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="grid-3x3" class="h-4 w-4 text-blue-500"></i>
+                Matrice de Compatibilité
+              </h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-[10px]">
+                  <thead>
+                    <tr class="border-b border-slate-200 dark:border-[#143E23]/40">
+                      <th class="pb-2 px-2 text-[9px] font-bold text-slate-400 uppercase"></th>
+                      <th class="pb-2 px-2 text-[9px] font-bold text-slate-400 uppercase text-center">Sol</th>
+                      <th class="pb-2 px-2 text-[9px] font-bold text-slate-400 uppercase text-center">Leg</th>
+                      <th class="pb-2 px-2 text-[9px] font-bold text-slate-400 uppercase text-center">Cruc</th>
+                      <th class="pb-2 px-2 text-[9px] font-bold text-slate-400 uppercase text-center">Lili</th>
+                    </tr>
+                  </thead>
+                  <tbody id="compatibility-matrix">
+                    <!-- Will be populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Quick Rotation Check -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="search" class="h-4 w-4 text-purple-500"></i>
+                Vérification Rapide
+              </h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Parcelle *</label>
+                  <select id="quick-check-parcel" class="w-full px-3 py-2 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20">
+                    <option value="">-- Sélectionner une parcelle --</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Culture à Planter *</label>
+                  <select id="quick-check-crop" class="w-full px-3 py-2 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20">
+                    <option value="">-- Sélectionner une culture --</option>
+                  </select>
+                </div>
+                <button onclick="window.checkRotationCompatibility()" class="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
+                  <i data-lucide="check-circle" class="h-4 w-4"></i>
+                  Vérifier la Compatibilité
+                </button>
+                <div id="quick-check-result" class="hidden p-3 rounded-xl"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column - Parcels Rotation Status & History -->
+          <div class="lg:col-span-2 space-y-6">
+            <!-- Parcels Rotation Status -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="layout-grid" class="h-4 w-4 text-emerald-500"></i>
+                  État de la Rotation par Parcelle
+                </h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div id="parcels-rotation-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Rotation History Table -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="history" class="h-4 w-4"></i>
+                  Historique des Rotations
+                </h3>
+                <div class="flex items-center gap-2">
+                  <input 
+                    id="history-search" 
+                    type="text" 
+                    placeholder="Rechercher..." 
+                    class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-xs font-bold w-48 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  >
+                  <button onclick="window.filterRotationHistory()" class="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-950/20 hover:bg-amber-500/20 dark:hover:bg-amber-950/30 border border-amber-500/20 text-amber-500 font-extrabold text-[9px] rounded-lg cursor-pointer transition-all flex items-center gap-1">
+                    <i data-lucide="filter" class="h-3 w-3"></i>
+                    Filtrer
+                  </button>
+                </div>
+              </div>
+              
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="border-b border-slate-200 dark:border-[#143E23]/40">
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Parcelle</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Culture</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Famille</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Cycle</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Début</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Fin</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Statut</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rotation-history-table-body" class="">
+                    <!-- Will be populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Family Library -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="book-open" class="h-4 w-4"></i>
+                  Bibliothèque des Familles de Plantes
+                </h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div id="family-library-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Rotation Planner Modal -->
+  <div id="rotation-planner-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="calendar" class="h-5 w-5 text-emerald-500"></i>
+          Planificateur de Rotation
+        </h3>
+        <button onclick="window.closeRotationPlannerModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Plan Information -->
+        <div class="space-y-4">
+          <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">Informations du Plan</h4>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Parcelle *</label>
+            <select id="planner-parcel" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+              <option value="">-- Sélectionner une parcelle --</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Date de Début *</label>
+            <input 
+              id="planner-start-date" 
+              type="date" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            >
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Durée Estimée (jours)</label>
+            <input 
+              id="planner-duration" 
+              type="number" 
+              value="90" 
+              min="30" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            >
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
+            <textarea 
+              id="planner-notes" 
+              rows="2" 
+              placeholder="Notes sur ce plan de rotation..." 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"
+            ></textarea>
+          </div>
+        </div>
+        
+        <!-- Rotation Sequence -->
+        <div class="space-y-4">
+          <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">Séquence de Rotation</h4>
+          <div id="rotation-sequence" class="space-y-3">
+            <!-- Sequence items will be added dynamically -->
+          </div>
+          <button onclick="window.addRotationSequenceItem()" class="w-full px-4 py-2 bg-emerald-500/10 dark:bg-emerald-950/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-950/30 border border-emerald-500/20 text-emerald-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
+            <i data-lucide="plus" class="h-4 w-4"></i>
+            Ajouter une Culture
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4">
+        <button onclick="window.closeRotationPlannerModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Annuler
+        </button>
+        <button onclick="window.saveRotationPlan()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+          <i data-lucide="check" class="h-4 w-4"></i>
+          Enregistrer le Plan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Family Manager Modal -->
+  <div id="family-manager-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="layers" class="h-5 w-5 text-amber-500"></i>
+          Gestion des Familles de Plantes
+        </h3>
+        <button onclick="window.closeFamilyManagerModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="flex items-center gap-2 mb-4">
+          <button onclick="window.showAddFamilyForm()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+            <i data-lucide="plus" class="h-4 w-4"></i>
+            Ajouter une Famille
+          </button>
+          <button onclick="window.showAddCropFamilyForm()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+            <i data-lucide="plus" class="h-4 w-4"></i>
+            Associer une Culture
+          </button>
+        </div>
+        
+        <!-- Add/Edit Family Form (Hidden by default) -->
+        <div id="add-family-form" class="hidden p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+          <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">Ajouter/Modifier une Famille</h4>
+          <form id="family-form" onsubmit="window.savePlantFamily(event)" class="space-y-4">
+            <input type="hidden" id="family-id">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Nom de la Famille *</label>
+                <input 
+                  id="family-name" 
+                  type="text" 
+                  placeholder="Solanacées" 
+                  class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                >
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Année Minimum entre Rotations *</label>
+                <input 
+                  id="family-min-years" 
+                  type="number" 
+                  value="2" 
+                  min="1" 
+                  class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                >
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+              <textarea 
+                id="family-description" 
+                rows="2" 
+                placeholder="Description de la famille de plantes..." 
+                class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none"
+              ></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Familles Compatibles (séparées par ,)</label>
+                <input 
+                  id="family-compatible" 
+                  type="text" 
+                  placeholder="FAM-002, FAM-003, FAM-004" 
+                  class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                >
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Familles Incompatibles (séparées par ,)</label>
+                <input 
+                  id="family-incompatible" 
+                  type="text" 
+                  placeholder="FAM-001" 
+                  class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                >
+              </div>
+            </div>
+            <div class="flex justify-end gap-3">
+              <button type="button" onclick="window.cancelFamilyForm()" class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+                Annuler
+              </button>
+              <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1">
+                <i data-lucide="check" class="h-3 w-3"></i>
+                Enregistrer
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Add Crop-Family Mapping Form (Hidden by default) -->
+        <div id="add-crop-family-form" class="hidden p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+          <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">Associer une Culture à une Famille</h4>
+          <form id="crop-family-form" onsubmit="window.saveCropFamily(event)" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Culture *</label>
+                <select id="crop-family-crop" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                  <option value="">-- Sélectionner une culture --</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Famille *</label>
+                <select id="crop-family-family" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                  <option value="">-- Sélectionner une famille --</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex justify-end gap-3">
+              <button type="button" onclick="window.cancelCropFamilyForm()" class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+                Annuler
+              </button>
+              <button type="submit" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1">
+                <i data-lucide="check" class="h-3 w-3"></i>
+                Associer
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Families List -->
+        <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+          <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3">Liste des Familles</h4>
+          <div id="families-list" class="space-y-2">
+            <!-- Will be populated by JS -->
+          </div>
+        </div>
+        
+        <!-- Crop-Family Mappings List -->
+        <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+          <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3">Associations Cultures-Familles</h4>
+          <div id="crop-families-list" class="space-y-2 max-h-40 overflow-y-auto">
+            <!-- Will be populated by JS -->
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4">
+        <button onclick="window.closeFamilyManagerModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="rotation-detail-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="h-5 w-5 text-emerald-500"></i>
+          Détail de la Rotation
+        </h3>
+        <button onclick="window.closeRotationDetailModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div id="rotation-detail-content" class="space-y-4">
+        <!-- Will be populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-rotation-confirm-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-md p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="text-center">
+        <div class="p-4 bg-rose-500/10 rounded-2xl mb-4">
+          <i data-lucide="trash-2" class="h-8 w-8 text-rose-500 mx-auto"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">
+          Supprimer cet enregistrement ?
+        </h3>
+        <p id="delete-confirm-message" class="text-sm text-slate-500 dark:text-[#819888] mb-6">
+          Cette action est irréversible.
+        </p>
+        <div class="flex justify-center gap-3">
+          <button onclick="window.closeDeleteModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button id="confirm-delete-btn" onclick="window.confirmDeleteRotation()" class="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Sidebar & Header -->
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/rotation.js"></script>
+</body>
+</html>
