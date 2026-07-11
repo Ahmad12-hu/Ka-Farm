@@ -551,55 +551,17 @@ export const App = {
 
         <!-- Sidebar Footer User Panel -->
         <div class="p-4 border-t border-[#143E23] space-y-3 bg-[#051009]">
-          <div class="flex items-center justify-between gap-1.5 px-1 text-left">
-            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="px-1 text-left">
+            <div class="flex items-center gap-2.5">
               <div id="user-avatar" class="h-8 w-8 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xs border border-emerald-500/30 flex-shrink-0">${userInitials}</div>
-              <div class="min-w-0 flex-1">
+              <div class="flex-1 min-w-0">
                 <p id="user-name-display" class="text-xs font-black text-white truncate leading-none">${userName}</p>
                 <p id="user-role-display" class="text-[9px] text-[#819888] font-bold mt-0.5 uppercase tracking-wider">${userRole}</p>
-                <p class="text-[9px] text-emerald-400 font-medium truncate mt-0.5" title="Exploitation">${enterpriseName}</p>
-                <div class="flex items-center gap-1 mt-1">
-                  <span class="text-[8px] bg-[#0E2F19] text-emerald-400 px-1 py-0.5 rounded font-mono font-bold select-all" title="Code équipe (cliquez pour copier)">${enterpriseCode}</span>
-                  <button onclick="navigator.clipboard.writeText('${enterpriseCode}'); alert('Code d’équipe copié ! Partagez ce code avec votre équipe pour qu’ils s’inscrivent.')" class="p-0.5 text-slate-500 hover:text-emerald-400 cursor-pointer" title="Copier le code">
-                    <i data-lucide="copy" class="h-2.5 w-2.5"></i>
-                  </button>
-                </div>
+                <p class="text-[9px] text-emerald-400 font-medium truncate mt-0.5">${enterpriseName}</p>
               </div>
             </div>
-            
-            <!-- Quick Account Switcher Button -->
-            <button onclick="window.toggleUserSwitcher()" class="p-1.5 hover:bg-[#0E2F19] text-emerald-500 hover:text-emerald-400 rounded-lg transition-colors cursor-pointer flex-shrink-0" title="Changer d'associé / de compte">
-              <i data-lucide="users-round" class="h-4 w-4"></i>
-            </button>
           </div>
 
-          <!-- User Social shortcuts -->
-          <div class="flex items-center gap-3 px-1.5 pt-2 border-t border-[#143E23]/20">
-            <a href="mailto:${currentUser ? currentUser.email : ''}" class="text-slate-400 hover:text-emerald-400 transition-colors" title="Email: ${currentUser ? currentUser.email : ''}">
-              <i data-lucide="mail" class="h-3.5 w-3.5"></i>
-            </a>
-            ${currentUser && currentUser.twitter ? `
-              <a href="${currentUser.twitter}" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-sky-400 transition-colors" title="Twitter / X">
-                <i data-lucide="twitter" class="h-3.5 w-3.5"></i>
-              </a>
-            ` : ''}
-            ${currentUser && currentUser.linkedin ? `
-              <a href="${currentUser.linkedin}" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-blue-400 transition-colors" title="LinkedIn">
-                <i data-lucide="linkedin" class="h-3.5 w-3.5"></i>
-              </a>
-            ` : ''}
-            ${currentUser && currentUser.facebook ? `
-              <a href="${currentUser.facebook}" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-blue-500 transition-colors" title="Facebook">
-                <i data-lucide="facebook" class="h-3.5 w-3.5"></i>
-              </a>
-            ` : ''}
-          </div>
-          
-          <!-- User Switcher Dropdown (Hidden by default) -->
-          <div id="user-switcher-dropdown" class="hidden p-2 bg-[#06130B]/90 border border-[#143E23]/60 rounded-xl space-y-1 animate-fadeIn">
-            <p class="text-[8px] font-black text-[#4F6D58] uppercase tracking-wider px-1 pb-1 border-b border-[#143E23]/30 mb-1">Changer de compte :</p>
-            <p class="text-[10px] text-slate-400 px-1">Utilisez la déconnexion pour vous connecter avec un autre compte.</p>
-          </div>
           
           <div class="flex items-center justify-between text-[11px] font-bold text-[#819888] px-1 pt-1 border-t border-[#143E23]/40">
             <span class="flex items-center gap-1"><i data-lucide="moon" class="h-3.5 w-3.5 text-emerald-500"></i> Sombre</span>
@@ -792,31 +754,6 @@ export const App = {
       }
     };
 
-    window.toggleUserSwitcher = () => {
-      const dropdown = document.getElementById('user-switcher-dropdown');
-      if (dropdown) {
-        dropdown.classList.toggle('hidden');
-      }
-    };
-
-    window.switchUser = (email) => {
-      const users = KAStorage.getUsers();
-      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (user) {
-        KAStorage.setCurrentUser({
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          enterpriseId: user.enterpriseId || 'ka_farm',
-          enterpriseName: user.enterpriseName || 'KA Farm',
-          enterpriseCode: user.enterpriseCode || 'KA-FARM'
-        }, true);
-        alert(`Vous avez basculé avec succès sur le compte associé de ${user.name} (${user.role}).`);
-        window.location.reload();
-      } else {
-        alert("Utilisateur associé introuvable.");
-      }
-    };
 
     // Auto load lucide icons
     if (window.lucide) {
