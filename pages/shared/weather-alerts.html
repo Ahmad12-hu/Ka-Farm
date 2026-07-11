@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alertes Climatiques - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .severity-critical { background-color: #ef4444; color: white; }
+    .severity-high { background-color: #f59e0b; color: white; }
+    .severity-medium { background-color: #fbbf24; color: #000; }
+    .severity-low { background-color: #10b981; color: white; }
+    .text-severity-critical { color: #ef4444; }
+    .text-severity-high { color: #f59e0b; }
+    .text-severity-medium { color: #fbbf24; }
+    .text-severity-low { color: #10b981; }
+    .animate-bounce-slow { animation: bounce 2s infinite; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+              <i data-lucide="cloud-lightning" class="h-7 w-7 text-amber-500"></i>
+              Alertes Climatiques
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-[#819888] mt-1">
+              Système de surveillance et d'alerte pour les événements climatiques extrêmes dans la région des Niayes
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="window.refreshWeatherAlerts()" class="px-4 py-2 bg-amber-500/10 dark:bg-amber-950/20 hover:bg-amber-500/20 dark:hover:bg-amber-950/30 border border-amber-500/20 text-amber-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+              Actualiser
+            </button>
+            <button onclick="window.openAddWeatherAlertModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-amber-500/25">
+              <i data-lucide="plus" class="h-4 w-4"></i>
+              Nouvelle Alerte
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-amber-500/10 rounded-xl">
+                <i data-lucide="bell-ring" class="h-5 w-5 text-amber-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alertes Actives</p>
+                <p id="stat-active-alerts" class="text-xl font-black text-slate-800 dark:text-white font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-rose-500/10 rounded-xl">
+                <i data-lucide="alert-triangle" class="h-5 w-5 text-rose-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Critiques</p>
+                <p id="stat-critical-alerts" class="text-xl font-black text-rose-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-amber-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-amber-500/10 rounded-xl">
+                <i data-lucide="alert-circle" class="h-5 w-5 text-amber-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Élevées</p>
+                <p id="stat-high-alerts" class="text-xl font-black text-amber-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-emerald-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                <i data-lucide="check-circle" class="h-5 w-5 text-emerald-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Acquittées</p>
+                <p id="stat-acknowledged-alerts" class="text-xl font-black text-emerald-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-slate-500/10 rounded-xl">
+                <i data-lucide="history" class="h-5 w-5 text-slate-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Déclenchées</p>
+                <p id="stat-total-triggered" class="text-xl font-black text-slate-800 dark:text-white font-mono">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Left Column - Alert Configuration & Quick Actions -->
+          <div class="lg:col-span-1 space-y-6">
+            <!-- Alert Configuration Card -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="settings" class="h-4 w-4 text-amber-500"></i>
+                  Configuration des Alertes
+                </h3>
+              </div>
+              
+              <div class="space-y-4">
+                <!-- Temperature Alert -->
+                <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/30">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="thermometer" class="h-4 w-4 text-amber-500"></i>
+                      <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Température</span>
+                    </div>
+                    <span id="temp-alert-status" class="text-xs font-bold text-emerald-500 px-2 py-1 bg-emerald-500/10 rounded-full">Actif</span>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                      <span>Seuil haut (°C)</span>
+                      <span id="temp-high-threshold">40</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                      <span>Seuil bas (°C)</span>
+                      <span id="temp-low-threshold">15</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Rainfall Alert -->
+                <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/30">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="cloud-rain" class="h-4 w-4 text-blue-500"></i>
+                      <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Pluie</span>
+                    </div>
+                    <span id="rain-alert-status" class="text-xs font-bold text-emerald-500 px-2 py-1 bg-emerald-500/10 rounded-full">Actif</span>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                      <span>Seuil (mm/jour)</span>
+                      <span id="rain-threshold">50</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Wind Alert -->
+                <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/30">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="wind" class="h-4 w-4 text-slate-500"></i>
+                      <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Vent</span>
+                    </div>
+                    <span id="wind-alert-status" class="text-xs font-bold text-emerald-500 px-2 py-1 bg-emerald-500/10 rounded-full">Actif</span>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                      <span>Seuil (km/h)</span>
+                      <span id="wind-threshold">60</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Humidity Alert -->
+                <div class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/30">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="droplets" class="h-4 w-4 text-cyan-500"></i>
+                      <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Humidité</span>
+                    </div>
+                    <span id="humidity-alert-status" class="text-xs font-bold text-emerald-500 px-2 py-1 bg-emerald-500/10 rounded-full">Actif</span>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                      <span>Seuil bas (%)</span>
+                      <span id="humidity-low-threshold">30</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                      <span>Seuil haut (%)</span>
+                      <span id="humidity-high-threshold">80</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Triggered Alerts -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="clock" class="h-4 w-4 text-amber-500"></i>
+                Dernières Alertes Déclenchées
+              </h3>
+              <div id="recent-triggered-alerts" class="space-y-3">
+                <!-- Will be populated by JS -->
+              </div>
+            </div>
+
+            <!-- Regional Weather Overview -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="globe" class="h-4 w-4 text-blue-500"></i>
+                Météo Régionale (Niayes)
+              </h3>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="text-center p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl">
+                  <i data-lucide="thermometer" class="h-5 w-5 text-amber-500 mx-auto mb-1"></i>
+                  <p class="text-xs text-slate-400">Température</p>
+                  <p id="current-temp" class="text-lg font-bold text-slate-800 dark:text-white">25°C</p>
+                </div>
+                <div class="text-center p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl">
+                  <i data-lucide="droplets" class="h-5 w-5 text-cyan-500 mx-auto mb-1"></i>
+                  <p class="text-xs text-slate-400">Humidité</p>
+                  <p id="current-humidity" class="text-lg font-bold text-slate-800 dark:text-white">65%</p>
+                </div>
+                <div class="text-center p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl">
+                  <i data-lucide="wind" class="h-5 w-5 text-slate-500 mx-auto mb-1"></i>
+                  <p class="text-xs text-slate-400">Vent</p>
+                  <p id="current-wind" class="text-lg font-bold text-slate-800 dark:text-white">10 km/h</p>
+                </div>
+                <div class="text-center p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl">
+                  <i data-lucide="cloud-rain" class="h-5 w-5 text-blue-500 mx-auto mb-1"></i>
+                  <p class="text-xs text-slate-400">Pluie</p>
+                  <p id="current-rain" class="text-lg font-bold text-slate-800 dark:text-white">0 mm</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column - Active Alerts & History Tables -->
+          <div class="lg:col-span-2 space-y-6">
+            <!-- Active Alerts Table -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="bell" class="h-4 w-4"></i>
+                  Alertes Actives Non Acquittées
+                </h3>
+                <div class="flex items-center gap-2">
+                  <button onclick="window.acknowledgeAllAlerts()" class="px-3 py-1.5 bg-emerald-500/10 dark:bg-emerald-950/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-950/30 border border-emerald-500/20 text-emerald-500 font-extrabold text-[9px] rounded-lg cursor-pointer transition-all flex items-center gap-1.5 uppercase tracking-wider">
+                    <i data-lucide="check-circle" class="h-3 w-3"></i>
+                    TOUTES ACQUITTER
+                  </button>
+                </div>
+              </div>
+              
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="border-b border-slate-200 dark:border-[#143E23]/40">
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Type</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Message</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Sévérité</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Valeur</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Déclenchée</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="active-alerts-table-body" class="">
+                    <!-- Will be populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Alert History Table -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="history" class="h-4 w-4"></i>
+                  Historique des Alertes
+                </h3>
+                <div class="flex items-center gap-2">
+                  <input 
+                    id="history-search" 
+                    type="text" 
+                    placeholder="Rechercher..." 
+                    class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-xs font-bold w-48 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                  >
+                  <button onclick="window.filterHistory()" class="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-950/20 hover:bg-amber-500/20 dark:hover:bg-amber-950/30 border border-amber-500/20 text-amber-500 font-extrabold text-[9px] rounded-lg cursor-pointer transition-all flex items-center gap-1">
+                    <i data-lucide="filter" class="h-3 w-3"></i>
+                    Filtrer
+                  </button>
+                </div>
+              </div>
+              
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="border-b border-slate-200 dark:border-[#143E23]/40">
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">ID</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Type</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Message</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Valeur</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Acquittée</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Date</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alert-history-table-body" class="">
+                    <!-- Will be populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Weather Alert Modal -->
+  <div id="add-weather-alert-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="plus-circle" class="h-5 w-5 text-amber-500"></i>
+          Configurer une Alerte Climatique
+        </h3>
+        <button onclick="window.closeAddWeatherAlertModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <form id="add-weather-alert-form" onsubmit="window.submitWeatherAlert(event)" class="space-y-4">
+        <input type="hidden" id="form-alert-id">
+        
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type d'Alerte *</label>
+          <select id="form-alert-type" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+            <option value="">-- Sélectionner un type --</option>
+            <option value="Température Élevée">Température Élevée</option>
+            <option value="Température Basse">Température Basse</option>
+            <option value="Pluie Intense">Pluie Intense</option>
+            <option value="Vent Fort">Vent Fort</option>
+            <option value="Humidité Élevée">Humidité Élevée</option>
+            <option value="Humidité Basse">Humidité Basse</option>
+            <option value="Sécheresse">Sécheresse</option>
+            <option value="Gel">Gel</option>
+            <option value="Canicule">Canicule</option>
+            <option value="Orage">Orage</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Message d'Alerte *</label>
+          <textarea 
+            id="form-alert-message" 
+            rows="2" 
+            placeholder="Description de l'alerte et conseils..." 
+            class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none"
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Valeur de Déclenchement *</label>
+            <input 
+              id="form-trigger-value" 
+              type="number" 
+              step="0.01" 
+              placeholder="0" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            >
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Unité</label>
+            <select id="form-trigger-unit" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+              <option value="°C">°C</option>
+              <option value="mm">mm</option>
+              <option value="km/h">km/h</option>
+              <option value="%">%</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Sévérité *</label>
+            <select id="form-severity" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+              <option value="">-- Sélectionner --</option>
+              <option value="Faible">Faible</option>
+              <option value="Moyenne">Moyenne</option>
+              <option value="Élevée">Élevée</option>
+              <option value="Critique">Critique</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Région</label>
+            <select id="form-region" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+              <option value="Niayes">Niayes</option>
+              <option value="Dakar">Dakar</option>
+              <option value="Thiès">Thiès</option>
+              <option value="Saint-Louis">Saint-Louis</option>
+              <option value="Fatick">Fatick</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Conseils</label>
+          <textarea 
+            id="form-advice" 
+            rows="2" 
+            placeholder="Conseils pour protéger les cultures..." 
+            class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="checkbox" 
+              id="form-is-active" 
+              checked
+              class="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+            >
+            <span class="text-sm font-bold text-slate-600 dark:text-slate-300">Alerte Active</span>
+          </label>
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" onclick="window.closeAddWeatherAlertModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button type="submit" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+            <i data-lucide="check" class="h-4 w-4"></i>
+            Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Alert Detail Modal -->
+  <div id="weather-alert-detail-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="h-5 w-5 text-amber-500"></i>
+          Détail de l'Alerte Climatique
+        </h3>
+        <button onclick="window.closeWeatherAlertDetailModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div id="weather-alert-detail-content" class="space-y-4">
+        <!-- Will be populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Acknowledge Alert Modal -->
+  <div id="acknowledge-alert-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-md p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="text-center">
+        <div id="acknowledge-icon-container" class="p-4 bg-amber-500/10 rounded-2xl mb-4">
+          <i data-lucide="check-circle" class="h-8 w-8 text-amber-500 mx-auto"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">
+          Acquitter cette alerte ?
+        </h3>
+        <p id="acknowledge-message" class="text-sm text-slate-500 dark:text-[#819888] mb-6">
+          Vous êtes sur le point d'acquitter cette alerte climatique. Cette action marque l'alerte comme lue et traitée.
+        </p>
+        <div class="flex justify-center gap-3">
+          <button onclick="window.closeAcknowledgeModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button id="confirm-acknowledge-btn" onclick="window.confirmAcknowledgeAlert()" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Acquitter
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-weather-alert-confirm-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-md p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="text-center">
+        <div class="p-4 bg-rose-500/10 rounded-2xl mb-4">
+          <i data-lucide="trash-2" class="h-8 w-8 text-rose-500 mx-auto"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">
+          Supprimer cette alerte ?
+        </h3>
+        <p class="text-sm text-slate-500 dark:text-[#819888] mb-6">
+          Cette action est irréversible. La configuration de cette alerte climatique sera supprimée.
+        </p>
+        <div class="flex justify-center gap-3">
+          <button onclick="window.closeDeleteWeatherAlertModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button id="confirm-weather-alert-delete-btn" class="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Sidebar & Header -->
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/weather-alerts.js"></script>
+</body>
+</html>

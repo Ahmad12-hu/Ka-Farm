@@ -112,6 +112,80 @@ const DEFAULT_MESSAGES = [
   { id: 'msg-4', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'D\'accord, c\'est noté. Je passe la commande aujourd\'hui depuis le bureau de Dakar 💻.', timestamp: '2026-06-25T10:00:00.000Z' }
 ];
 
+const DEFAULT_TREATMENTS = [
+  { id: 'TR-001', parcelId: 'P-001', parcelName: 'Parcelle Nord - Planche 2', cropId: 'C-101', cropName: 'Tomate Mongal F1', category: 'bio-phytosanitaire', productName: 'Purin de Neem', dateApplied: '2026-06-20', dar: 3, target: 'Chenilles et pucerons', notes: 'Traitement préventif appliqué le matin. Respecter le DAR de 3 jours.', harvestReady: true, enterprise_id: 'ka_farm' },
+  { id: 'TR-002', parcelId: 'P-002', parcelName: 'Parcelle Est - Grand Champ', cropId: 'C-102', cropName: 'Oignon Rouge de Galmi', category: 'chimique-phytosanitaire', productName: 'Décis (Insecticide chimique)', dateApplied: '2026-06-23', dar: 7, target: 'Tuta Absoluta', notes: 'Traitement curatif suite à l\'alerte sur les chenilles.', harvestReady: false, enterprise_id: 'ka_farm' },
+  { id: 'TR-003', parcelId: 'P-001', parcelName: 'Parcelle Nord - Planche 2', cropId: 'C-101', cropName: 'Tomate Mongal F1', category: 'bio-engrais', productName: 'Compost Organique Bio', dateApplied: '2026-06-15', dar: 0, target: 'Amendement du sol', notes: 'Application en fond pour améliorer la fertilité.', harvestReady: true, enterprise_id: 'ka_farm' },
+  { id: 'TR-004', parcelId: 'P-003', parcelName: 'Parcelle Sud - Planche 1', cropId: '', cropName: 'Chou Cabus', category: 'chimique-phytosanitaire', productName: 'Ridomil Gold', dateApplied: '2026-06-22', dar: 14, target: 'Mildiou', notes: 'Traitement fongicide préventif.', harvestReady: false, enterprise_id: 'ka_farm' }
+];
+
+const DEFAULT_CROP_PROFITS = [
+  {
+    id: 'PROF-001',
+    cropName: 'Tomate Mongal F1',
+    parcelId: 'P-001',
+    parcelName: 'Parcelle Nord - Planche 2',
+    yieldKg: 5000,
+    pricePerKg: 650,
+    revenue: 3250000,
+    costs: { seeds: 150000, fertilizer: 200000, water: 100000, labor: 300000 },
+    totalCost: 750000,
+    netMargin: 2500000,
+    profitabilityPercent: 333.33,
+    period: '2026-06-25',
+    notes: 'Excellent rendement grâce au goutte-à-goutte. Marge exceptionnelle cette saison.',
+    enterprise_id: 'ka_farm'
+  },
+  {
+    id: 'PROF-002',
+    cropName: 'Oignon Rouge de Galmi',
+    parcelId: 'P-002',
+    parcelName: 'Parcelle Est - Grand Champ',
+    yieldKg: 8000,
+    pricePerKg: 500,
+    revenue: 4000000,
+    costs: { seeds: 200000, fertilizer: 150000, water: 80000, labor: 400000 },
+    totalCost: 830000,
+    netMargin: 3170000,
+    profitabilityPercent: 382.05,
+    period: '2026-06-20',
+    notes: 'Culture très rentable. Prix stable sur le marché de Sandiara.',
+    enterprise_id: 'ka_farm'
+  },
+  {
+    id: 'PROF-003',
+    cropName: 'Piment Oiseau',
+    parcelId: 'P-003',
+    parcelName: 'Parcelle Sud - Planche 1',
+    yieldKg: 1500,
+    pricePerKg: 1200,
+    revenue: 1800000,
+    costs: { seeds: 80000, fertilizer: 50000, water: 30000, labor: 150000 },
+    totalCost: 310000,
+    netMargin: 1490000,
+    profitabilityPercent: 480.65,
+    period: '2026-06-28',
+    notes: 'Petite surface mais très haut prix au kg. Culture stratégique.',
+    enterprise_id: 'ka_farm'
+  },
+  {
+    id: 'PROF-004',
+    cropName: 'Chou Cabus',
+    parcelId: 'P-004',
+    parcelName: 'Zone Ombragée - Bac A',
+    yieldKg: 3000,
+    pricePerKg: 400,
+    revenue: 1200000,
+    costs: { seeds: 60000, fertilizer: 40000, water: 25000, labor: 200000 },
+    totalCost: 325000,
+    netMargin: 875000,
+    profitabilityPercent: 269.23,
+    period: '2026-06-15',
+    notes: 'Culture d\'hivernage. Bon rendement sous ombrage.',
+    enterprise_id: 'ka_farm'
+  }
+];
+
 export const CROP_LIBRARY_DATA = [
   {
     name: "Tomate Mongal F1",
@@ -199,6 +273,8 @@ export const KAStorage = {
     if (!scopedCheck('ka_farm_elevage_production')) this.saveElevageProduction(DEFAULT_ELEVAGE_PRODUCTION);
     if (!scopedCheck('ka_farm_elevage_health')) this.saveElevageHealth(DEFAULT_ELEVAGE_HEALTH);
     if (!scopedCheck('ka_farm_messages')) this.saveMessages(DEFAULT_MESSAGES);
+    if (!scopedCheck('ka_farm_treatments')) this.saveTreatments(DEFAULT_TREATMENTS);
+    if (!scopedCheck('ka_farm_crop_profits')) this.saveCropProfits(DEFAULT_CROP_PROFITS);
 
     // Kicks off the Firebase live cloud synchronization
     KAFirebaseSync.initSync((key, data) => {
@@ -323,6 +399,27 @@ export const KAStorage = {
   },
   saveMessages(messages) {
     this.set('ka_farm_messages', messages);
+  },
+
+  getTreatments() {
+    return this.get('ka_farm_treatments', DEFAULT_TREATMENTS);
+  },
+  saveTreatments(treatments) {
+    this.set('ka_farm_treatments', treatments);
+  },
+
+  getCropProfits() {
+    return this.get('ka_farm_crop_profits', DEFAULT_CROP_PROFITS);
+  },
+  saveCropProfits(profits) {
+    this.set('ka_farm_crop_profits', profits);
+  },
+
+  getHarvests() {
+    return this.get('ka_farm_harvests', DEFAULT_HARVESTS);
+  },
+  saveHarvests(harvests) {
+    this.set('ka_farm_harvests', harvests);
   },
 
   // Users with automatic secure hash migration
@@ -487,5 +584,57 @@ export const KAStorage = {
     const totalDepense = finances.filter(f => f.type === 'Dépense').reduce((sum, f) => sum + f.amount, 0);
     const solde = totalRevenu - totalDepense;
     return { totalRevenu, totalDepense, solde };
+  },
+
+  // Weather Alerts
+  getWeatherAlerts() {
+    return this.get('ka_farm_weather_alerts', []);
+  },
+  saveWeatherAlerts(alerts) {
+    this.set('ka_farm_weather_alerts', alerts);
+  },
+
+  getWeatherAlertHistory() {
+    return this.get('ka_farm_weather_alert_history', []);
+  },
+  saveWeatherAlertHistory(history) {
+    this.set('ka_farm_weather_alert_history', history);
+  },
+
+  // Weather Configuration
+  getWeatherConfig() {
+    return this.get('ka_farm_weather_config', {
+      temperature: { high: 40, low: 15 },
+      rainfall: { threshold: 50 },
+      wind: { threshold: 60 },
+      humidity: { low: 30, high: 80 }
+    });
+  },
+  saveWeatherConfig(config) {
+    this.set('ka_farm_weather_config', config);
+  },
+
+  // Current Weather
+  getCurrentWeather() {
+    return this.get('ka_farm_current_weather', {
+      temperature: 25,
+      humidity: 65,
+      wind: 10,
+      rainfall: 0
+    });
+  },
+  saveCurrentWeather(weather) {
+    this.set('ka_farm_current_weather', weather);
+  },
+
+  // Default Harvests
+  getHarvests() {
+    return this.get('ka_farm_harvests', []);
+  },
+  saveHarvests(harvests) {
+    this.set('ka_farm_harvests', harvests);
   }
 };
+
+// Default Harvests Data
+const DEFAULT_HARVESTS = [];
