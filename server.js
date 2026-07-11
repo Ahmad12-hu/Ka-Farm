@@ -731,13 +731,112 @@ async function startServer() {
 
       const systemInstruction = "Tu es KA-Farm Agro-Advisor, un conseiller horticole et maraîcher expert d'Afrique de l'Ouest (Sénégal), chaleureux, pragmatique, direct et scientifique. Tu réponds en français. Tu es spécialisé exclusivement dans le maraîchage (cultures de légumes, fines herbes, fruits de jardin, pépinières, irrigation goutte-à-goutte ou aspersion, maladies horticoles comme la mineuse de la tomate Tuta absoluta, le mildiou, l'oïdium, les thrips, et l'usage de biopesticides locaux comme le neem ou le piment). Tu aides à diagnostiquer les ravageurs et maladies des légumes, planifier les pépinières maraîchères et le repiquage, optimiser l'arrosage et les amendements (compost organique, fumier) de manière écologique et agroécologique. Donne des réponses concises, claires, structurées et adaptées aux conditions locales ouest-africaines.";
 
-      let contents = prompt;
+      // Formatage correct de l'historique pour l'API Gemini
+      const chatHistory = [];
       if (history && Array.isArray(history) && history.length > 0) {
-        const formattedHistory = history.map((m) => `${m.role === 'user' ? 'Utilisateur' : 'Conseiller'}: ${m.text}`).join('\n');
-        contents = `${formattedHistory}\nUtilisateur: ${prompt}\nConseiller:`;
+        history.forEach(m => {
+          chatHistory.push({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: m.text }]
+          });
+        });
       }
 
-      const modelsToTry = ['gemini-3.5-flash', 'gemini-flash-latest'];
+      // Utilisation du bon nom de modèle et de la bonne méthode d'appel
+      const modelName = 'gemini-1.5-flash';
+      const model = ai.getGenerativeModel({
+        model: modelName,
+        systemInstruction: {
+          role: 'system',
+          parts: [{ text: systemInstruction }],
+        },
+      });
+
+      const chat = model.startChat({
+        history: chatHistory,
+        generationConfig: {
+          temperature: 0.7,
+        }
+      });
+
+      const result = await chat.sendMessage(prompt);
+      const response = result.response;
+      const text = response.text();
+
+      if (!text) {
+        throw new Error('Impossible de générer une réponse de l\'IA.');
+      }
+
+      return res.json({ text });
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      return res.status(500).json({ error: error.message || 'Erreur interne de l\'API' });
+    }
+  });
+
+  // ==================== WEATHER ====================
+  app.get('/api/weather', async (req, res) => {
+    try {
+      const { lat, lon } = req.query;
+      if (!lat || !lon) {
+        return res.status(400).json({ error: 'Coordonnées lat et lon requises' });
+      }
+
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&timezone=auto`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Open-Meteo API returned status ${response.status}`);
+      }
+      const data = await response.json();
+      return res.json({
+        temp: data.current.temperature_2m,
+        humidity: data.current.relative_humidity_2m,
+        precipitation: data.current.precipitation,
+        weather_code: data.current.weather_code,
+        wind_speed: data.current.wind_speed_10m
+      });
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des données météo' });
+    }
+  });
+
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!isProd) {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'mpa'
+    });
+    app.use(vite.middlewares);
+  } else {
+    // Servir les fichiers statiques depuis le dossier pages/ (pour les pages HTML partagées)
+    app.use('/pages', express.static(path.resolve('pages'), { extensions: ['html'] }));
+    
+    // Servir les fichiers statiques du build Vite (dist/)
+    app.use(express.static(path.resolve('dist'), { extensions: ['html'] }));
+    
+    // Servir les assets (images, CSS, JS) depuis la racine
+    app.use('/assets', express.static(path.resolve('assets')));
+    app.use('/css', express.static(path.resolve('css')));
+    app.use('/js', express.static(path.resolve('js')));
+    
+    // Route par défaut pour les requêtes non correspondantes
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve('dist/index.html'));
+    });
+  }
+
+  const port = process.env.PORT || 3000;
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running at http://0.0.0.0:${port}`);
+    console.log(`Mode: ${usePostgres ? 'PostgreSQL' : 'Fallback mémoire (localStorage)'}`);
+  });
+}
+
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+});
       let response = null;
       let lastError = null;
 

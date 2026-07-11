@@ -1,0 +1,9 @@
+API error from mistral (model: mistral-vibe-cli-latest): LLM backend error [mistral]
+  status: N/A
+  reason: ReadError('')
+  request_id: N/A
+  endpoint: https://api.mistral.ai
+  model: mistral-vibe-cli-latest
+  provider_message: Network error
+  body_excerpt: 
+  payload_summary: {"model":"mistral-vibe-cli-latest","message_count":29,"approx_chars":288995,"temperature":1.0,"has_tools":true,"tool_choice":"auto"}
