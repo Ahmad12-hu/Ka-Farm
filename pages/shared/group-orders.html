@@ -556,6 +556,8 @@
   <script type="module">
     import { GroupOrdersModule } from '/js/modules/group-orders.js';
     window.GroupOrdersModule = GroupOrdersModule;
+    // Initialize the module
+    GroupOrdersModule.init();
     
     // Populate dropdowns dynamically
     document.addEventListener('DOMContentLoaded', () => {
