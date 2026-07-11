@@ -38,90 +38,21 @@ async function startServer() {
   app.use(express.json({ limit: '12mb' }));
 
   // In-memory fallback stores (used when PostgreSQL is not available)
-  let serverMessages = [
-    { id: 'msg-1', senderEmail: 'moussa@kafarm.sn', senderName: 'Moussa KA', text: 'Salam Aly ! J\'ai fini de vérifier le système de goutte-à-goutte sur la parcelle A. Tout fonctionne bien pour les tomates 🍅.', timestamp: '2026-06-25T08:30:00.000Z', isPrivate: false, image: null },
-    { id: 'msg-2', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'Wa alaykoum salam Moussa. Alhamdoulilah ! Et qu\'en est-il du stock de compost bio ? Est-ce qu\'on a assez pour la pépinière de poivrons ?', timestamp: '2026-06-25T09:15:00.000Z', isPrivate: false, image: null },
-    { id: 'msg-3', senderEmail: 'moussa@kafarm.sn', senderName: 'Moussa KA', text: 'On a encore environ 350 kg en réserve, mais ce serait bien d\'en commander 500 kg supplémentaires pour juillet 🌱.', timestamp: '2026-06-25T09:40:00.000Z', isPrivate: false, image: null },
-    { id: 'msg-4', senderEmail: 'aly@kafarm.sn', senderName: 'Aly KA', text: 'D\'accord, c\'est noté. Je passe la commande aujourd\'hui depuis le bureau de Dakar 💻.', timestamp: '2026-06-25T10:00:00.000Z', isPrivate: false, image: null }
-  ];
-
-  let serverStocks = [
-    { id: 'S-301', name: 'Compost Organique Bio', category: 'Amendements', quantity: 350, maxQuantity: 1000, unit: 'kg' },
-    { id: 'S-302', name: 'Semences Tomate Mongal F1', category: 'Semences', quantity: 12, maxQuantity: 50, unit: 'sachets' },
-    { id: 'S-303', name: 'Purin de Neem (Insecticide)', category: 'Traitements', quantity: 45, maxQuantity: 100, unit: 'L' },
-    { id: 'S-304', name: 'Fumier de Mouton séché', category: 'Amendements', quantity: 150, maxQuantity: 800, unit: 'kg' },
-    { id: 'S-305', name: 'Aliments Concentrés Bovins', category: 'Alimentation', quantity: 180, maxQuantity: 1000, unit: 'kg' }
-  ];
-
-  let serverCrops = [
-    { id: 'C-101', name: 'Tomate Mongal F1', field: 'Parcelle Nord - Planche 2', sowingDate: '2026-05-10', harvestDate: '2026-08-15', status: 'Floraison', waterStatus: 'Optimale', fertilizerStatus: 'OK', photos: [] },
-    { id: 'C-102', name: 'Oignon Rouge de Galmi', field: 'Parcelle Est - Grand Champ', sowingDate: '2026-04-15', harvestDate: '2026-09-01', status: 'Croissance', waterStatus: 'Besoin d\'eau', fertilizerStatus: 'OK', photos: [] }
-  ];
-
-  let serverParcelles = [
-    { id: 'P-001', name: 'Parcelle Nord - Planche 2', surface: 120, lat: 14.7932, lng: -17.2654, status: 'Cultivée', type_sol: 'sableux', history: ['Tomate Mongal F1'], currentCrop: 'Tomate Mongal F1', waterStatus: 'Irrigué' },
-    { id: 'P-002', name: 'Parcelle Est - Grand Champ', surface: 500, lat: 14.7938, lng: -17.2642, status: 'Cultivée', type_sol: 'limoneux', history: ['Oignon Rouge de Galmi'], currentCrop: 'Oignon Rouge de Galmi', waterStatus: 'Besoin d\'eau' }
-  ];
-
-  let serverTasks = [
-    { id: 'T-401', title: 'Irrigation matin de l\'oignon Galmi', category: 'Irrigation', dueDate: '2026-06-26', assignee: 'Moussa', priority: 'Haute', completed: false },
-    { id: 'T-402', title: 'Sarclage & Désherbage planche choux', category: 'Entretien', dueDate: '2026-06-28', assignee: 'Fatou', priority: 'Moyenne', completed: false }
-  ];
-
-  let serverFinances = [
-    { id: 'F-501', description: 'Vente de 8 caisses de Tomates Mongal', category: 'Vente Légumes', type: 'Revenu', amount: 120000, date: '2026-06-20' },
-    { id: 'F-502', description: 'Achat de semences oignon Galmi', category: 'Semences', type: 'Dépense', amount: 35000, date: '2026-06-18' }
-  ];
-
-  let serverEmployees = [
-    { id: 'E-001', name: 'Samba Diouf', phone: '77 521 44 22', role: 'Ouvrier agricole', dailyRate: 4000, status: 'Actif' },
-    { id: 'E-002', name: 'Awa Sow', phone: '76 432 11 00', role: 'Chef d\'équipe pépinière', dailyRate: 5000, status: 'Actif' }
-  ];
-
-  let serverCheptel = [
-    { id: 'CH-001', name: 'Génisses Laitières Holstein', type: 'Bovins', breed: 'Holstein/Guzera', quantity: 12, unit: 'têtes', status: 'Sain', purpose: 'Lait' },
-    { id: 'CH-002', name: 'Moutons Ladoum d\'Élevage', type: 'Ovins', breed: 'Ladoum Pur', quantity: 8, unit: 'têtes', status: 'Sain', purpose: 'Reproduction' }
-  ];
-
-  let serverElevageProduction = [
-    { id: 'PROD-001', date: '2026-06-25', type: 'Lait', quantity: 145, unit: 'L', notes: 'Excellente traite matinale.' },
-    { id: 'PROD-002', date: '2026-06-25', type: 'Œufs', quantity: 310, unit: 'unités', notes: '10 plateaux collectés.' }
-  ];
-
-  let serverElevageHealth = [
-    { id: 'HEA-001', date: '2026-06-10', target: 'Moutons Ladoum', intervention: 'Vaccination Pastorose', practitioner: 'Dr. Diop', cost: 15000, notes: 'Rappel annuel effectué.' }
-  ];
-
-  let serverNurseries = [
-    { id: 'PEP-201', name: 'Pépinière Tomates Mongal', cropType: 'Tomate', sowingDate: '2026-06-01', plannedTransplantDate: '2026-07-01', quantityEst: 1500, status: 'Levée', healthStatus: 'Excellent' },
-    { id: 'PEP-202', name: 'Pépinière Poivron Yolo Wonder', cropType: 'Poivron', sowingDate: '2026-06-10', plannedTransplantDate: '2026-07-15', quantityEst: 800, status: 'Semis', healthStatus: 'Excellent' }
-  ];
-
-  let serverTreatments = [
-    { id: 'TR-001', enterprise_id: 'ka_farm', parcel_id: 'P-001', crop_id: 'C-101', crop_name: 'Tomate Mongal F1', parcel_name: 'Parcelle Nord - Planche 2', product_name: 'Purin de Neem', category: 'bio-phytosanitaire', date_applied: '2026-06-20', dar_days: 3, target: 'Chenilles et pucerons', notes: 'Traitement préventif appliqué le matin. Respecter le DAR de 3 jours.', harvest_ready: true },
-    { id: 'TR-002', enterprise_id: 'ka_farm', parcel_id: 'P-002', crop_id: 'C-102', crop_name: 'Oignon Rouge de Galmi', parcel_name: 'Parcelle Est - Grand Champ', product_name: 'Décis (Insecticide chimique)', category: 'chimique-phytosanitaire', date_applied: '2026-06-23', dar_days: 7, target: 'Tuta Absoluta', notes: 'Traitement curatif suite à l\'alerte sur les chenilles.', harvest_ready: false },
-    { id: 'TR-003', enterprise_id: 'ka_farm', parcel_id: 'P-001', crop_id: 'C-101', crop_name: 'Tomate Mongal F1', parcel_name: 'Parcelle Nord - Planche 2', product_name: 'Compost Organique Bio', category: 'bio-engrais', date_applied: '2026-06-15', dar_days: 0, target: 'Amendement du sol', notes: 'Application en fond pour améliorer la fertilité.', harvest_ready: true },
-    { id: 'TR-004', enterprise_id: 'ka_farm', parcel_id: 'P-003', crop_id: null, crop_name: 'Chou Cabus', parcel_name: 'Parcelle Sud - Planche 1', product_name: 'Ridomil Gold', category: 'chimique-phytosanitaire', date_applied: '2026-06-22', dar_days: 14, target: 'Mildiou', notes: 'Traitement fongicide préventif.', harvest_ready: false }
-  ];
-
-  let serverCropProfits = [
-    { id: 'PROF-001', enterprise_id: 'ka_farm', crop_name: 'Tomate Mongal F1', parcel_id: 'P-001', parcel_name: 'Parcelle Nord - Planche 2', yield_kg: 5000, price_per_kg: 650, revenue: 3250000, costs: { seeds: 150000, fertilizer: 200000, water: 100000, labor: 300000 }, total_cost: 750000, net_margin: 2500000, profitability_percent: 333.33, period: '2026-06-25', notes: 'Excellent rendement grâce au goutte-à-goutte. Marge exceptionnelle cette saison.' },
-    { id: 'PROF-002', enterprise_id: 'ka_farm', crop_name: 'Oignon Rouge de Galmi', parcel_id: 'P-002', parcel_name: 'Parcelle Est - Grand Champ', yield_kg: 8000, price_per_kg: 500, revenue: 4000000, costs: { seeds: 200000, fertilizer: 150000, water: 80000, labor: 400000 }, total_cost: 830000, net_margin: 3170000, profitability_percent: 382.05, period: '2026-06-20', notes: 'Culture très rentable. Prix stable sur le marché de Sandiara.' },
-    { id: 'PROF-003', enterprise_id: 'ka_farm', crop_name: 'Piment Oiseau', parcel_id: 'P-003', parcel_name: 'Parcelle Sud - Planche 1', yield_kg: 1500, price_per_kg: 1200, revenue: 1800000, costs: { seeds: 80000, fertilizer: 50000, water: 30000, labor: 150000 }, total_cost: 310000, net_margin: 1490000, profitability_percent: 480.65, period: '2026-06-28', notes: 'Petite surface mais très haut prix au kg. Culture stratégique.' },
-    { id: 'PROF-004', enterprise_id: 'ka_farm', crop_name: 'Chou Cabus', parcel_id: 'P-004', parcel_name: 'Zone Ombragée - Bac A', yield_kg: 3000, price_per_kg: 400, revenue: 1200000, costs: { seeds: 60000, fertilizer: 40000, water: 25000, labor: 200000 }, total_cost: 325000, net_margin: 875000, profitability_percent: 269.23, period: '2026-06-15', notes: 'Culture d\'hivernage. Bon rendement sous ombrage.' }
-  ];
-
-  let serverAttendance = [
-    { employeeId: 'E-001', date: '2026-06-25', status: 'Présent', notes: '' },
-    { employeeId: 'E-002', date: '2026-06-25', status: 'Présent', notes: '' },
-    { employeeId: 'E-001', date: '2026-06-26', status: 'Présent', notes: '' },
-    { employeeId: 'E-002', date: '2026-06-26', status: 'Présent', notes: '' }
-  ];
-
-  let serverPayments = [
-    { id: 'PAY-001', employeeId: 'E-001', amount: 80000, date: '2026-06-15', periodStart: '2026-06-01', periodEnd: '2026-06-15', paymentMethod: 'Orange Money', status: 'Payé' },
-    { id: 'PAY-002', employeeId: 'E-002', amount: 100000, date: '2026-06-15', periodStart: '2026-06-01', periodEnd: '2026-06-15', paymentMethod: 'Wave', status: 'Payé' }
-  ];
+  let serverMessages = [];
+  let serverStocks = [];
+  let serverCrops = [];
+  let serverParcelles = [];
+  let serverTasks = [];
+  let serverFinances = [];
+  let serverEmployees = [];
+  let serverCheptel = [];
+  let serverElevageProduction = [];
+  let serverElevageHealth = [];
+  let serverNurseries = [];
+  let serverTreatments = [];
+  let serverCropProfits = [];
+  let serverAttendance = [];
+  let serverPayments = [];
 
   // ==================== MESSAGES ====================
   app.get('/api/messages', async (req, res) => {
