@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compostage Organique - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .severity-critical { background-color: #ef4444; color: white; }
+    .severity-high { background-color: #f59e0b; color: white; }
+    .severity-medium { background-color: #fbbf24; color: #000; }
+    .severity-low { background-color: #10b981; color: white; }
+    .text-severity-critical { color: #ef4444; }
+    .text-severity-high { color: #f59e0b; }
+    .text-severity-medium { color: #fbbf24; }
+    .text-severity-low { color: #10b981; }
+    
+    .cn-ratio-low { background-color: #fef2f2; border-color: #fecaca; }
+    .cn-ratio-ideal { background-color: #dcfce7; border-color: #86efac; }
+    .cn-ratio-high { background-color: #fffbeb; border-color: #fde68a; }
+    .cn-ratio-critical { background-color: #fee2e2; border-color: #fca5a5; }
+    
+    .material-green { border-left: 4px solid #10b981; }
+    .material-brown { border-left: 4px solid #f59e0b; }
+    .material-manure { border-left: 4px solid #8b5cf6; }
+    .material-mineral { border-left: 4px solid #6b7280; }
+    
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+    .progress-ring-circle {
+      transition: stroke-dashoffset 0.35s;
+    }
+    
+    .temperature-gauge {
+      background: conic-gradient(from 0deg, #10b981 0deg 60deg, #f59e0b 60deg 80deg, #ef4444 80deg 100deg);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+              <i data-lucide="flame" class="h-7 w-7 text-amber-500"></i>
+              Calculateur de Compostage Organique
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-[#819888] mt-1">
+              Outil personnalisé pour créer et gérer des recettes de compost optimisées pour votre ferme
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="window.refreshCompostData()" class="px-4 py-2 bg-amber-500/10 dark:bg-amber-950/20 hover:bg-amber-500/20 dark:hover:bg-amber-950/30 border border-amber-500/20 text-amber-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+              Actualiser
+            </button>
+            <button onclick="window.openNewBatchModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-emerald-500/25">
+              <i data-lucide="plus" class="h-4 w-4"></i>
+              Nouveau Tas
+            </button>
+            <button onclick="window.openRecipeModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-amber-500/25">
+              <i data-lucide="book-open" class="h-4 w-4"></i>
+              Gérer les Recettes
+            </button>
+            <button onclick="window.openMaterialModal()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-cyan-500/25">
+              <i data-lucide="layers" class="h-4 w-4"></i>
+              Matériaux
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                <i data-lucide="bar-chart-3" class="h-5 w-5 text-emerald-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tas Totaux</p>
+                <p id="stat-total-batches" class="text-xl font-black text-slate-800 dark:text-white font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-emerald-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                <i data-lucide="package" class="h-5 w-5 text-emerald-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Compost Produit</p>
+                <p id="stat-total-quantity" class="text-xl font-black text-emerald-500 font-mono">0 kg</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-amber-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-amber-500/10 rounded-xl">
+                <i data-lucide="check-circle" class="h-5 w-5 text-amber-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tas Terminés</p>
+                <p id="stat-completed-batches" class="text-xl font-black text-amber-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-blue-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-blue-500/10 rounded-xl">
+                <i data-lucide="loader-2" class="h-5 w-5 text-blue-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">En Cours</p>
+                <p id="stat-in-progress" class="text-xl font-black text-blue-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-purple-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-purple-500/10 rounded-xl">
+                <i data-lucide="thermometer" class="h-5 w-5 text-purple-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ratio C:N Moyen</p>
+                <p id="stat-avg-cn-ratio" class="text-xl font-black text-purple-500 font-mono">0:1</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-white dark:bg-[#061109]/40 rounded-2xl border border-cyan-500/20">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-cyan-500/10 rounded-xl">
+                <i data-lucide="clock" class="h-5 w-5 text-cyan-500"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jours Moyen</p>
+                <p id="stat-avg-days" class="text-xl font-black text-cyan-500 font-mono">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Left Column - C:N Ratio Calculator & Quick Actions -->
+          <div class="lg:col-span-1 space-y-6">
+            <!-- C:N Ratio Calculator -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-amber-500/20">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="calculator" class="h-4 w-4 text-amber-500"></i>
+                  Calculateur de Ratio C:N
+                </h3>
+              </div>
+              
+              <div class="space-y-4">
+                <div class="text-center p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl">
+                  <div class="relative w-32 h-32 mx-auto mb-3">
+                    <svg class="w-32 h-32 progress-ring" viewBox="0 0 120 120">
+                      <circle
+                        class="text-slate-200 dark:text-[#143E23]/40"
+                        stroke-width="8"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r="52"
+                        cx="60"
+                        cy="60"
+                      />
+                      <circle
+                        id="cn-ratio-circle"
+                        class="progress-ring-circle text-emerald-500"
+                        stroke-width="8"
+                        stroke-linecap="round"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r="52"
+                        cx="60"
+                        cy="60"
+                        style="stroke-dasharray: 326.7; stroke-dashoffset: 326.7"
+                      />
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                      <span id="cn-ratio-display" class="text-2xl font-black text-slate-800 dark:text-white">0:1</span>
+                    </div>
+                  </div>
+                  <p id="cn-ratio-status" class="text-xs font-bold text-slate-500 dark:text-[#819888] uppercase tracking-wider">Ajoutez des matériaux</p>
+                </div>
+                
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Matériau à Ajouter</label>
+                  <select id="material-select" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                    <option value="">-- Sélectionner un matériau --</option>
+                  </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Quantité (kg)</label>
+                    <input id="material-quantity" type="number" value="10" min="0.1" step="0.1" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"></label>
+                    <button onclick="window.addMaterialToCalculator()" class="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1">
+                      <i data-lucide="plus" class="h-4 w-4"></i>
+                      Ajouter
+                    </button>
+                  </div>
+                </div>
+                
+                <div id="calculator-materials" class="space-y-2 max-h-40 overflow-y-auto">
+                  <!-- Materials will be added here -->
+                </div>
+                
+                <div class="flex gap-2">
+                  <button onclick="window.clearCalculator()" class="flex-1 px-4 py-2 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+                    Effacer
+                  </button>
+                  <button onclick="window.calculateIdealMix()" class="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+                    Conseils
+                  </button>
+                </div>
+                
+                <div id="cn-recommendations" class="hidden p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl border border-slate-200 dark:border-[#143E23]/40">
+                  <!-- Recommendations will be shown here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Start Recipes -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="zap" class="h-4 w-4 text-cyan-500"></i>
+                Recettes Rapides
+              </h3>
+              <div class="space-y-3">
+                <button onclick="window.startQuickRecipe('CR-001')" class="w-full p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl border border-slate-200 dark:border-[#143E23]/40 text-left hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="font-bold text-slate-800 dark:text-white group-hover:text-emerald-500">Classique 3 Couches</p>
+                      <p class="text-[10px] text-slate-500 dark:text-[#819888]">90 jours | Ratio 30:1</p>
+                    </div>
+                    <i data-lucide="arrow-right" class="h-4 w-4 text-slate-400 group-hover:text-emerald-500"></i>
+                  </div>
+                </button>
+                <button onclick="window.startQuickRecipe('CR-002')" class="w-full p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl border border-slate-200 dark:border-[#143E23]/40 text-left hover:bg-amber-500/10 hover:border-amber-500/30 transition-all group">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="font-bold text-slate-800 dark:text-white group-hover:text-amber-500">Rapide Maraîchage</p>
+                      <p class="text-[10px] text-slate-500 dark:text-[#819888]">60 jours | Ratio 25:1</p>
+                    </div>
+                    <i data-lucide="arrow-right" class="h-4 w-4 text-slate-400 group-hover:text-amber-500"></i>
+                  </div>
+                </button>
+                <button onclick="window.startQuickRecipe('CR-005')" class="w-full p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl border border-slate-200 dark:border-[#143E23]/40 text-left hover:bg-purple-500/10 hover:border-purple-500/30 transition-all group">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="font-bold text-slate-800 dark:text-white group-hover:text-purple-500">Bio-Intensive</p>
+                      <p class="text-[10px] text-slate-500 dark:text-[#819888]">45 jours | Ratio 28:1</p>
+                    </div>
+                    <i data-lucide="arrow-right" class="h-4 w-4 text-slate-400 group-hover:text-purple-500"></i>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Current Temperature Monitoring -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2 mb-4">
+                <i data-lucide="thermometer" class="h-4 w-4 text-rose-500"></i>
+                Surveillance Température
+              </h3>
+              <div class="text-center">
+                <div class="relative w-24 h-24 mx-auto mb-3">
+                  <div class="temperature-gauge w-24 h-24 rounded-full relative overflow-hidden">
+                    <div class="absolute inset-2 bg-white dark:bg-[#061109] rounded-full flex items-center justify-center">
+                      <span id="current-temp-display" class="text-xl font-black text-slate-800 dark:text-white">--°C</span>
+                    </div>
+                  </div>
+                </div>
+                <p id="temp-status" class="text-xs text-slate-500 dark:text-[#819888]">Ajoutez un capteur</p>
+                <div class="flex justify-center gap-4 mt-3 text-[10px]">
+                  <div class="text-center">
+                    <div class="w-2 h-2 bg-rose-500 rounded-full mx-auto mb-1"></div>
+                    <span class="text-rose-500 font-bold">>60°C</span>
+                  </div>
+                  <div class="text-center">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full mx-auto mb-1"></div>
+                    <span class="text-amber-500 font-bold">45-60°C</span>
+                  </div>
+                  <div class="text-center">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full mx-auto mb-1"></div>
+                    <span class="text-emerald-500 font-bold">40-45°C</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column - Current Batches & History -->
+          <div class="lg:col-span-2 space-y-6">
+            <!-- Current Batches -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="loader-2" class="h-4 w-4 text-blue-500"></i>
+                  Tas de Compost en Cours
+                </h3>
+              </div>
+              <div id="current-batches-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Will be populated by JS -->
+              </div>
+            </div>
+
+            <!-- Compost History -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="history" class="h-4 w-4"></i>
+                  Historique des Tas de Compost
+                </h3>
+                <div class="flex items-center gap-2">
+                  <input 
+                    id="compost-history-search" 
+                    type="text" 
+                    placeholder="Rechercher..." 
+                    class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-xs font-bold w-48 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  >
+                  <button onclick="window.filterCompostHistory()" class="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-950/20 hover:bg-amber-500/20 dark:hover:bg-amber-950/30 border border-amber-500/20 text-amber-500 font-extrabold text-[9px] rounded-lg cursor-pointer transition-all flex items-center gap-1">
+                    <i data-lucide="filter" class="h-3 w-3"></i>
+                    Filtrer
+                  </button>
+                </div>
+              </div>
+              
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="border-b border-slate-200 dark:border-[#143E23]/40">
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">ID</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Recette</th>
+                      <th class="pb-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Début</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Fin</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Ratio C:N</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Quantité</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Statut</th>
+                      <th class="pb-4 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="compost-history-table-body" class="">
+                    <!-- Will be populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Materials Inventory -->
+            <div class="p-6 bg-white dark:bg-[#061109]/40 rounded-3xl border border-slate-200 dark:border-[#143E23]/40">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="warehouse" class="h-4 w-4 text-cyan-500"></i>
+                  Inventaire des Matériaux
+                </h3>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div id="materials-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- New Batch Modal -->
+  <div id="new-batch-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="plus-circle" class="h-5 w-5 text-emerald-500"></i>
+          Nouveau Tas de Compost
+        </h3>
+        <button onclick="window.closeNewBatchModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Batch Information -->
+        <div class="space-y-4">
+          <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">Informations du Tas</h4>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Recette *</label>
+            <select id="batch-recipe" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+              <option value="">-- Sélectionner une recette --</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Date de Début *</label>
+            <input id="batch-start-date" type="date" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Emplacement</label>
+            <select id="batch-location" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+              <option value="">-- Sélectionner un emplacement --</option>
+              <option value="Zone de Compost Nord">Zone de Compost Nord</option>
+              <option value="Zone de Compost Sud">Zone de Compost Sud</option>
+              <option value="Coin Ombragé">Coin Ombragé</option>
+              <option value="Derrière le Hangar">Derrière le Hangar</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
+            <textarea id="batch-notes" rows="2" placeholder="Notes sur ce tas de compost..." class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"></textarea>
+          </div>
+        </div>
+        
+        <!-- Materials Selection -->
+        <div class="space-y-4">
+          <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">Matériaux Utilisés</h4>
+          <div id="batch-materials-selector" class="space-y-3 max-h-64 overflow-y-auto">
+            <!-- Materials will be added here -->
+          </div>
+          <button onclick="window.addMaterialToBatch()" class="w-full px-4 py-2 bg-emerald-500/10 dark:bg-emerald-950/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-950/30 border border-emerald-500/20 text-emerald-500 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
+            <i data-lucide="plus" class="h-4 w-4"></i>
+            Ajouter un Matériau
+          </button>
+          
+          <div class="p-3 bg-slate-50 dark:bg-[#0D2615]/30 rounded-xl border border-slate-200 dark:border-[#143E23]/40">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ratio C:N Estimé</span>
+              <span id="batch-cn-ratio" class="font-bold text-slate-800 dark:text-white">0:1</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-[#143E23]/40 rounded-full h-1.5">
+              <div id="batch-cn-progress" class="bg-emerald-500 h-1.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="batch-cn-status" class="text-[10px] text-slate-500 dark:text-[#819888] mt-1"></p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4">
+        <button onclick="window.closeNewBatchModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Annuler
+        </button>
+        <button onclick="window.saveNewBatch()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+          <i data-lucide="check" class="h-4 w-4"></i>
+          Démarrer le Tas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipe Manager Modal -->
+  <div id="recipe-manager-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="book-open" class="h-5 w-5 text-amber-500"></i>
+          Gestion des Recettes de Compost
+        </h3>
+        <button onclick="window.closeRecipeModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div class="flex items-center gap-2 mb-4">
+        <button onclick="window.showAddRecipeForm()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+          <i data-lucide="plus" class="h-4 w-4"></i>
+          Ajouter une Recette
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="recipes-list" class="space-y-3">
+          <!-- Recipes will be listed here -->
+        </div>
+        <div id="recipe-details" class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+          <!-- Recipe details will be shown here -->
+        </div>
+      </div>
+      
+      <!-- Add/Edit Recipe Form -->
+      <div id="add-recipe-form" class="hidden p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40 mt-4">
+        <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">Ajouter/Modifier une Recette</h4>
+        <form id="recipe-form" onsubmit="window.saveRecipe(event)" class="space-y-4">
+          <input type="hidden" id="recipe-id">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Nom de la Recette *</label>
+              <input id="recipe-name" type="text" placeholder="Recette Classique" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Ratio C:N Cible</label>
+              <input id="recipe-target-ratio" type="number" value="30" step="0.1" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Humidité Idéale (%)</label>
+              <input id="recipe-moisture" type="number" value="60" step="1" min="10" max="90" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Temp. Min (°C)</label>
+              <input id="recipe-temp-min" type="number" value="40" step="1" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Temp. Max (°C)</label>
+              <input id="recipe-temp-max" type="number" value="60" step="1" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Jours de Maturation</label>
+              <input id="recipe-days" type="number" value="90" step="1" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+            <textarea id="recipe-description" rows="2" placeholder="Description de la recette..." class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
+            <textarea id="recipe-notes" rows="1" placeholder="Notes supplémentaires..." class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none"></textarea>
+          </div>
+          <div class="flex justify-end gap-3">
+            <button type="button" onclick="window.cancelRecipeForm()" class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+              Annuler
+            </button>
+            <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1">
+              <i data-lucide="check" class="h-3 w-3"></i>
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4">
+        <button onclick="window.closeRecipeModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Material Manager Modal -->
+  <div id="material-manager-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="layers" class="h-5 w-5 text-cyan-500"></i>
+          Gestion des Matériaux de Compost
+        </h3>
+        <button onclick="window.closeMaterialModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div class="flex items-center gap-2 mb-4">
+        <button onclick="window.showAddMaterialForm()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-2">
+          <i data-lucide="plus" class="h-4 w-4"></i>
+          Ajouter un Matériau
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="materials-list" class="space-y-3 max-h-96 overflow-y-auto">
+          <!-- Materials will be listed here -->
+        </div>
+        <div id="material-details" class="p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40">
+          <!-- Material details will be shown here -->
+        </div>
+      </div>
+      
+      <!-- Add/Edit Material Form -->
+      <div id="add-material-form" class="hidden p-4 bg-slate-50 dark:bg-[#0D2615]/30 rounded-2xl border border-slate-200 dark:border-[#143E23]/40 mt-4">
+        <h4 class="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">Ajouter/Modifier un Matériau</h4>
+        <form id="material-form" onsubmit="window.saveMaterial(event)" class="space-y-4">
+          <input type="hidden" id="material-id">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Nom du Matériau *</label>
+              <input id="material-name" type="text" placeholder="Fumier de Vache" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type de Matériau *</label>
+              <select id="material-type" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                <option value="">-- Sélectionner --</option>
+                <option value="Fumier">Fumier</option>
+                <option value="Résidus végétaux">Résidus végétaux</option>
+                <option value="Résidus verts">Résidus verts</option>
+                <option value="Déchets de cuisine">Déchets de cuisine</option>
+                <option value="Sous-produit agricole">Sous-produit agricole</option>
+                <option value="Minéral">Minéral</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Ratio Carbone (%)</label>
+              <input id="material-carbon" type="number" value="25" step="0.1" min="0" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Ratio Azote (%)</label>
+              <input id="material-nitrogen" type="number" value="1.5" step="0.01" min="0" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Ratio C:N</label>
+              <input id="material-cn-ratio" type="number" value="16.7" step="0.1" readonly class="w-full px-3 py-2.5 bg-slate-100 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Teneur en Humidité (%)</label>
+              <input id="material-moisture" type="number" value="60" step="1" min="0" max="100" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Unité</label>
+              <select id="material-unit" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                <option value="kg">kg</option>
+                <option value="L">L</option>
+                <option value="m3">m3</option>
+                <option value="sac">sac</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+            <textarea id="material-description" rows="2" placeholder="Description du matériau..." class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20 resize-none"></textarea>
+          </div>
+          <div class="flex items-center gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="material-common" checked class="w-4 h-4 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500">
+              <span class="text-sm font-bold text-slate-600 dark:text-slate-300">Commun au Sénégal</span>
+            </label>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Notes</label>
+            <textarea id="material-notes" rows="1" placeholder="Notes supplémentaires..." class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#0D2615]/50 border border-slate-200 dark:border-[#143E23]/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20 resize-none"></textarea>
+          </div>
+          <div class="flex justify-end gap-3">
+            <button type="button" onclick="window.cancelMaterialForm()" class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+              Annuler
+            </button>
+            <button type="submit" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1">
+              <i data-lucide="check" class="h-3 w-3"></i>
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4">
+        <button onclick="window.closeMaterialModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Detail Modal -->
+  <div id="batch-detail-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="file-text" class="h-5 w-5 text-emerald-500"></i>
+          Détail du Tas de Compost
+        </h3>
+        <button onclick="window.closeBatchDetailModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-[#0D2615]/50 rounded-lg transition-colors cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5 text-slate-400"></i>
+        </button>
+      </div>
+      
+      <div id="batch-detail-content" class="space-y-4">
+        <!-- Will be populated by JS -->
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4">
+        <button onclick="window.closeBatchDetailModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-batch-confirm-modal" class="fixed inset-0 bg-black/60 dark:bg-[#061109]/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-[#061109] rounded-3xl w-full max-w-md p-6 border border-slate-200 dark:border-[#143E23]/40 shadow-2xl shadow-black/20">
+      <div class="text-center">
+        <div class="p-4 bg-rose-500/10 rounded-2xl mb-4">
+          <i data-lucide="trash-2" class="h-8 w-8 text-rose-500 mx-auto"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">
+          Supprimer cet enregistrement ?
+        </h3>
+        <p id="delete-batch-confirm-message" class="text-sm text-slate-500 dark:text-[#819888] mb-6">
+          Cette action est irréversible.
+        </p>
+        <div class="flex justify-center gap-3">
+          <button onclick="window.closeDeleteBatchModal()" class="px-6 py-2.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Annuler
+          </button>
+          <button id="confirm-delete-batch-btn" onclick="window.confirmDeleteBatch()" class="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Sidebar & Header -->
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/modules/compost.js"></script>
+</body>
+</html>
