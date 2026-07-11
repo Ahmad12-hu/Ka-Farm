@@ -1,5 +1,6 @@
 // KA Farm - Router & Page Protection Logic
 import { UserManager } from './user-manager.js';
+import { isAdmin } from './auth-client.js';
 
 export const Router = {
   // Routes config for active states in the sidebar
@@ -27,6 +28,7 @@ export const Router = {
     '/pages/personal/my-tasks.html': 'tasks',
     '/pages/personal/my-sales.html': 'sales',
     '/pages/personal/settings.html': 'settings',
+    '/pages/admin/dashboard.html': 'admin',
   },
 
   init() {

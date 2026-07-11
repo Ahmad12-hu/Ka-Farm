@@ -1,103 +1,126 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+// KA Farm - Supabase Auth Client
+// Gère l'authentification via Supabase
 
-// Ces valeurs seront chargées depuis un fichier de config ou les variables d'environnement
-// Pour l'instant, nous les mettons ici. Remplacez-les par vos clés Supabase.
-const SUPABASE_URL = 'VOTRE_URL_DE_PROJET_SUPABASE';
-const SUPABASE_ANON_KEY = 'VOTRE_CLÉ_ANON_PUBLIC';
+import { createClient } from '@supabase/supabase-js';
 
+// Configuration Supabase
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://your-project-id.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+
+// Client Supabase
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Admin email autorisé (remplacer par votre email)
+const ADMIN_EMAIL = 'admin@kafarm.sn';
+
 /**
- * Gère la soumission du formulaire de connexion.
- * @param {Event} e L'événement de soumission.
+ * Connexion avec email/mot de passe
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<{data: any, error: any}>}
  */
-async function handleLogin(e) {
-  e.preventDefault();
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const errorDiv = document.getElementById('error-message');
-  const loginButton = document.getElementById('login-button');
-  const loginButtonText = document.getElementById('login-button-text');
+export async function signIn(email, password) {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
 
-  // UI feedback
-  errorDiv.classList.add('hidden');
-  loginButton.disabled = true;
-  loginButtonText.textContent = 'Connexion...';
+    if (error) {
+      return { data: null, error: error.message };
+    }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: email,
-    password: password,
-  });
-
-  if (error) {
-    console.error('Erreur de connexion:', error.message);
-    errorDiv.textContent = "L'email ou le mot de passe est incorrect.";
-    errorDiv.classList.remove('hidden');
-    loginButton.disabled = false;
-    loginButtonText.textContent = 'Se Connecter';
-  } else if (data.user) {
-    // Redirection vers le tableau de bord après une connexion réussie
-    window.location.href = '/pages/shared/dashboard.html';
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error.message };
   }
 }
 
 /**
- * Déconnecte l'utilisateur.
+ * Inscription - Désactivée pour l'admin
  */
-export async function handleLogout() {
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    console.error('Erreur de déconnexion:', error.message);
-  } else {
-    // Redirige vers la page de connexion après la déconnexion
-    window.location.href = '/pages/login.html';
+export async function signUp(email, password) {
+  return {
+    data: null,
+    error: 'La création de compte est désactivée pour cet espace.'
+  };
+}
+
+/**
+ * Déconnexion
+ */
+export async function signOut() {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Logout error:', error);
+    }
+    window.location.href = '/pages/admin/login.html';
+  } catch (error) {
+    console.error('Logout error:', error);
+    window.location.href = '/pages/admin/login.html';
   }
 }
 
 /**
- * Vérifie si un utilisateur est connecté et s'il est l'administrateur.
- * Redirige si non autorisé.
+ * Vérifier si l'utilisateur est connecté
+ * @returns {Promise<boolean>}
  */
-export async function protectPage() {
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    // Pas de session, redirige vers le login
-    window.location.href = `/pages/login.html?redirect=${window.location.pathname}`;
-    return;
-  }
-
-  // Mettez ici VOTRE email d'administrateur
-  const ADMIN_EMAIL = "votre-email-admin@exemple.com";
-
-  if (session.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-    // L'utilisateur est connecté mais n'est pas l'admin
-    console.warn("Accès non autorisé refusé pour :", session.user.email);
-    await handleLogout(); // Déconnecte l'utilisateur non autorisé
-    return;
-  }
-
-  // L'utilisateur est l'admin, on peut continuer
-  console.log('Accès autorisé pour :', session.user.email);
-  return session.user;
-}
-
-/**
- * Récupère la session utilisateur actuelle.
- * @returns {Promise<import('@supabase/supabase-js').User | null>}
- */
-export async function getUser() {
+export async function isAuthenticated() {
+  try {
     const { data: { session } } = await supabase.auth.getSession();
-    return session ? session.user : null;
-}
-
-// Attache le gestionnaire de connexion au formulaire si la page est `login.html`
-if (window.location.pathname.endsWith('login.html')) {
-  const loginForm = document.getElementById('login-form');
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
+    return session !== null;
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return false;
   }
 }
 
-// Expose la fonction de déconnexion globalement pour le bouton dans la sidebar
-window.handleLogout = handleLogout;
+/**
+ * Obtenir l'utilisateur connecté
+ * @returns {Promise<User|null>}
+ */
+export async function getCurrentUser() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  } catch (error) {
+    console.error('Get user error:', error);
+    return null;
+  }
+}
+
+/**
+ * Vérifier que c'est bien l'admin
+ * @returns {Promise<boolean>}
+ */
+export async function isAdmin() {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  return user.email === ADMIN_EMAIL;
+}
+
+/**
+ * Middleware de protection des routes admin
+ */
+export async function requireAuth() {
+  const authenticated = await isAuthenticated();
+  const admin = await isAdmin();
+
+  if (!authenticated) {
+    window.location.href = '/pages/admin/login.html';
+    return false;
+  }
+
+  if (!admin) {
+    alert('Accès refusé. Vous n\'êtes pas administrateur.');
+    await signOut();
+    return false;
+  }
+
+  return true;
+}
+
+// Exposer globalement pour les tests
+window.supabase = supabase;
+window.Auth = { signIn, signUp, signOut, isAuthenticated, getCurrentUser, requireAuth };

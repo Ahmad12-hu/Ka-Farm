@@ -2,6 +2,7 @@
 // Manages LocalStorage and fallback defaults
 
 import { KAFirebaseSync } from './firebase.js';
+import { ErrorHandler } from './modules/error-handler.js';
 
 const DEFAULT_CROPS = [
   { id: 'C-101', name: 'Tomate Mongal F1', field: 'Parcelle Nord - Planche 2', sowingDate: '2026-05-10', harvestDate: '2026-08-15', status: 'Floraison', waterStatus: 'Optimale', fertilizerStatus: 'OK', photos: [] },
@@ -319,7 +320,7 @@ export const KAStorage = {
       const val = localStorage.getItem(scopedKey);
       return val ? JSON.parse(val) : fallback;
     } catch (e) {
-      console.error('Error reading localStorage key', key, e);
+      ErrorHandler.log(e, `Storage.read: ${key}`);
       return fallback;
     }
   },
@@ -331,7 +332,7 @@ export const KAStorage = {
       // Save changes to cloud Firestore asynchronously
       KAFirebaseSync.saveToCloud(key, val);
     } catch (e) {
-      console.error('Error setting localStorage key', key, e);
+      ErrorHandler.log(e, `Storage.write: ${key}`);
     }
   },
 
@@ -478,12 +479,12 @@ export const KAStorage = {
 
   hashPassword(password) {
     if (!password) return '';
-    // If already hashed (length 64 hex)
-    if (password.length === 64 && /^[0-9a-f]{64}$/i.test(password)) {
+    // If already hashed in new format (salt + hash stored separately), don't hash again
+    if (password.length > 64 || !/^[0-9a-f]{64}$/i.test(password)) {
       return password;
     }
     
-    // Light, standard SHA-256 synchronous function
+    // Legacy SHA-256 synchronous function (kept for backward compatibility)
     const rotr = (n, x) => (x >>> n) | (x << (32 - n));
     let h = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
     const k = [

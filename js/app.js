@@ -2,11 +2,13 @@
 import { KAStorage } from './storage.js';
 import { UserManager } from './user-manager.js';
 import { WolofAudio } from './wolof-audio.js';
+import { ErrorHandler } from './modules/error-handler.js';
 
 // Global variables for other scripts to use
 window.KAStorage = KAStorage;
 window.UserManager = UserManager;
 window.WolofAudio = WolofAudio;
+window.ErrorHandler = ErrorHandler;
 
 // State
 let currentUser = null;
