@@ -10,8 +10,17 @@
 -- Sauvegardez vos données admin AVANT toute manipulation
 -- Exportez ces données et gardez-les précieusement
 
+-- Vérifier d'abord si la table users existe
 SELECT 
-  'BACKUP - Utilisateurs Admin' as info,
+  'BACKUP - Vérification table users' as info,
+  table_name,
+  table_schema
+FROM information_schema.tables 
+WHERE table_name = 'users' 
+  AND table_schema = 'public';
+  
+-- Si la table existe, lister les utilisateurs admin
+SELECT 
   id, 
   email, 
   name, 
@@ -25,6 +34,7 @@ WHERE role IN ('admin', 'super_admin');
 -- ============================================
 
 -- Requête 1 : Lister tous les utilisateurs (examinez les résultats)
+-- Si la table n'existe pas, vérifiez dans Supabase Auth > Users
 SELECT 
   id,
   email,
@@ -40,6 +50,9 @@ SELECT
   END as categorie
 FROM users
 ORDER BY created_at DESC;
+
+-- Si erreur "relation users does not exist", utilisez Supabase Auth
+-- Allez dans Authentication > Users pour voir les comptes
 
 -- Requête 2 : Trouver les utilisateurs avec données associées
 -- Cette requête montre quelles tables contiennent des données pour chaque utilisateur
