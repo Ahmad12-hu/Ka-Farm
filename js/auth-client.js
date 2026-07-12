@@ -121,6 +121,6 @@ export async function requireAuth() {
   return true;
 }
 
-// Exposer globalement pour les tests
+// Exposer globalement et en tant qu'export nommé
 window.supabase = supabase;
-window.Auth = { signIn, signUp, signOut, isAuthenticated, getCurrentUser, requireAuth };
+export const Auth = { signIn, signUp, signOut, isAuthenticated, getCurrentUser, requireAuth };
