@@ -10,6 +10,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { logger } from './js/modules/logger.js';
 import { validateData, UserSchema, ParcelleSchema, CropSchema, TreatmentSchema, FinanceSchema, EmployeeSchema, StockSchema, HarvestSchema, SaleSchema, TaskSchema } from './js/modules/validators.js';
+import { z } from 'zod';
 
 dotenv.config();
 
