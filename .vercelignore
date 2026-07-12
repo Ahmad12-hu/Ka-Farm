@@ -1,0 +1,10 @@
+# Exclude server-side files from Vercel build
+server.js
+api/index.js
+node_modules/
+.git/
+dist/
+*.log
+.env
+.env.local
+.env.*.local

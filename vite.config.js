@@ -50,14 +50,16 @@ export default defineConfig(() => {
           'pages/personal/settings': path.resolve(__dirname, 'pages/personal/settings.html'),
         }
       },
-      // Exclude server-side files from client build
+      // Server-side files should NOT be bundled
       rollup: {
-        // Explicitly externalize server-side dependencies
         external: [],
       },
-      // Ensure server.js is never bundled
       outDir: 'dist',
       emptyOutDir: true,
+    },
+    // Optimize dependencies to avoid bundling server-side modules
+    optimizeDeps: {
+      exclude: ['server.js', 'api/index.js']
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
