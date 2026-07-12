@@ -3,7 +3,7 @@
 -- ============================================
 -- À exécuter dans Supabase > Éditeur SQL
 
--- IMPORTANT : Email admin configuré pour admin@kafarm.sn
+-- IMPORTANT : Remplacez 'votre-email-admin@exemple.sn' par votre vrai email admin
 
 -- 1. CRÉER LA TABLE DES ADMINS (si elle n'existe pas)
 CREATE TABLE IF NOT EXISTS admin_users (
@@ -13,10 +13,11 @@ CREATE TABLE IF NOT EXISTS admin_users (
 );
 
 -- 2. INSÉRER VOTRE EMAIL ADMIN
+-- Remplacez 'votre-email-admin@exemple.sn' par votre email réel
 INSERT INTO admin_users (id, email)
-SELECT id, 'admin@kafarm.sn'
+SELECT id, 'votre-email-admin@exemple.sn'
 FROM auth.users
-WHERE email = 'admin@kafarm.sn'
+WHERE email = 'votre-email-admin@exemple.sn'
 ON CONFLICT (email) DO NOTHING;
 
 -- 3. FONCTION DE VÉRIFICATION ADMIN
