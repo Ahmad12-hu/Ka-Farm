@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi Financier & Compostage - KA Farm</title>
+
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo-CVaPPC6u.svg">
+  <link rel="apple-touch-icon" href="/assets/logo-CVaPPC6u.svg">
+
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom separated Stylesheets -->
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script type="module" crossorigin src="/assets/pages/shared/finances-D-G3ZNWz.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-client-BIZ63hJO.js">
+  <link rel="modulepreload" crossorigin href="/assets/storage-C1IPJf-V.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-manager-ficPWetn.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-BlLxvn42.js">
+  <link rel="modulepreload" crossorigin href="/assets/app-DhSchYKj.js">
+  <link rel="stylesheet" crossorigin href="/assets/auth-client-BwcYXwNA.css">
+</head>
+
+<body
+  class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-6">
+
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
+          <div class="space-y-1">
+            <span class="text-[10px] text-emerald-500 font-extrabold uppercase tracking-widest">Co-Pilotage
+              Économique</span>
+            <h2 class="text-2xl font-black text-slate-850 dark:text-white flex items-center gap-2">
+              <i data-lucide="wallet" class="h-6 w-6 text-emerald-500"></i> Comptabilité & Compostage Organique
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              Pilotez la rentabilité de votre exploitation et équilibrez vos intrants organiques locaux.
+            </p>
+          </div>
+          <button onclick="document.getElementById('finance-modal').classList.remove('hidden')"
+            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="plus" class="h-3.5 w-3.5"></i> Noter une transaction
+          </button>
+        </div>
+
+        <!-- Financial Widgets Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div
+            class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left">
+            <p class="text-[9px] font-black text-[#819888] uppercase tracking-wider">Total Revenus (Ventes)</p>
+            <p id="finances-total-revenu" class="text-2xl font-black text-emerald-500 mt-1 font-mono">0 F</p>
+            <span class="text-[9px] text-emerald-500 font-extrabold">Entrées de caisse cumulées</span>
+          </div>
+
+          <div
+            class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left">
+            <p class="text-[9px] font-black text-[#819888] uppercase tracking-wider">Total Dépenses (Achats)</p>
+            <p id="finances-total-depense" class="text-2xl font-black text-rose-500 mt-1 font-mono">0 F</p>
+            <span class="text-[9px] text-rose-400 font-semibold">Graines, carburant, fientes de poule</span>
+          </div>
+
+          <div
+            class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left">
+            <p class="text-[9px] font-black text-[#819888] uppercase tracking-wider">Trésorerie Actuelle</p>
+            <p id="finances-total-solde" class="text-2xl font-black text-white mt-1 font-mono">0 F</p>
+            <span class="text-[9px] text-[#819888] font-bold">Bénéfice net restant</span>
+          </div>
+        </div>
+
+        <!-- Double Grid layout: 1. Cash flow log, 2. Compost calculator -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- Cash flow table log -->
+          <div
+            class="lg:col-span-7 p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 shadow-sm h-fit">
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-50 dark:border-slate-800/10">
+              <h3
+                class="text-xs font-black text-slate-450 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="book-open" class="h-4 w-4 text-emerald-500"></i> Registre des transactions
+              </h3>
+              <div class="flex items-center gap-2">
+                <button onclick="window.exportFinancesCSV()"
+                  class="px-2.5 py-1.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#1A4525] text-slate-700 dark:text-slate-200 rounded-lg text-[10px] font-black flex items-center gap-1 cursor-pointer transition-all">
+                  <i data-lucide="file-spreadsheet" class="h-3 w-3 text-emerald-500"></i> Exporter CSV
+                </button>
+                <button onclick="window.exportFinancesPDF()"
+                  class="px-2.5 py-1.5 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#1A4525] text-slate-700 dark:text-slate-200 rounded-lg text-[10px] font-black flex items-center gap-1 cursor-pointer transition-all">
+                  <i data-lucide="file-text" class="h-3 w-3 text-rose-500"></i> PDF Bilan
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs font-semibold">
+                <thead>
+                  <tr
+                    class="border-b border-slate-100 dark:border-slate-800 text-slate-400 text-[10px] uppercase tracking-wider text-left">
+                    <th class="pb-3 font-bold">Libellé</th>
+                    <th class="pb-3 font-bold">Type</th>
+                    <th class="pb-3 font-bold">Rubrique</th>
+                    <th class="pb-3 font-bold">Date</th>
+                    <th class="pb-3 font-bold">Montant</th>
+                    <th class="pb-3 font-bold text-right"></th>
+                  </tr>
+                </thead>
+                <tbody id="finances-table-body">
+                  <!-- Dynamically populated via finances.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Compost & Organic Fertilizer Balance Calculator -->
+          <div
+            class="lg:col-span-5 p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 shadow-sm h-fit">
+            <div class="pb-2 border-b border-slate-50 dark:border-slate-800/10">
+              <h3
+                class="text-xs font-black text-slate-850 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="beaker" class="h-4 w-4 text-emerald-500"></i> Simulateur C/N Compostage Organique
+              </h3>
+              <p class="text-[10px] text-slate-400 font-semibold mt-0.5 leading-relaxed">
+                Calculez l'équilibre Carbone (Paille/Feuilles) et Azote (Manure/Herbe verte) pour optimiser vos engrais
+                faits maison.
+              </p>
+            </div>
+
+            <div class="space-y-3 text-xs font-semibold">
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">🍂 Matériaux Carbonés
+                  (Secs en kg)</label>
+                <input type="number" id="compost-carbon-input" value="150" min="0"
+                  placeholder="Ex: Paille de mil, herbes sèches, copeaux de bois"
+                  class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2 text-slate-800 dark:text-slate-200 outline-none">
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">🌿 Matériaux Azotés
+                  (Humides en kg)</label>
+                <input type="number" id="compost-nitrogen-input" value="100" min="0"
+                  placeholder="Ex: Fientes de poule, épluchures de légumes, fumier"
+                  class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2 text-slate-800 dark:text-slate-200 outline-none">
+              </div>
+            </div>
+
+            <!-- Result Box -->
+            <div id="compost-result-box"
+              class="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl space-y-2 hidden animate-scaleUp">
+              <div class="flex justify-between items-center">
+                <span id="compost-ratio-text" class="text-sm font-black text-slate-800 dark:text-white font-mono">C/N ≈
+                  --</span>
+                <span id="compost-status-label" class="text-[9px] font-black">--</span>
+              </div>
+              <p id="compost-advice-text"
+                class="text-[11px] text-slate-600 dark:text-slate-350 font-medium leading-relaxed">
+                Saisissez des quantités pour lancer la simulation agro-écologique.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Analyse des Marges Nettes par Parcelle & par Variété -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Parcelles Margins -->
+          <div
+            class="lg:col-span-6 p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 shadow-sm h-fit">
+            <div class="pb-2 border-b border-slate-50 dark:border-slate-800/10">
+              <h3
+                class="text-xs font-black text-slate-850 dark:text-white uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <i data-lucide="map" class="h-4 w-4 text-emerald-500"></i> Marges Nettes par Parcelle
+              </h3>
+              <p class="text-[10px] text-[#819888] font-bold mt-0.5 leading-relaxed">
+                Revenus moins dépenses affectées spécifiquement à chaque planche / parcelle de l'exploitation.
+              </p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs font-semibold">
+                <thead>
+                  <tr
+                    class="border-b border-slate-100 dark:border-slate-800 text-slate-450 text-[10px] uppercase tracking-wider text-left">
+                    <th class="pb-3 font-bold">Parcelle</th>
+                    <th class="pb-3 font-bold text-emerald-500">Revenus</th>
+                    <th class="pb-3 font-bold text-rose-500">Dépenses</th>
+                    <th class="pb-3 font-bold text-right">Marge Net</th>
+                  </tr>
+                </thead>
+                <tbody id="parcel-margins-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Varieties Margins -->
+          <div
+            class="lg:col-span-6 p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 shadow-sm h-fit">
+            <div class="pb-2 border-b border-slate-50 dark:border-slate-800/10">
+              <h3
+                class="text-xs font-black text-slate-850 dark:text-white uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <i data-lucide="sprout" class="h-4 w-4 text-emerald-500"></i> Marges Nettes par Variété
+              </h3>
+              <p class="text-[10px] text-[#819888] font-bold mt-0.5 leading-relaxed">
+                Suivi de rentabilité économique par variété maraîchère cultivée.
+              </p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs font-semibold">
+                <thead>
+                  <tr
+                    class="border-b border-slate-100 dark:border-slate-800 text-slate-450 text-[10px] uppercase tracking-wider text-left">
+                    <th class="pb-3 font-bold">Variété</th>
+                    <th class="pb-3 font-bold text-emerald-500">Revenus</th>
+                    <th class="pb-3 font-bold text-rose-500">Dépenses</th>
+                    <th class="pb-3 font-bold text-right">Marge Net</th>
+                  </tr>
+                </thead>
+                <tbody id="crop-margins-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulateur de Prix des Marchés Locaux & Calculateur de Marge -->
+        <div
+          class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-6 shadow-sm">
+          <div
+            class="pb-3 border-b border-slate-100 dark:border-slate-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <h3
+                class="text-sm font-black text-slate-850 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="trending-up" class="h-4 w-4 text-emerald-500 animate-pulse"></i> Simulateur des Marchés
+                Sénégalais & Marges
+              </h3>
+              <p class="text-[11px] text-slate-400 font-semibold">
+                Comparez les prix de vente en temps réel sur les grands marchés du Sénégal et évaluez vos coûts pour
+                maximiser votre rentabilité.
+              </p>
+            </div>
+
+            <div
+              class="flex items-center gap-2 bg-slate-50 dark:bg-[#061109]/30 p-1.5 rounded-xl border border-slate-150 dark:border-[#143E23]/20">
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider pl-1.5">Culture ciblée
+                :</span>
+              <select id="market-crop-select"
+                class="bg-white dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-slate-200 outline-none"
+                onchange="window.updateMarketCalculations()">
+                <option value="tomate">🍅 Tomate (Mongal / Cobra)</option>
+                <option value="oignon">🧅 Oignon local (Galmi)</option>
+                <option value="piment">🌶 Piment fort (Antillais)</option>
+                <option value="gombo">🌱 Gombo (Kirene)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Side: Cost Inputs -->
+            <div class="lg:col-span-5 space-y-4">
+              <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="coins" class="h-3.5 w-3.5 text-emerald-500"></i> Vos Coûts Réels Estimés (FCFA)
+              </h4>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-semibold">
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">🌱 Semences &
+                    Plants</label>
+                  <input type="number" id="cost-seeds" value="45000" min="0"
+                    class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3.5 py-2 text-slate-800 dark:text-slate-200 outline-none"
+                    oninput="window.updateMarketCalculations()">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">🧪 Engrais &
+                    Traitements</label>
+                  <input type="number" id="cost-fertilizers" value="60000" min="0"
+                    class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3.5 py-2 text-slate-800 dark:text-slate-200 outline-none"
+                    oninput="window.updateMarketCalculations()">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">⛽ Eau / Carburant
+                    Pompe</label>
+                  <input type="number" id="cost-fuel" value="50000" min="0"
+                    class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3.5 py-2 text-slate-800 dark:text-slate-200 outline-none"
+                    oninput="window.updateMarketCalculations()">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">👥 Main d'œuvre
+                    (Journaliers)</label>
+                  <input type="number" id="cost-labor" value="30000" min="0"
+                    class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3.5 py-2 text-slate-800 dark:text-slate-200 outline-none"
+                    oninput="window.updateMarketCalculations()">
+                </div>
+
+                <div class="space-y-1 sm:col-span-2">
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">📦 Autres charges
+                    (Transport, emballages, caisses)</label>
+                  <input type="number" id="cost-others" value="15000" min="0"
+                    class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3.5 py-2 text-slate-800 dark:text-slate-200 outline-none"
+                    oninput="window.updateMarketCalculations()">
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-100 dark:border-slate-800/40 space-y-2">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Volume de récolte attendu</span>
+                  <span id="yield-display" class="text-emerald-500 font-black">500 kg</span>
+                </div>
+                <input type="range" id="param-yield" min="50" max="3000" step="50" value="500"
+                  class="w-full h-1.5 bg-slate-200 dark:bg-[#061109] rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  oninput="window.updateMarketCalculations()">
+              </div>
+            </div>
+
+            <!-- Middle/Right Side: Local Market comparison & margin calculation -->
+            <div class="lg:col-span-7 space-y-4">
+              <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="map-pin" class="h-3.5 w-3.5 text-emerald-500"></i> Sélectionner un marché & Comparer les
+                cours
+              </h4>
+
+              <!-- Interactive Market Grid -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="markets-comparison-grid">
+                <!-- Injected via JavaScript dynamically -->
+              </div>
+
+              <!-- Main Financial Diagnostics Banner -->
+              <div
+                class="p-4.5 bg-[#0D2615]/20 dark:bg-[#0D2615]/30 rounded-2xl border border-[#143E23]/30 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+                <div class="space-y-1">
+                  <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Coût de production
+                    global</span>
+                  <p id="calc-total-cost" class="text-lg font-black text-slate-800 dark:text-white font-mono">200 000 F
+                  </p>
+                  <p class="text-[9px] text-slate-400 font-bold">Investissement total</p>
+                </div>
+                <div class="space-y-1 sm:border-x sm:border-slate-150 dark:sm:border-[#143E23]/20 sm:px-4">
+                  <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Prix de revient au
+                    kg</span>
+                  <p id="calc-cost-per-kg" class="text-lg font-black text-amber-500 font-mono">400 F / kg</p>
+                  <p class="text-[9px] text-slate-400 font-bold">Seuil de rentabilité minimum</p>
+                </div>
+                <div class="space-y-1 sm:pl-4">
+                  <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Bénéfice Net Estimé</span>
+                  <p id="calc-net-profit" class="text-lg font-black text-emerald-500 font-mono">+50 000 F</p>
+                  <span id="calc-roi" class="text-[9px] text-emerald-500 font-extrabold uppercase">ROI: +25%</span>
+                </div>
+              </div>
+
+              <!-- Extra Advice/Alert panel depending on margin -->
+              <div
+                class="p-3.5 bg-slate-50 dark:bg-[#061109]/40 rounded-xl border border-slate-100 dark:border-[#143E23]/10 flex items-start gap-3">
+                <div id="profit-indicator-icon" class="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg">
+                  <i data-lucide="check-circle" class="h-5 w-5"></i>
+                </div>
+                <div class="space-y-0.5 text-left">
+                  <p id="profit-advice-title" class="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                    Simulation rentabilité viable</p>
+                  <p id="profit-advice-desc"
+                    class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed font-semibold">
+                    Le marché sélectionné vous assure une marge intéressante. Assurez-vous de minimiser les
+                    intermédiaires de transport pour capter ce profit réel.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal for recording a transaction -->
+  <div id="finance-modal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden animate-fadeIn">
+    <div
+      class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 text-left shadow-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="plus-circle" class="h-4 w-4 text-emerald-500"></i> Enregistrer un Flux Financier
+        </h3>
+        <button onclick="document.getElementById('finance-modal').classList.add('hidden')"
+          class="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <form id="shared-finance-form" class="space-y-4 text-xs font-semibold">
+        <div class="space-y-1">
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Désignation /
+            Libellé</label>
+          <input type="text" id="form-fin-desc" required placeholder="Ex: Vente de 10 caisses de tomates Mongal"
+            class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type de flux</label>
+            <select id="form-fin-type"
+              class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+              <option value="Revenu" selected>🟢 Revenu (Entrée)</option>
+              <option value="Dépense">🔴 Dépense (Sortie)</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rubrique /
+              Catégorie</label>
+            <select id="form-fin-cat"
+              class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+              <option value="Vente Légumes">🍅 Vente Légumes</option>
+              <option value="Engrais/Semences">🌱 Engrais & Semences</option>
+              <option value="Carburant">⛽ Carburant pompe forage</option>
+              <option value="Main d'oeuvre">👥 Journaliers / Main d'oeuvre</option>
+              <option value="Autres">📦 Autres charges</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Montant (FCFA)</label>
+            <input type="number" id="form-fin-amount" required placeholder="Ex: 120000"
+              class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date</label>
+            <input type="date" id="form-fin-date" required
+              class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parcelle Associée</label>
+            <select id="form-fin-parcel"
+              class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+              <!-- Options chargées dynamiquement par JS -->
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Culture Associée</label>
+            <select id="form-fin-crop"
+              class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none">
+              <!-- Options chargées dynamiquement par JS -->
+            </select>
+          </div>
+        </div>
+
+        <button type="submit"
+          class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs">
+          Enregistrer la transaction
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shared App & Finances Module Entry Points -->
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const finDateInput = document.getElementById('form-fin-date');
+      if (finDateInput) finDateInput.value = todayStr;
+    });
+  </script>
+</body>
+
+</html>

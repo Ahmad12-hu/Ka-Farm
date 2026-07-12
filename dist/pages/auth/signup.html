@@ -10,16 +10,14 @@
   <meta name="description"
     content="Créez votre compte collaborateur sur KA Farm Sénégal et commencez à gérer l'exploitation agro-écologique en temps réel.">
   <link rel="canonical" href="https://kafarm.sn/pages/auth/signup.html">
-  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
-  <link rel="apple-touch-icon" href="/assets/logo.svg">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo-CVaPPC6u.svg">
+  <link rel="apple-touch-icon" href="/assets/logo-CVaPPC6u.svg">
 
   <!-- Tailwind CSS CDN & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom separated Stylesheets -->
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/auth.css">
 
   <script>
     try {
@@ -49,6 +47,15 @@
       }
     }
   </script>
+  <script type="module" crossorigin src="/assets/pages/auth/signup-Co2Jo6Ms.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-client-BIZ63hJO.js">
+  <link rel="modulepreload" crossorigin href="/assets/storage-C1IPJf-V.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-manager-ficPWetn.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-BlLxvn42.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-Dc2gwlfF.js">
+  <link rel="stylesheet" crossorigin href="/assets/auth-client-BwcYXwNA.css">
+  <link rel="stylesheet" crossorigin href="/assets/auth-BPdtUq8N.css">
 </head>
 
 <body
@@ -141,24 +148,6 @@
     </div>
   </div>
 
-  <script type="module">
-    import { Router } from '/js/router.js';
-    import { AuthPublic } from '/js/auth-public.js';
-
-    document.getElementById('signup-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('signup-name').value;
-      const email = document.getElementById('signup-email').value;
-      const role = document.getElementById('signup-role').value;
-      const pass = document.getElementById('signup-password').value;
-
-      // Utiliser Supabase Auth pour l'inscription publique
-      await AuthPublic.signup(name, email, role, pass);
-    });
-
-    // Auto load icons
-    lucide.createIcons();
-  </script>
 </body>
 
 </html>

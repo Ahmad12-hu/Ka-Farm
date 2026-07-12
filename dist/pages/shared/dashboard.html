@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de Bord - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo-CVaPPC6u.svg">
+  <link rel="apple-touch-icon" href="/assets/logo-CVaPPC6u.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script type="module" crossorigin src="/assets/pages/shared/dashboard-CcA0frDv.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-client-BIZ63hJO.js">
+  <link rel="modulepreload" crossorigin href="/assets/storage-C1IPJf-V.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-manager-ficPWetn.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-BlLxvn42.js">
+  <link rel="modulepreload" crossorigin href="/assets/app-DhSchYKj.js">
+  <link rel="stylesheet" crossorigin href="/assets/auth-client-BwcYXwNA.css">
+  <link rel="stylesheet" crossorigin href="/assets/dashboard-BZvniQQs.css">
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full space-y-6">
+        
+        <!-- Global Search Bar Section -->
+        <div class="relative z-50 w-full max-w-2xl mx-auto md:mx-0">
+          <div class="relative group">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i data-lucide="search" class="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors"></i>
+            </div>
+            <input 
+              type="text" 
+              id="global-search-input" 
+              placeholder="Rechercher une parcelle, un stock, ou une fiche de culture..." 
+              class="w-full pl-11 pr-10 py-3 bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/40 rounded-2xl text-xs sm:text-sm outline-none transition-all focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 shadow-sm font-semibold"
+              autocomplete="off"
+            >
+            <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
+              <span id="search-badge" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-black font-mono text-slate-400 dark:text-[#819888] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#061109]">RECHERCHER</span>
+              <button id="global-search-clear" class="hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer">
+                <i data-lucide="x" class="h-4 w-4"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Floating Results Dropdown -->
+          <div 
+            id="global-search-dropdown" 
+            class="hidden absolute left-0 right-0 mt-2 bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl shadow-2xl overflow-hidden animate-fadeIn text-left max-h-[380px] overflow-y-auto"
+          >
+            <div class="p-3 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-[#819888] border-b border-slate-50 dark:border-[#143E23]/10">
+              Résultats de la recherche
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-[#143E23]/15" id="global-search-results">
+              <!-- Dynamically rendered rows -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Welcome header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+          <div class="space-y-1">
+            <span class="text-[10px] text-emerald-500 font-extrabold uppercase tracking-widest">Tableau de Bord Global</span>
+            <h2 class="text-2xl font-black text-slate-850 dark:text-white flex items-center gap-2">
+              <i data-lucide="layout-dashboard" class="h-6 w-6 text-emerald-500"></i> Suivi Exploitation
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              Rapprochement en temps réel de vos parcelles et de vos bureaux de vente partout au Sénégal.
+            </p>
+          </div>
+
+          <!-- Weather Station selector -->
+          <div class="flex items-center gap-2 bg-[#0B2112]/40 border border-[#143E23]/30 px-3 py-1.5 rounded-xl">
+            <i data-lucide="cloud-sun" class="h-4 w-4 text-emerald-500"></i>
+            <select id="weather-selector" class="bg-transparent text-xs font-extrabold text-[#819888] dark:text-emerald-400 border-none outline-none cursor-pointer">
+              <option value="Dakar" class="bg-[#06130B]">Dakar</option>
+              <option value="Diourbel" class="bg-[#06130B]">Diourbel</option>
+              <option value="Fatick" class="bg-[#06130B]">Fatick</option>
+              <option value="Kaffrine" class="bg-[#06130B]">Kaffrine</option>
+              <option value="Kaolack" class="bg-[#06130B]">Kaolack</option>
+              <option value="Kédougou" class="bg-[#06130B]">Kédougou</option>
+              <option value="Kolda" class="bg-[#06130B]">Kolda</option>
+              <option value="Louga" class="bg-[#06130B]">Louga</option>
+              <option value="Matam" class="bg-[#06130B]">Matam</option>
+              <option value="Saint-Louis" class="bg-[#06130B]">Saint-Louis</option>
+              <option value="Sédhiou" class="bg-[#06130B]">Sédhiou</option>
+              <option value="Tambacounda" class="bg-[#06130B]">Tambacounda</option>
+              <option value="Thiès" class="bg-[#06130B]">Thiès (Mbour)</option>
+              <option value="Ziguinchor" class="bg-[#06130B]">Ziguinchor (Casamance)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Water Alert Banner -->
+        <div id="dashboard-water-alert" class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-3 hidden text-left animate-fadeIn">
+          <div class="h-8 w-8 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i data-lucide="droplet" class="h-4 w-4"></i>
+          </div>
+          <div>
+            <p class="text-xs font-black text-amber-400">💧 Alerte d'irrigation requise</p>
+            <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Certaines de nos parcelles ont un statut "Besoin d'eau". Veuillez coordonner l'arrosage.</p>
+          </div>
+        </div>
+
+        <!-- Top statistics widgets -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left stat-card cursor-pointer hover:border-emerald-500/30 transition-all stagger-card delay-1" onclick="window.location.href='/pages/shared/crops.html'">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black text-[#819888] uppercase tracking-wider">Cultures Actives</span>
+              <div class="h-7 w-7 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center"><i data-lucide="sprout" class="h-4 w-4"></i></div>
+            </div>
+            <p id="stat-crops-count" class="text-3xl font-black text-slate-800 dark:text-white mt-2 font-mono">0</p>
+            <p class="text-[9px] text-slate-400 mt-1">Planches en cours de croissance</p>
+          </div>
+
+          <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left stat-card cursor-pointer hover:border-amber-500/30 transition-all stagger-card delay-2" onclick="window.location.href='/pages/personal/my-tasks.html'">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black text-[#819888] uppercase tracking-wider">Tâches en attente</span>
+              <div class="h-7 w-7 bg-amber-500/10 text-amber-500 rounded-lg flex items-center justify-center"><i data-lucide="check-square" class="h-4 w-4"></i></div>
+            </div>
+            <p id="stat-tasks-count" class="text-3xl font-black text-slate-800 dark:text-white mt-2 font-mono">0</p>
+            <p class="text-[9px] text-slate-400 mt-1">Travaux d'entretien à réaliser</p>
+          </div>
+
+          <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left stat-card cursor-pointer hover:border-[#a855f7]/30 transition-all stagger-card delay-3" onclick="window.location.href='/pages/shared/crops.html'">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black text-[#819888] uppercase tracking-wider">Pépinières actives</span>
+              <div class="h-7 w-7 bg-purple-500/10 text-purple-400 rounded-lg flex items-center justify-center"><i data-lucide="layers" class="h-4 w-4"></i></div>
+            </div>
+            <p id="stat-nurseries-count" class="text-3xl font-black text-slate-800 dark:text-white mt-2 font-mono">0</p>
+            <p class="text-[9px] text-slate-400 mt-1">Semis prêts pour repiquage</p>
+          </div>
+
+          <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left stat-card cursor-pointer hover:border-amber-500/30 transition-all stagger-card delay-4" onclick="window.location.href='/pages/shared/elevage.html'">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black text-[#819888] uppercase tracking-wider">Cheptel Actif</span>
+              <div class="h-7 w-7 bg-amber-500/10 text-amber-500 rounded-lg flex items-center justify-center"><i data-lucide="paw-print" class="h-4 w-4 text-amber-500"></i></div>
+            </div>
+            <p id="stat-cheptel-count" class="text-3xl font-black text-slate-800 dark:text-white mt-2 font-mono">0</p>
+            <p class="text-[9px] text-slate-400 mt-1">Têtes d'élevage actives</p>
+          </div>
+        </div>
+
+        <!-- Finances summary block -->
+        <div class="p-6 bg-[#0B2112] border border-[#143E23]/30 rounded-3xl grid grid-cols-1 sm:grid-cols-3 gap-6 text-left shadow-lg stagger-card delay-5">
+          <div>
+            <p class="text-[10px] font-black text-[#A4C4AF] uppercase tracking-wider">Ventes Totales (Revenus)</p>
+            <p id="stat-total-revenu" class="text-xl md:text-2xl font-black text-emerald-400 font-mono mt-1">0 F</p>
+            <span class="text-[9px] text-emerald-300 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded-full mt-1.5 inline-block">Marché & Grossistes</span>
+          </div>
+          <div>
+            <p class="text-[10px] font-black text-[#A4C4AF] uppercase tracking-wider">Dépenses Totales (Achats)</p>
+            <p id="stat-total-depense" class="text-xl md:text-2xl font-black text-rose-300 font-mono mt-1">0 F</p>
+            <span class="text-[9px] text-rose-300 font-bold bg-rose-500/20 px-1.5 py-0.5 rounded-full mt-1.5 inline-block">Intrants & Carburant</span>
+          </div>
+          <div class="border-t sm:border-t-0 sm:border-l border-[#143E23] pt-4 sm:pt-0 sm:pl-6">
+            <p class="text-[10px] font-black text-[#A4C4AF] uppercase tracking-wider">Trésorerie / Bénéfice Net</p>
+            <p id="stat-solde" class="text-xl md:text-2xl font-black text-white font-mono mt-1">0 F</p>
+            <span class="text-[9px] text-[#A4C4AF] font-bold">Solde disponible en caisse</span>
+          </div>
+        </div>
+
+        <!-- Middle widgets: Weather advice + summary items -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Weather recommendations -->
+          <div class="md:col-span-2 p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 stagger-card delay-6">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/10">
+              <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="cloud-lightning" class="h-4 w-4 text-emerald-500"></i> Bulletin Météo & Recommandation
+                <span class="inline-flex items-center gap-1 text-[8px] bg-red-500/15 text-red-500 font-extrabold px-1.5 py-0.5 rounded-md animate-pulse">
+                  <span class="h-1 w-1 bg-red-500 rounded-full"></span> DIRECT API
+                </span>
+              </h3>
+              <span id="weather-city-name" class="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold px-2 py-0.5 rounded-full">Dakar</span>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div class="bg-slate-50 dark:bg-[#061109]/40 p-3 rounded-2xl border border-slate-100 dark:border-emerald-950/20">
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Température</p>
+                <p id="weather-temp" class="text-base font-black text-slate-800 dark:text-white mt-0.5">26°C</p>
+              </div>
+              <div class="bg-slate-50 dark:bg-[#061109]/40 p-3 rounded-2xl border border-slate-100 dark:border-emerald-950/20">
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Humidité</p>
+                <p id="weather-humidity" class="text-base font-black text-slate-800 dark:text-white mt-0.5">82%</p>
+              </div>
+              <div class="bg-slate-50 dark:bg-[#061109]/40 p-3 rounded-2xl border border-slate-100 dark:border-emerald-950/20">
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Pluviométrie</p>
+                <p id="weather-precipitation" class="text-base font-black text-slate-800 dark:text-white mt-0.5">0.0 mm</p>
+              </div>
+              <div class="bg-slate-50 dark:bg-[#061109]/40 p-3 rounded-2xl border border-slate-100 dark:border-emerald-950/20 col-span-1">
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">État</p>
+                <p id="weather-condition" class="text-[11px] font-extrabold text-emerald-500 mt-1 truncate">Brumeux</p>
+              </div>
+            </div>
+
+            <div class="p-4 bg-emerald-500/5 dark:bg-[#061109]/30 border border-emerald-500/10 rounded-2xl">
+              <p class="text-[10px] font-black text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                <i data-lucide="sparkles" class="h-3.5 w-3.5"></i> Conseil horticole KA-Advisor
+              </p>
+              <p id="weather-advice" class="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed font-semibold">
+                Humidité élevée. Limitez l'arrosage de fin de journée pour éviter le mildiou sur les tomates et oignons.
+              </p>
+            </div>
+          </div>
+
+          <!-- Quick listings stack -->
+          <div class="space-y-4">
+            <!-- Harvest ready crops -->
+            <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-3 stagger-card delay-7">
+              <h4 class="text-[10px] font-black text-slate-450 dark:text-slate-400 uppercase tracking-wider">🎯 Récolte Prête</h4>
+              <div class="space-y-2" id="dash-harvest-list">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Stocks critical warnings -->
+            <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-3 stagger-card delay-8">
+              <h4 class="text-[10px] font-black text-slate-450 dark:text-slate-400 uppercase tracking-wider">⚠️ Stock Bas (&lt;25%)</h4>
+              <div class="space-y-2" id="dash-stock-list">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Recent Livestock Production -->
+            <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-3 cursor-pointer hover:border-emerald-500/30 transition-all stagger-card delay-9" onclick="window.location.href='/pages/shared/elevage.html'">
+              <h4 class="text-[10px] font-black text-slate-450 dark:text-slate-400 uppercase tracking-wider">🥛 Productions d'Élevage (7j)</h4>
+              <div class="space-y-2" id="dash-elevage-production-list">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historical Crop Yields Section (Recharts) -->
+        <div id="yields-chart-react-root" class="stagger-card delay-9.5"></div>
+
+        <!-- bottom section: Visualisation du Budget D3.js & Transactions Récentes -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Monthly Budget distribution (D3.js Visualization) -->
+          <div class="lg:col-span-2 p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 hover-lift stagger-card delay-10">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/10">
+              <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="pie-chart" class="h-4 w-4 text-emerald-500"></i> Répartition des Dépenses (Budget Mensuel)
+              </h3>
+              <span class="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold px-2.5 py-0.5 rounded-full">D3.js Interactif</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <!-- D3.js Donut Chart SVG Container -->
+              <div class="flex justify-center items-center relative py-2" id="budget-d3-chart-container" style="min-height: 220px;">
+                <svg id="budget-donut-chart" class="w-full max-w-[200px] h-[200px]"></svg>
+                <div class="absolute flex flex-col items-center justify-center text-center pointer-events-none">
+                  <span class="text-[8px] text-slate-400 dark:text-[#819888] font-bold uppercase tracking-wider">Total</span>
+                  <span id="budget-chart-total" class="text-xs sm:text-sm font-black text-slate-800 dark:text-white font-mono">0 F</span>
+                </div>
+              </div>
+              
+              <!-- Legend & Interactive Details -->
+              <div class="space-y-4">
+                <div class="space-y-1">
+                  <p class="text-xs font-black text-slate-800 dark:text-slate-200">KA-Analytics Intelligente</p>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
+                    Survolez ou cliquez sur les secteurs du graphique circulaire pour voir les montants détaillés et les pourcentages par poste de dépense.
+                  </p>
+                </div>
+                <div id="budget-legend" class="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                  <!-- Dynamic Legend Rows -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transactions list -->
+          <div class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-4 stagger-card delay-11">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/10">
+              <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="history" class="h-4 w-4 text-emerald-500"></i> Transactions Récentes
+              </h3>
+              <a href="/pages/shared/finances.html" class="text-[10px] text-emerald-500 hover:underline font-black flex items-center gap-1">Voir tout <i data-lucide="arrow-right" class="h-3 w-3"></i></a>
+            </div>
+            <div class="space-y-3.5 max-h-[220px] overflow-y-auto pr-1" id="dash-finances-list">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Shared App & Dashboard Module Entry Points -->
+</body>
+</html>

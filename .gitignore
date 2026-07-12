@@ -15,3 +15,26 @@ yarn-debug.log*
 .idea/
 blobs/
 manifests/
+
+# Fichiers de logs
+/logs/
+*.log
+
+# Dossiers de build et dépendances
+/dist/
+/build/
+/coverage/
+/node_modules/
+
+# Fichiers de test Cypress
+/cypress/videos/
+/cypress/screenshots/
+
+# Fichiers d'environnement local
+.env.local
+.env.*.local
+
+# Fichiers temporaires
+*.tmp
+*.temp
+.nyc_output/

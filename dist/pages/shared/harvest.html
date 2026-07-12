@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journal des Récoltes - KA Farm</title>
+  
+  <!-- Favicon & Branding -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo-CVaPPC6u.svg">
+  <link rel="apple-touch-icon" href="/assets/logo-CVaPPC6u.svg">
+  
+  <!-- Tailwind CSS CDN & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom separated Stylesheets -->
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#06130B',
+              slate: '#0B2112',
+              green: '#10B981',
+              hover: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script type="module" crossorigin src="/assets/pages/shared/harvest-Hz2tm6U-.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-client-BIZ63hJO.js">
+  <link rel="modulepreload" crossorigin href="/assets/storage-C1IPJf-V.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-manager-ficPWetn.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-BlLxvn42.js">
+  <link rel="modulepreload" crossorigin href="/assets/app-DhSchYKj.js">
+  <link rel="stylesheet" crossorigin href="/assets/auth-client-BwcYXwNA.css">
+  <link rel="stylesheet" crossorigin href="/assets/dashboard-BZvniQQs.css">
+</head>
+<body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Mobile Top Header Placeholder -->
+  <div id="mobile-header-placeholder"></div>
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content Stage -->
+    <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+      <div class="w-full max-w-6xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+          <div class="space-y-1">
+            <span class="text-[10px] text-emerald-500 font-extrabold uppercase tracking-widest">Données d'Exploitation</span>
+            <h2 class="text-2xl font-black text-slate-850 dark:text-white flex items-center gap-2">
+              <i data-lucide="sprout" class="h-6 w-6 text-emerald-500"></i> Journal des Récoltes
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              Historique complet de toutes les récoltes effectuées sur l'exploitation.
+            </p>
+          </div>
+          <button class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg shadow-emerald-950/20 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+            <i data-lucide="plus-circle" class="h-4 w-4"></i>
+            <span>Ajouter une Récolte</span>
+          </button>
+        </div>
+
+        <!-- Harvests Table -->
+        <div class="bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl shadow-lg overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 dark:bg-[#061109]/30">
+                <tr>
+                  <th class="p-4 font-black text-slate-500 dark:text-[#819888] uppercase tracking-wider">Culture</th>
+                  <th class="p-4 font-black text-slate-500 dark:text-[#819888] uppercase tracking-wider">Parcelle</th>
+                  <th class="p-4 font-black text-slate-500 dark:text-[#819888] uppercase tracking-wider">Quantité (kg)</th>
+                  <th class="p-4 font-black text-slate-500 dark:text-[#819888] uppercase tracking-wider">Date de Récolte</th>
+                  <th class="p-4 font-black text-slate-500 dark:text-[#819888] uppercase tracking-wider">Qualité</th>
+                  <th class="p-4 font-black text-slate-500 dark:text-[#819888] uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="harvests-table-body" class="divide-y divide-slate-100 dark:divide-[#143E23]/20">
+                <!-- Les lignes de données seront injectées ici par JavaScript -->
+                <tr id="loading-row">
+                  <td colspan="6" class="p-8 text-center text-slate-400 font-semibold">
+                    <div class="flex items-center justify-center gap-2">
+                      <i data-lucide="loader" class="h-4 w-4 animate-spin"></i>
+                      <span>Chargement des données depuis Supabase...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Shared App & Page-specific Module Entry Points -->
+</body>
+</html>

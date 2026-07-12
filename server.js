@@ -5,8 +5,30 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { Pool } from 'pg';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import cors from 'cors';
+import { logger } from './js/modules/logger.js';
+import { validateData, UserSchema, ParcelleSchema, CropSchema, TreatmentSchema, FinanceSchema, EmployeeSchema, StockSchema, HarvestSchema, SaleSchema, TaskSchema } from './js/modules/validators.js';
 
 dotenv.config();
+
+// Security middleware
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de requêtes, veuillez réessayer dans 15 minutes.' }
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes for API writes
+  max: 30, // stricter limit for mutations
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de modifications, veuillez réessayer dans 5 minutes.' }
+});
 
 // PostgreSQL connection pool
 let pool;
@@ -35,6 +57,35 @@ try {
 
 async function startServer() {
   const app = express();
+
+  // Security headers
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        connectSrc: ["'self'", "https://api.open-meteo.com", "https://generativelanguage.googleapis.com"],
+        fontSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"]
+      }
+    },
+    crossOriginEmbedderPolicy: false
+  }));
+
+  // CORS configuration
+  app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:5173'],
+    credentials: true,
+    optionsSuccessStatus: 204
+  }));
+
+  // Rate limiting
+  app.use('/api/', limiter);
+  app.use('/api/', apiLimiter);
+
   app.use(express.json({ limit: '12mb' }));
 
   // In-memory fallback stores (used when PostgreSQL is not available)
@@ -54,6 +105,13 @@ async function startServer() {
   let serverAttendance = [];
   let serverPayments = [];
 
+  // Request logging middleware
+  app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    logger.http(`${req.method} ${req.path}`);
+    next();
+  });
+
   // ==================== MESSAGES ====================
   app.get('/api/messages', async (req, res) => {
     if (usePostgres && pool) {
@@ -62,7 +120,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching messages from PostgreSQL:', err);
+        logger.error('Error fetching messages from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverMessages);
@@ -70,6 +128,30 @@ async function startServer() {
 
   app.post('/api/messages', async (req, res) => {
     const { id, senderEmail, senderName, text, timestamp, isPrivate, image } = req.body;
+
+    // Validation with Zod
+    const messageData = {
+      id,
+      senderEmail,
+      senderName: senderName || senderEmail,
+      text,
+      timestamp: timestamp || new Date().toISOString(),
+      isPrivate: !!isPrivate
+    };
+
+    const validation = validateData(
+      z.object({
+        senderEmail: z.string().email('Email invalide'),
+        text: z.string().min(1, 'Message vide'),
+      }),
+      { senderEmail: messageData.senderEmail, text: messageData.text }
+    );
+
+    if (!validation.success) {
+      logger.warn('Message validation failed', { errors: validation.errors });
+      return res.status(400).json({ error: 'Données invalides', details: validation.errors });
+    }
+
     if (!senderEmail || !text) {
       return res.status(400).json({ error: 'Champs requis manquants' });
     }
@@ -88,14 +170,16 @@ async function startServer() {
           'INSERT INTO messages (id, enterprise_id, sender_email, sender_name, text, timestamp, is_private) VALUES ($1, $2, $3, $4, $5, $6, $7)',
           [newMsg.id, 'ka_farm', newMsg.senderEmail, newMsg.senderName, newMsg.text, newMsg.timestamp, newMsg.isPrivate]
         );
+        logger.info('Message saved to PostgreSQL', { messageId: newMsg.id });
         res.json({ success: true, message: newMsg });
         return;
       } catch (err) {
-        console.error('Error saving message to PostgreSQL:', err);
+        logger.error('Error saving message to PostgreSQL', { error: err.message });
       }
     }
-    
+
     serverMessages.push(newMsg);
+    logger.info('Message saved to memory', { messageId: newMsg.id });
     res.json({ success: true, message: newMsg });
   });
 
@@ -115,6 +199,14 @@ async function startServer() {
 
   app.post('/api/treatments', async (req, res) => {
     const treatment = req.body;
+
+    // Validation with Zod
+    const validation = validateData(TreatmentSchema, treatment);
+    if (!validation.success) {
+      logger.warn('Treatment validation failed', { errors: validation.errors });
+      return res.status(400).json({ error: 'Données invalides', details: validation.errors });
+    }
+
     if (!treatment || !treatment.id || !treatment.product_name) {
       return res.status(400).json({ error: 'ID et nom du produit requis' });
     }
@@ -125,13 +217,14 @@ async function startServer() {
           'INSERT INTO traitements_phytosanitaires (id, enterprise_id, parcel_id, crop_id, crop_name, parcel_name, product_name, category, date_applied, dar_days, target, notes, harvest_ready) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
           [treatment.id, treatment.enterprise_id || 'ka_farm', treatment.parcel_id, treatment.crop_id, treatment.crop_name, treatment.parcel_name, treatment.product_name, treatment.category, treatment.date_applied, treatment.dar_days, treatment.target, treatment.notes, treatment.harvest_ready]
         );
+        logger.info('Treatment saved to PostgreSQL', { treatmentId: treatment.id, product: treatment.product_name });
         res.json({ success: true, treatment });
         return;
       } catch (err) {
-        console.error('Error saving treatment to PostgreSQL:', err);
+        logger.error('Error saving treatment to PostgreSQL', { error: err.message });
       }
     }
-    
+
     const existing = serverTreatments.find(t => t.id === treatment.id);
     if (existing) {
       const idx = serverTreatments.findIndex(t => t.id === treatment.id);
@@ -139,6 +232,7 @@ async function startServer() {
     } else {
       serverTreatments.push(treatment);
     }
+    logger.info('Treatment saved to memory', { treatmentId: treatment.id });
     res.json({ success: true, treatment });
   });
 
@@ -363,6 +457,14 @@ async function startServer() {
 
   app.post('/api/parcelles', async (req, res) => {
     const parcelle = req.body;
+
+    // Validation with Zod
+    const validation = validateData(ParcelleSchema, parcelle);
+    if (!validation.success) {
+      logger.warn('Parcelle validation failed', { errors: validation.errors });
+      return res.status(400).json({ error: 'Données invalides', details: validation.errors });
+    }
+
     if (!parcelle || !parcelle.id || !parcelle.name) {
       return res.status(400).json({ error: 'ID et nom requis' });
     }
@@ -373,13 +475,14 @@ async function startServer() {
           'INSERT INTO parcelles (id, enterprise_id, name, surface, lat, lng, status, type_sol, history, current_crop, water_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
           [parcelle.id, 'ka_farm', parcelle.name, parcelle.surface, parcelle.lat, parcelle.lng, parcelle.status, parcelle.type_sol || 'sableux', parcelle.history, parcelle.currentCrop, parcelle.waterStatus]
         );
+        logger.info('Parcelle saved to PostgreSQL', { parcelleId: parcelle.id, name: parcelle.name });
         res.json({ success: true, parcelle });
         return;
       } catch (err) {
-        console.error('Error saving parcelle to PostgreSQL:', err);
+        logger.error('Error saving parcelle to PostgreSQL', { error: err.message });
       }
     }
-    
+
     const existing = serverParcelles.find(p => p.id === parcelle.id);
     if (existing) {
       const idx = serverParcelles.findIndex(p => p.id === parcelle.id);
@@ -387,6 +490,7 @@ async function startServer() {
     } else {
       serverParcelles.push(parcelle);
     }
+    logger.info('Parcelle saved to memory', { parcelleId: parcelle.id });
     res.json({ success: true, parcelle });
   });
 
@@ -772,6 +876,7 @@ async function startServer() {
   app.listen(port, '0.0.0.0', () => {
     console.log(`Server running at http://0.0.0.0:${port}`);
     console.log(`Mode: ${usePostgres ? 'PostgreSQL' : 'Fallback mémoire (localStorage)'}`);
+    console.log(`Security: Rate limiting + Helmet + CORS enabled`);
   });
 }
 
