@@ -3,6 +3,43 @@
 
 const API_BASE = '/api/auth';
 
+// Export supabase pour compatibilité avec l'admin dashboard
+// (utilise le backend API au lieu de Supabase direct)
+export const supabase = {
+  auth: {
+    signInWithPassword: signIn,
+    signUp: signUp,
+    signOut: signOut,
+    getSession: async () => {
+      const result = await verifyToken();
+      if (result.valid) {
+        return { data: { session: { user: result.user } } };
+      }
+      return { data: { session: null } };
+    },
+    getUser: async () => {
+      const result = await verifyToken();
+      if (result.valid) {
+        return { data: { user: result.user } };
+      }
+      return { data: { user: null } };
+    }
+  },
+  from: (table) => ({
+    select: (cols) => ({
+      eq: (field, value) => ({
+        single: async () => {
+          // Utiliser l'API backend
+          const response = await fetch(`/api/${table}?${field}=${value}`);
+          const data = await response.json();
+          return { data: Array.isArray(data) ? data[0] : data, error: null };
+        },
+        then: (fn) => fn
+      })
+    })
+  })
+};
+
 // ==================== INSCRIPTION ====================
 
 async function signUp(email, password, name, farmName = '') {
@@ -186,6 +223,5 @@ window.Auth = {
   isAuthenticated
 };
 
+// Export pour compatibilité avec l'admin dashboard
 export { signUp, signIn, signOut, verifyToken, getStoredUser, getStoredToken, isAuthenticated };
-
-</parameter>
