@@ -12,5 +12,6 @@ yarn-debug.log*
 # Fichiers système
 .DS_Store
 .continue/
+.idea/
 blobs/
 manifests/
