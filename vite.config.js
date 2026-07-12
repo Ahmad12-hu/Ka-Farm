@@ -55,6 +55,9 @@ export default defineConfig(() => {
         // Explicitly externalize server-side dependencies
         external: [],
       },
+      // Ensure server.js is never bundled
+      outDir: 'dist',
+      emptyOutDir: true,
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
