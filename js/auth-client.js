@@ -212,16 +212,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Exposer les fonctions globalement
-window.Auth = {
+// Fonction utilitaire pour vérifier si l'utilisateur est admin
+function isAdmin() {
+  const user = getStoredUser();
+  return user && (user.role === 'admin' || user.role === 'super_admin');
+}
+
+// Créer l'objet Auth
+const Auth = {
   signUp,
   signIn,
   signOut,
   verifyToken,
   getStoredUser,
   getStoredToken,
-  isAuthenticated
+  isAuthenticated,
+  isAdmin
 };
 
+// Exposer les fonctions globalement
+window.Auth = Auth;
+
 // Export pour compatibilité avec l'admin dashboard
-export { signUp, signIn, signOut, verifyToken, getStoredUser, getStoredToken, isAuthenticated };
+export { signUp, signIn, signOut, verifyToken, getStoredUser, getStoredToken, isAuthenticated, Auth, isAdmin };

@@ -49,7 +49,12 @@ export default defineConfig(() => {
           'pages/personal/profile': path.resolve(__dirname, 'pages/personal/profile.html'),
           'pages/personal/settings': path.resolve(__dirname, 'pages/personal/settings.html'),
         }
-      }
+      },
+      // Exclude server-side files from client build
+      rollup: {
+        // Explicitly externalize server-side dependencies
+        external: [],
+      },
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
