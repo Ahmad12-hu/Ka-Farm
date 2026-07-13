@@ -1,102 +1,104 @@
-// Winston Logger Configuration pour KA Farm
-import winston from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// Browser-compatible Logger pour KA Farm
+// Utilise console avec style + localStorage pour persistance
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const isBrowser = typeof window !== 'undefined';
 
-// Define log levels
-const levels = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  debug: 4,
+// Storage key for error logs
+const STORAGE_KEY = 'kafarm_error_logs';
+const MAX_LOGS = 50;
+
+// Log functions avec styled console output
+const logFunctions = {
+  info: (message, meta = {}) => {
+    if (!isBrowser) {
+      console.log(`[INFO] ${message}`, meta);
+    } else {
+      console.log(`%c[INFO] ${message}`, 'color: #10B981; font-weight: bold;', meta);
+    }
+  },
+  
+  error: (message, meta = {}) => {
+    const errorStr = typeof meta?.error === 'string' ? meta.error : (meta?.error?.message || JSON.stringify(meta));
+    if (!isBrowser) {
+      console.error(`[ERROR] ${message}:`, meta);
+    } else {
+      console.error(`%c[ERROR] ${message}: ${errorStr}`, 'color: #EF4444; font-weight: bold;', meta);
+    }
+    
+    // Store in localStorage for persistence
+    if (isBrowser) {
+      try {
+        const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        logs.unshift({ 
+          timestamp: new Date().toISOString(), 
+          level: 'error',
+          message, 
+          error: errorStr 
+        });
+        // Keep only last 50 logs
+        if (logs.length > MAX_LOGS) logs.length = MAX_LOGS;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+      } catch (e) {
+        console.warn('Unable to save error log to localStorage:', e);
+      }
+    }
+  },
+  
+  warn: (message, meta = {}) => {
+    if (!isBrowser) {
+      console.warn(`[WARN] ${message}`, meta);
+    } else {
+      console.warn(`%c[WARN] ${message}`, 'color: #F59E0B; font-weight: bold;', meta);
+    }
+  },
+  
+  debug: (message, meta = {}) => {
+    if (!isBrowser) {
+      console.debug(`[DEBUG] ${message}`, meta);
+    } else {
+      console.debug(`%c[DEBUG] ${message}`, 'color: #3B82F6; font-weight: bold;', meta);
+    }
+  },
+  
+  http: (message, meta = {}) => {
+    if (!isBrowser) {
+      console.log(`[HTTP] ${message}`, meta);
+    } else {
+      console.log(`%c[HTTP] ${message}`, 'color: #8B5CF6; font-weight: bold;', meta);
+    }
+  },
 };
 
-// Define colors for each level
-const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'blue',
+// Logger export
+export const logger = {
+  info: logFunctions.info,
+  error: logFunctions.error,
+  warn: logFunctions.warn,
+  debug: logFunctions.debug,
+  http: logFunctions.http,
 };
 
-winston.addColors(colors);
-
-// Define format for console
-const consoleFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.colorize({ all: true }),
-  winston.format.printf(
-    (info) => `${info.timestamp} [${info.level}] ${info.message}`
-  )
-);
-
-// Define format for files
-const fileFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.errors({ stack: true }),
-  winston.format.json()
-);
-
-// Create the logger
-const logger = winston.createLogger({
-  levels,
-  format: fileFormat,
-  transports: [
-    // Console transport for all logs
-    new winston.transports.Console({
-      format: consoleFormat,
-    }),
-    // Error log file - rotated daily
-    new DailyRotateFile({
-      filename: path.join(__dirname, '../../logs/error-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      level: 'error',
-    }),
-    // Combined log file - rotated daily
-    new DailyRotateFile({
-      filename: path.join(__dirname, '../../logs/combined-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      level: 'info',
-    }),
-    // Debug log file - rotated daily
-    new DailyRotateFile({
-      filename: path.join(__dirname, '../../logs/debug-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      level: 'debug',
-    }),
-  ],
-});
-
-// Create logs directory if it doesn't exist
-import fs from 'fs';
-const logsDir = path.join(__dirname, '../../logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
-
-// Export logger instance
-export { logger };
-
-// Export convenience methods
+// Default export
 export default {
-  info: (message, meta = {}) => logger.info(message, meta),
-  error: (message, meta = {}) => logger.error(message, meta),
-  warn: (message, meta = {}) => logger.warn(message, meta),
-  debug: (message, meta = {}) => logger.debug(message, meta),
-  http: (message, meta = {}) => logger.http(message, meta),
+  info: logFunctions.info,
+  error: logFunctions.error,
+  warn: logFunctions.warn,
+  debug: logFunctions.debug,
+  http: logFunctions.http,
+};
+
+// Helper to retrieve stored logs (for diagnostics)
+export const getStoredLogs = () => {
+  if (!isBrowser) return [];
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+};
+
+// Helper to clear logs
+export const clearLogs = () => {
+  if (!isBrowser) return;
+  localStorage.removeItem(STORAGE_KEY);
 };

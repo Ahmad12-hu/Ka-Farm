@@ -98,7 +98,9 @@
               </div>
             </div>
           </div>
-          <canvas id="priceChart" height="80"></canvas>
+          <div class="relative h-64 sm:h-80 md:h-96">
+            <canvas id="priceChart"></canvas>
+          </div>
         </div>
 
         <!-- Price Summary Cards -->
@@ -282,6 +284,7 @@
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
+          resizeDelay: 0,
           plugins: {
             legend: {
               display: false
