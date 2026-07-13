@@ -278,10 +278,12 @@ export const ToolsSharingModule = {
       const reviewCount = this.storage.getToolReviewCount(tool.id);
       const isFavorited = this.storage.isToolFavorited(this.state.currentUserFarmId, tool.id);
       
+      const defaultImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%231e293b'/%3E%3Cg transform='translate(200, 150)'%3E%3Ccircle cx='0' cy='0' r='60' fill='%23334155' stroke='%2310B981' stroke-width='3'/%3E%3Cpath d='M-30,-20 L-10,-20 L-10,20 L-30,20 Z' fill='%2310B981'/%3E%3Cpath d='M-10,-20 L20,-20 L20,20 L-10,20 Z' fill='%23059669'/%3E%3Cpath d='M20,-10 L40,-10 L40,10 L20,10 Z' fill='%2310B981'/%3E%3Ccircle cx='50' cy='0' r='8' fill='%23047857'/%3E%3C/g%3E%3Ctext x='200' y='230' text-anchor='middle' fill='%2394a3b8' font-family='Arial' font-size='14' font-weight='bold'%3EOutil Agricole%3C/text%3E%3C/svg%3E";
+      
       return `
         <div class="bg-brand-slate rounded-xl border border-gray-700 overflow-hidden hover:border-brand-green transition-colors">
           <div class="relative">
-            <img src="${tool.photos && tool.photos[0] ? tool.photos[0] : '/assets/tools/default.jpg'}" 
+            <img src="${tool.photos && tool.photos[0] ? tool.photos[0] : defaultImage}" 
                  alt="${tool.tool_name}" 
                  class="w-full h-48 object-cover">
             <button onclick="ToolsSharingModule.toggleFavorite('${tool.id}')" 
@@ -480,21 +482,23 @@ export const ToolsSharingModule = {
     const reviews = this.storage.getToolReviewsByTool(toolId);
     const rentalHistory = this.storage.getRentalHistory(toolId);
 
-    const modal = this.elements.toolDetailModal;
-    if (!modal) return;
+      const defaultImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%231e293b'/%3E%3Cg transform='translate(200, 150)'%3E%3Ccircle cx='0' cy='0' r='60' fill='%23334155' stroke='%2310B981' stroke-width='3'/%3E%3Cpath d='M-30,-20 L-10,-20 L-10,20 L-30,20 Z' fill='%2310B981'/%3E%3Cpath d='M-10,-20 L20,-20 L20,20 L-10,20 Z' fill='%23059669'/%3E%3Cpath d='M20,-10 L40,-10 L40,10 L20,10 Z' fill='%2310B981'/%3E%3Ccircle cx='50' cy='0' r='8' fill='%23047857'/%3E%3C/g%3E%3Ctext x='200' y='230' text-anchor='middle' fill='%2394a3b8' font-family='Arial' font-size='14' font-weight='bold'%3EOutil Agricole%3C/text%3E%3C/svg%3E";
+      
+      const modal = this.elements.toolDetailModal;
+      if (!modal) return;
 
-    modal.innerHTML = `
-      <div class="bg-brand-slate rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-700">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-semibold text-white">${tool.tool_name}</h2>
-          <button data-close-tool-detail class="text-gray-400 hover:text-white">
-            <i data-lucide="x" class="w-6 h-6"></i>
-          </button>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div>
-            <img src="${tool.photos && tool.photos[0] ? tool.photos[0] : '/assets/tools/default.jpg'}" 
+      modal.innerHTML = `
+        <div class="bg-brand-slate rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-700">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-semibold text-white">${tool.tool_name}</h2>
+            <button data-close-tool-detail class="text-gray-400 hover:text-white">
+              <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+          </div>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div>
+              <img src="${tool.photos && tool.photos[0] ? tool.photos[0] : defaultImage}" 
                  alt="${tool.tool_name}" 
                  class="w-full h-64 object-cover rounded-xl mb-4">
             
