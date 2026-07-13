@@ -93,16 +93,6 @@
     </div>
 
 
-    <!-- Type de connexion -->
-    <div class="flex gap-2 mb-4">
-      <button type="button" id="btn-login-public" class="flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-emerald-600 text-white border border-emerald-500 transition-all">
-        Utilisateur Public
-      </button>
-      <button type="button" id="btn-login-admin" class="flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-slate-200 dark:bg-[#0D2615] text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-[#1A4525] transition-all">
-        Admin (Privé)
-      </button>
-    </div>
-
     <!-- Form -->
     <form id="login-form" class="space-y-4 text-xs font-semibold text-left">
       <div class="space-y-1">
@@ -150,26 +140,6 @@
   <script type="module">
     import { Router } from '/js/router.js';
     import { Auth } from '/js/auth.js';
-    import { AuthPublic } from '/js/auth-public.js';
-
-    // Mode de connexion par défaut : public
-    let loginMode = 'public';
-
-    // Boutons de sélection du mode
-    const btnPublic = document.getElementById('btn-login-public');
-    const btnAdmin = document.getElementById('btn-login-admin');
-
-    btnPublic.addEventListener('click', () => {
-      loginMode = 'public';
-      btnPublic.className = 'flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-emerald-600 text-white border border-emerald-500 transition-all';
-      btnAdmin.className = 'flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-slate-200 dark:bg-[#0D2615] text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-[#1A4525] transition-all';
-    });
-
-    btnAdmin.addEventListener('click', () => {
-      loginMode = 'admin';
-      btnAdmin.className = 'flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-emerald-600 text-white border border-emerald-500 transition-all';
-      btnPublic.className = 'flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-slate-200 dark:bg-[#0D2615] text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-[#1A4525] transition-all';
-    });
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -177,13 +147,8 @@
       const pass = document.getElementById('login-password').value;
       const rem = document.getElementById('login-remember').checked;
 
-      if (loginMode === 'public') {
-        // Utiliser Supabase Auth pour les utilisateurs publics
-        await AuthPublic.login(email, pass);
-      } else {
-        // Utiliser l'auth locale pour l'admin
-        await Auth.login(email, pass, rem);
-      }
+      // Utiliser localStorage pour la connexion
+      await Auth.login(email, pass, rem);
     });
 
     // Auto load icons

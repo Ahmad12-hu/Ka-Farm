@@ -1,5 +1,6 @@
 // KA Farm - Gestion des Parcelles Module
 import { KAStorage } from '../storage.js';
+import { logger } from './logger.js';
 
 let parcelles = [];
 let selectedParcelId = null;
@@ -1015,7 +1016,7 @@ window.copyCurrentCoordinates = () => {
       }, 2000);
     }
   }).catch(err => {
-    console.error('Failed to copy text', err);
+    logger.error('Failed to copy text', { error: err.message });
   });
 };
 
@@ -1051,7 +1052,7 @@ window.getCurrentPositionGPS = () => {
         }
       },
       (error) => {
-        console.warn('Geolocation failed or permission denied, using simulated GPS refresh.');
+        logger.warn('Geolocation failed or permission denied, using simulated GPS refresh.', { error: error.message });
         // Simulate GPS recalibration with small offset
         const idx = parcelles.findIndex(p => p.id === selectedParcelId);
         if (idx !== -1) {

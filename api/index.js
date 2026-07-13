@@ -17,7 +17,7 @@ try {
     console.warn("firebase-applet-config.json not found in Vercel runtime. Using in-memory fallback.");
   }
 } catch (e) {
-  console.error("Failed to initialize Firebase in Vercel function:", e);
+  logger.error("Failed to initialize Firebase in Vercel function", { error: e.message });
 }
 
 const app = express();
@@ -88,7 +88,7 @@ async function syncWithFirestore(collection, fallbackData) {
     }
     return fallbackData;
   } catch (err) {
-    console.error(`Firestore read error for ${collection}:`, err);
+    logger.error(`Firestore read error for ${collection}`, { error: err.message });
     return fallbackData;
   }
 }
@@ -99,7 +99,7 @@ async function saveToFirestore(collection, data) {
     await setDoc(doc(db, "app_data", collection), { data, updatedAt: new Date().toISOString() });
     return { success: true };
   } catch (err) {
-    console.error(`Firestore write error for ${collection}:`, err);
+    logger.error(`Firestore write error for ${collection}`, { error: err.message });
     return { success: false, fallback: true };
   }
 }
@@ -481,7 +481,7 @@ app.post('/api/gemini', async (req, res) => {
 
     return res.json({ text: response.text });
   } catch (error) {
-    console.error('Error calling Gemini API:', error);
+    logger.error('Error calling Gemini API', { error: error.message });
     return res.status(500).json({ error: error.message || 'Erreur interne de l\'API' });
   }
 });
@@ -507,8 +507,8 @@ app.get('/api/weather', async (req, res) => {
       weather_code: data.current.weather_code,
       wind_speed: data.current.wind_speed_10m
     });
-  } catch (error) {
-    console.error('Error fetching weather:', error);
+    } catch (error) {
+    logger.error('Error fetching weather', { error: error.message });
     return res.status(500).json({ error: 'Erreur lors de la récupération des données météo' });
   }
 });

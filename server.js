@@ -192,7 +192,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching treatments from PostgreSQL:', err);
+        logger.error('Error fetching treatments from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverTreatments);
@@ -252,7 +252,7 @@ async function startServer() {
           res.json({ success: true, message: 'Traitements synchronisés avec PostgreSQL', treatments });
           return;
         } catch (err) {
-          console.error('Error syncing treatments to PostgreSQL:', err);
+          logger.error('Error syncing treatments to PostgreSQL', { error: err.message });
         }
       }
       serverTreatments = treatments;
@@ -270,7 +270,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching crop profits from PostgreSQL:', err);
+        logger.error('Error fetching crop profits from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverCropProfits);
@@ -306,7 +306,7 @@ async function startServer() {
         res.json({ success: true, profit });
         return;
       } catch (err) {
-        console.error('Error saving crop profit to PostgreSQL:', err);
+        logger.error('Error saving crop profit to PostgreSQL', { error: err.message });
       }
     }
     
@@ -350,7 +350,7 @@ async function startServer() {
           res.json({ success: true, message: 'Analyses de rentabilité synchronisées avec PostgreSQL', cropProfits });
           return;
         } catch (err) {
-          console.error('Error syncing crop profits to PostgreSQL:', err);
+          logger.error('Error syncing crop profits to PostgreSQL', { error: err.message });
         }
       }
       serverCropProfits = cropProfits;
@@ -368,7 +368,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching stocks from PostgreSQL:', err);
+        logger.error('Error fetching stocks from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverStocks);
@@ -389,7 +389,7 @@ async function startServer() {
           res.json({ success: true, message: 'Stocks synchronisés avec PostgreSQL', stocks });
           return;
         } catch (err) {
-          console.error('Error syncing stocks to PostgreSQL:', err);
+          logger.error('Error syncing stocks to PostgreSQL', { error: err.message });
         }
       }
       serverStocks = stocks;
@@ -407,7 +407,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching crops from PostgreSQL:', err);
+        logger.error('Error fetching crops from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverCrops);
@@ -428,7 +428,7 @@ async function startServer() {
         res.json({ success: true, crop });
         return;
       } catch (err) {
-        console.error('Error saving crop to PostgreSQL:', err);
+        logger.error('Error saving crop to PostgreSQL', { error: err.message });
       }
     }
     
@@ -450,7 +450,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching parcelles from PostgreSQL:', err);
+        logger.error('Error fetching parcelles from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverParcelles);
@@ -503,7 +503,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching tasks from PostgreSQL:', err);
+        logger.error('Error fetching tasks from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverTasks);
@@ -524,7 +524,7 @@ async function startServer() {
         res.json({ success: true, task });
         return;
       } catch (err) {
-        console.error('Error saving task to PostgreSQL:', err);
+        logger.error('Error saving task to PostgreSQL', { error: err.message });
       }
     }
     
@@ -546,7 +546,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching finances from PostgreSQL:', err);
+        logger.error('Error fetching finances from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverFinances);
@@ -567,7 +567,7 @@ async function startServer() {
         res.json({ success: true, finance });
         return;
       } catch (err) {
-        console.error('Error saving finance to PostgreSQL:', err);
+        logger.error('Error saving finance to PostgreSQL', { error: err.message });
       }
     }
     
@@ -589,7 +589,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching employees from PostgreSQL:', err);
+        logger.error('Error fetching employees from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverEmployees);
@@ -610,7 +610,7 @@ async function startServer() {
         res.json({ success: true, employee });
         return;
       } catch (err) {
-        console.error('Error saving employee to PostgreSQL:', err);
+        logger.error('Error saving employee to PostgreSQL', { error: err.message });
       }
     }
     
@@ -632,7 +632,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching cheptel from PostgreSQL:', err);
+        logger.error('Error fetching cheptel from PostgreSQL', { error: err.message });
       }
     }
     res.json(serverCheptel);
@@ -653,7 +653,7 @@ async function startServer() {
         res.json({ success: true, group });
         return;
       } catch (err) {
-        console.error('Error saving cheptel to PostgreSQL:', err);
+        logger.error('Error saving cheptel to PostgreSQL', { error: err.message });
       }
     }
     
@@ -675,7 +675,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching elevage production from PostgreSQL:', err);
+        logger.error('Error fetching elevage production from PostgreSQL', { error: err.message });
       }
     }
     const sorted = serverElevageProduction.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -697,7 +697,7 @@ async function startServer() {
         res.json({ success: true, log });
         return;
       } catch (err) {
-        console.error('Error saving elevage production to PostgreSQL:', err);
+        logger.error('Error saving elevage production to PostgreSQL', { error: err.message });
       }
     }
     
@@ -713,7 +713,7 @@ async function startServer() {
         res.json(result.rows);
         return;
       } catch (err) {
-        console.error('Error fetching elevage health from PostgreSQL:', err);
+        logger.error('Error fetching elevage health from PostgreSQL', { error: err.message });
       }
     }
     const sorted = serverElevageHealth.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -735,7 +735,7 @@ async function startServer() {
         res.json({ success: true, log });
         return;
       } catch (err) {
-        console.error('Error saving elevage health to PostgreSQL:', err);
+        logger.error('Error saving elevage health to PostgreSQL', { error: err.message });
       }
     }
     
@@ -981,7 +981,7 @@ async function startServer() {
 
       return res.json({ text });
     } catch (error) {
-      console.error('Error calling Gemini API:', error);
+      logger.error('Error calling Gemini API', { error: error.message });
       return res.status(500).json({ error: error.message || 'Erreur interne de l\'API' });
     }
   });
@@ -1008,7 +1008,7 @@ async function startServer() {
         wind_speed: data.current.wind_speed_10m
       });
     } catch (error) {
-      console.error('Error fetching weather:', error);
+      logger.error('Error fetching weather', { error: error.message });
       return res.status(500).json({ error: 'Erreur lors de la récupération des données météo' });
     }
   });
@@ -1048,5 +1048,5 @@ async function startServer() {
 }
 
 startServer().catch(err => {
-  console.error('Failed to start server:', err);
+  logger.error('Failed to start server', { error: err.message });
 });

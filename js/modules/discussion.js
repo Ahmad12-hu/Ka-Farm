@@ -1,5 +1,6 @@
 // KA Farm - Discussion and Messaging Module with Photo Attachment & Social Media Sharing
 import { KAStorage } from '../storage.js';
+import { logger } from './logger.js';
 
 export const DiscussionModule = {
   currentChatId: 'general', // 'general' or 'direct'
@@ -518,7 +519,7 @@ ${name} partage le dernier rendement de traite laitière : ${latestMilk.quantity
         alert("Impossible de contacter le conseiller IA. Utilisation de la légende d'origine.");
       }
     } catch (err) {
-      console.error("Gemini caption generation failed:", err);
+      logger.error("Gemini caption generation failed", { error: err.message });
       alert("Erreur technique lors de la génération IA.");
     } finally {
       btn.disabled = false;

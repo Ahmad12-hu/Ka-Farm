@@ -4,7 +4,7 @@
 -- Ce script crée un trigger PostgreSQL qui initialise automatiquement
 -- les données de base pour un nouvel utilisateur après son inscription
 --
--- Quand un nouvel utilisateur est créé dans la table users,
+-- Quand un nouvel utilisateur est créé dans la table utilisateurs,
 -- ce trigger crée automatiquement :
 -- - Une parcelle par défaut
 -- - Une culture par défaut
@@ -39,13 +39,13 @@ BEGIN
   task_id := 'task_' || substr(md5(random()::text), 1, 8);
 
   -- Créer une parcelle par défaut
-  INSERT INTO parcelles (
-    id, 
-    user_id, 
-    enterprise_id, 
-    name, 
-    surface, 
-    status, 
+  INSERT INTO parcelle (
+    id,
+    user_id,
+    enterprise_id,
+    name,
+    surface,
+    status,
     water_status
   ) VALUES (
     parcel_id,
@@ -58,7 +58,7 @@ BEGIN
   );
 
   -- Créer une culture par défaut
-  INSERT INTO crops (
+  INSERT INTO cultures (
     id,
     user_id,
     enterprise_id,
@@ -81,7 +81,7 @@ BEGIN
   );
 
   -- Créer un stock par défaut
-  INSERT INTO stocks (
+  INSERT INTO stock_intrants (
     id,
     user_id,
     enterprise_id,
@@ -102,7 +102,7 @@ BEGIN
   );
 
   -- Créer une tâche par défaut
-  INSERT INTO tasks (
+  INSERT INTO taches (
     id,
     user_id,
     enterprise_id,
@@ -133,10 +133,10 @@ $$ LANGUAGE plpgsql;
 -- 2. CRÉER LE TRIGGER
 -- ============================================
 
-DROP TRIGGER IF EXISTS on_new_user_trigger ON users;
+DROP TRIGGER IF EXISTS on_new_user_trigger ON utilisateurs;
 
 CREATE TRIGGER on_new_user_trigger
-  AFTER INSERT ON users
+  AFTER INSERT ON utilisateurs
   FOR EACH ROW
   EXECUTE FUNCTION handle_new_user();
 
@@ -144,7 +144,7 @@ CREATE TRIGGER on_new_user_trigger
 -- 3. TEST DE L'ONBOARDING
 -- ============================================
 -- Pour tester, vous pouvez insérer un utilisateur manuellement :
--- INSERT INTO users (id, email, name, role, user_id, enterprise_id, enterprise_name, enterprise_code)
+-- INSERT INTO utilisateurs (id, email, name, role, user_id, enterprise_id, enterprise_name, enterprise_code)
 -- VALUES (
 --   gen_random_uuid(),
 --   'test@example.com',
@@ -159,7 +159,7 @@ CREATE TRIGGER on_new_user_trigger
 -- ============================================
 -- NOTES IMPORTANTES
 -- ============================================
--- 1. Ce trigger s'exécute automatiquement après chaque INSERT dans la table users
+-- 1. Ce trigger s'exécute automatiquement après chaque INSERT dans la table utilisateurs
 -- 2. Les données créées sont liées à l'utilisateur via user_id
 -- 3. Les RLS policies s'appliqueront automatiquement pour isoler ces données
 -- 4. Vous pouvez personnaliser les données par défaut selon vos besoins

@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, onSnapshot } from "firebase/firestore";
 import firebaseConfig from '../firebase-applet-config.json';
+import { logger } from './modules/logger.js';
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
@@ -108,7 +109,7 @@ export const KAFirebaseSync = {
       
       console.log(`[Firebase Sync] Synchronisation réussie de ${key} avec Firestore.`);
     } catch (error) {
-      console.error(`[Firebase Sync] Erreur lors de la synchronisation de ${key} sur Firestore:`, error);
+      logger.error(`[Firebase Sync] Erreur lors de la synchronisation de ${key} sur Firestore`, { error: error.message });
     }
   },
 
@@ -158,12 +159,12 @@ export const KAFirebaseSync = {
                 }
               }
             } catch (e) {
-              console.error(`[Firebase Sync] Erreur lors du peuplement initial de la collection '${collectionName}':`, e);
+              logger.error(`[Firebase Sync] Erreur lors du peuplement initial de la collection '${collectionName}'`, { error: e.message });
             }
           }
         }
       }, (error) => {
-        console.error(`[Firebase Sync] Erreur d'écoute en temps réel pour la collection '${collectionName}':`, error);
+        logger.error(`[Firebase Sync] Erreur d'écoute en temps réel pour la collection '${collectionName}'`, { error: error.message });
       });
     });
   }

@@ -43,14 +43,14 @@ ALTER TABLE credit ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(i
 -- 2. CRÉER DES INDEX SUR user_id POUR LA PERFORMANCE
 -- ============================================
 
-CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
-CREATE INDEX IF NOT EXISTS idx_parcelles_user_id ON parcelles(user_id);
-CREATE INDEX IF NOT EXISTS idx_crops_user_id ON crops(user_id);
-CREATE INDEX IF NOT EXISTS idx_stocks_user_id ON stocks(user_id);
-CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
-CREATE INDEX IF NOT EXISTS idx_finances_user_id ON finances(user_id);
-CREATE INDEX IF NOT EXISTS idx_employees_user_id ON employees(user_id);
-CREATE INDEX IF NOT EXISTS idx_harvests_user_id ON harvests(user_id);
+CREATE INDEX IF NOT EXISTS idx_utilisateurs_user_id ON utilisateurs(user_id);
+CREATE INDEX IF NOT EXISTS idx_parcelle_user_id ON parcelle(user_id);
+CREATE INDEX IF NOT EXISTS idx_cultures_user_id ON cultures(user_id);
+CREATE INDEX IF NOT EXISTS idx_stock_intrants_user_id ON stock_intrants(user_id);
+CREATE INDEX IF NOT EXISTS idx_taches_user_id ON taches(user_id);
+CREATE INDEX IF NOT EXISTS idx_transaction_finacieres_user_id ON transaction_finacieres(user_id);
+CREATE INDEX IF NOT EXISTS idx_employer_user_id ON employer(user_id);
+CREATE INDEX IF NOT EXISTS idx_recole_user_id ON recole(user_id);
 
 -- ============================================
 -- 3. MIGRER LES DONNÉES EXISTANTES
@@ -81,79 +81,79 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- L'admin peut voir/modifier TOUTES les données
 -- ============================================
 
--- Exemple pour la table harvests (adapter pour toutes les tables)
+-- Exemple pour la table recole (adapter pour toutes les tables)
 
-ALTER TABLE harvests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recole ENABLE ROW LEVEL SECURITY;
 
 -- Politique : Les utilisateurs voient leurs propres données OU NULL (données admin)
 CREATE POLICY "Users can view own data"
-  ON harvests FOR SELECT
+  ON recole FOR SELECT
   USING (
-    user_id = auth.uid() 
-    OR user_id IS NULL 
+    user_id = auth.uid()
+    OR user_id IS NULL
     OR is_admin()
   );
 
 -- Politique : Les utilisateurs peuvent insérer leurs propres données
 CREATE POLICY "Users can insert own data"
-  ON harvests FOR INSERT
+  ON recole FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
 -- Politique : Les utilisateurs peuvent modifier leurs propres données
 CREATE POLICY "Users can update own data"
-  ON harvests FOR UPDATE
+  ON recole FOR UPDATE
   USING (user_id = auth.uid() OR is_admin());
 
 -- Politique : Les utilisateurs peuvent supprimer leurs propres données
 CREATE POLICY "Users can delete own data"
-  ON harvests FOR DELETE
+  ON recole FOR DELETE
   USING (user_id = auth.uid() OR is_admin());
 
 -- ============================================
 -- 6. POLITIQUES SIMILAIRES POUR LES AUTRES TABLES PRINCIPALES
 -- ============================================
 
--- Parcelles
-ALTER TABLE parcelles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own parcelles" ON parcelles FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
-CREATE POLICY "Users can insert own parcelles" ON parcelles FOR INSERT WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Users can update own parcelles" ON parcelles FOR UPDATE USING (user_id = auth.uid() OR is_admin());
-CREATE POLICY "Users can delete own parcelles" ON parcelles FOR DELETE USING (user_id = auth.uid() OR is_admin());
+-- Parcelle
+ALTER TABLE parcelle ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own parcelle" ON parcelle FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
+CREATE POLICY "Users can insert own parcelle" ON parcelle FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own parcelle" ON parcelle FOR UPDATE USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "Users can delete own parcelle" ON parcelle FOR DELETE USING (user_id = auth.uid() OR is_admin());
 
--- Crops
-ALTER TABLE crops ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own crops" ON crops FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
-CREATE POLICY "Users can insert own crops" ON crops FOR INSERT WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Users can update own crops" ON crops FOR UPDATE USING (user_id = auth.uid() OR is_admin());
-CREATE POLICY "Users can delete own crops" ON crops FOR DELETE USING (user_id = auth.uid() OR is_admin());
+-- Cultures
+ALTER TABLE cultures ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own cultures" ON cultures FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
+CREATE POLICY "Users can insert own cultures" ON cultures FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own cultures" ON cultures FOR UPDATE USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "Users can delete own cultures" ON cultures FOR DELETE USING (user_id = auth.uid() OR is_admin());
 
--- Stocks
-ALTER TABLE stocks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own stocks" ON stocks FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
-CREATE POLICY "Users can insert own stocks" ON stocks FOR INSERT WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Users can update own stocks" ON stocks FOR UPDATE USING (user_id = auth.uid() OR is_admin());
-CREATE POLICY "Users can delete own stocks" ON stocks FOR DELETE USING (user_id = auth.uid() OR is_admin());
+-- Stock Intrants
+ALTER TABLE stock_intrants ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own stock_intrants" ON stock_intrants FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
+CREATE POLICY "Users can insert own stock_intrants" ON stock_intrants FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own stock_intrants" ON stock_intrants FOR UPDATE USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "Users can delete own stock_intrants" ON stock_intrants FOR DELETE USING (user_id = auth.uid() OR is_admin());
 
--- Finances
-ALTER TABLE finances ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own finances" ON finances FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
-CREATE POLICY "Users can insert own finances" ON finances FOR INSERT WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Users can update own finances" ON finances FOR UPDATE USING (user_id = auth.uid() OR is_admin());
-CREATE POLICY "Users can delete own finances" ON finances FOR DELETE USING (user_id = auth.uid() OR is_admin());
+-- Transaction Financieres
+ALTER TABLE transaction_finacieres ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own transaction_finacieres" ON transaction_finacieres FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
+CREATE POLICY "Users can insert own transaction_finacieres" ON transaction_finacieres FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own transaction_finacieres" ON transaction_finacieres FOR UPDATE USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "Users can delete own transaction_finacieres" ON transaction_finacieres FOR DELETE USING (user_id = auth.uid() OR is_admin());
 
--- Employees
-ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own employees" ON employees FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
-CREATE POLICY "Users can insert own employees" ON employees FOR INSERT WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Users can update own employees" ON employees FOR UPDATE USING (user_id = auth.uid() OR is_admin());
-CREATE POLICY "Users can delete own employees" ON employees FOR DELETE USING (user_id = auth.uid() OR is_admin());
+-- Employer
+ALTER TABLE employer ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own employer" ON employer FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
+CREATE POLICY "Users can insert own employer" ON employer FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own employer" ON employer FOR UPDATE USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "Users can delete own employer" ON employer FOR DELETE USING (user_id = auth.uid() OR is_admin());
 
--- Tasks
-ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own tasks" ON tasks FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
-CREATE POLICY "Users can insert own tasks" ON tasks FOR INSERT WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Users can update own tasks" ON tasks FOR UPDATE USING (user_id = auth.uid() OR is_admin());
-CREATE POLICY "Users can delete own tasks" ON tasks FOR DELETE USING (user_id = auth.uid() OR is_admin());
+-- Taches
+ALTER TABLE taches ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own taches" ON taches FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR is_admin());
+CREATE POLICY "Users can insert own taches" ON taches FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own taches" ON taches FOR UPDATE USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "Users can delete own taches" ON taches FOR DELETE USING (user_id = auth.uid() OR is_admin());
 
 COMMIT;
 

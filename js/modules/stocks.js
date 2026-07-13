@@ -1,5 +1,6 @@
 // KA Farm - Stocks & Inputs Management Module
 import { KAStorage } from '../storage.js';
+import { logger } from './logger.js';
 
 export const StocksModule = {
   isOfflineSimulated: localStorage.getItem('ka_stocks_offline_simulated') === 'true',
@@ -115,7 +116,7 @@ export const StocksModule = {
       localStorage.removeItem('ka_stocks_pending_sync');
       this.showToast("Modifications synchronisées avec succès !", "success");
     } catch (e) {
-      console.error("Stocks Module: Sync failed, saved in local cache.", e);
+      logger.error("Stocks Module: Sync failed, saved in local cache", { error: e.message });
       localStorage.setItem('ka_stocks_pending_sync', 'true');
       this.showToast("Sauvegardé localement (Erreur de synchronisation)", "warning");
     }
@@ -135,7 +136,7 @@ export const StocksModule = {
           this.showToast("🔄 Modifications hors-ligne synchronisées avec le serveur !", "success");
         }
       } catch (e) {
-        console.error("Auto-sync failed:", e);
+        logger.error("Auto-sync failed", { error: e.message });
       }
     }
   },

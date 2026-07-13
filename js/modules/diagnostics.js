@@ -1,5 +1,6 @@
 // KA Farm - Diagnostic des Cultures Module
 import { KAStorage } from '../storage.js';
+import { logger } from './logger.js';
 
 let diagnostics = [];
 let diagnosticHistory = [];
@@ -154,7 +155,7 @@ const DISEASE_LIBRARY = [
       },
       {
         name: 'Bicarbonate de soude',
-        dosage: '5-10 g/L d\'eau + savon noir",
+        dosage: '5-10 g/L d\'eau + savon noir',
         frequency: 'Préventif hebdomadaire',
         dar: 1
       }
@@ -1619,7 +1620,7 @@ export const DiagnosticsModule = {
         `;
 
     } catch (error) {
-        console.error('Erreur du diagnostic IA:', error);
+        logger.error('Erreur du diagnostic IA', { error: error.message });
         resultContainer.innerHTML = `
             <div class="p-4 bg-rose-500/10 rounded-xl border border-rose-500/20">
                 <p class="text-sm font-bold text-rose-500">Erreur d'analyse</p>

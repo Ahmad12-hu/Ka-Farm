@@ -2,6 +2,7 @@
 // Utilise les endpoints /api/auth/* du serveur
 
 const API_BASE = '/api/auth';
+import { logger } from './modules/logger.js';
 
 // Export supabase pour compatibilité avec l'admin dashboard
 // (utilise le backend API au lieu de Supabase direct)
@@ -65,7 +66,7 @@ async function signUp(email, password, name, farmName = '') {
       return { data: null, error: result.error };
     }
   } catch (error) {
-    console.error('Signup error:', error);
+    logger.error('Signup error', { error: error.message });
     return { data: null, error: 'Erreur de connexion au serveur' };
   }
 }
@@ -93,7 +94,7 @@ async function signIn(email, password) {
       return { data: null, error: result.error };
     }
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error', { error: error.message });
     return { data: null, error: 'Erreur de connexion au serveur' };
   }
 }
@@ -120,7 +121,7 @@ async function signOut() {
     // Redirection vers login
     window.location.href = '/pages/auth/login.html';
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('Logout error', { error: error.message });
   }
 }
 
@@ -151,7 +152,7 @@ async function verifyToken() {
       return { valid: false, user: null };
     }
   } catch (error) {
-    console.error('Token verification error:', error);
+    logger.error('Token verification error', { error: error.message });
     return { valid: false, user: null };
   }
 }
@@ -163,7 +164,7 @@ function getStoredUser() {
     const userStr = localStorage.getItem('kafarm_user');
     return userStr ? JSON.parse(userStr) : null;
   } catch (error) {
-    console.error('Get stored user error:', error);
+    logger.error('Get stored user error', { error: error.message });
     return null;
   }
 }

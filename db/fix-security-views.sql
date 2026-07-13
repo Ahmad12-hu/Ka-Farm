@@ -18,7 +18,7 @@ DROP VIEW IF EXISTS public.vue_synthese_finances;
 
 CREATE OR REPLACE VIEW public.vue_synthese_finances
 WITH (security_invoker = true) AS
-SELECT 
+SELECT
   f.id,
   f.user_id,
   f.enterprise_id,
@@ -30,11 +30,11 @@ SELECT
   f.crop_name,
   f.created_at,
   -- Calculs d'agrégation
-  (SELECT SUM(amount) FILTER (WHERE type = 'Revenu') FROM finances fi WHERE fi.user_id = f.user_id) as total_revenus,
-  (SELECT SUM(amount) FILTER (WHERE type = 'Dépense') FROM finances fi WHERE fi.user_id = f.user_id) as total_depenses,
-  (SELECT SUM(amount) FILTER (WHERE type = 'Revenu') FROM finances fi WHERE fi.user_id = f.user_id) - 
-   (SELECT SUM(amount) FILTER (WHERE type = 'Dépense') FROM finances fi WHERE fi.user_id = f.user_id) as solde
-FROM finances f
+  (SELECT SUM(amount) FILTER (WHERE type = 'Revenu') FROM transaction_finacieres fi WHERE fi.user_id = f.user_id) as total_revenus,
+  (SELECT SUM(amount) FILTER (WHERE type = 'Dépense') FROM transaction_finacieres fi WHERE fi.user_id = f.user_id) as total_depenses,
+  (SELECT SUM(amount) FILTER (WHERE type = 'Revenu') FROM transaction_finacieres fi WHERE fi.user_id = f.user_id) -
+   (SELECT SUM(amount) FILTER (WHERE type = 'Dépense') FROM transaction_finacieres fi WHERE fi.user_id = f.user_id) as solde
+FROM transaction_finacieres f
 -- Filtre RLS : l'utilisateur ne voit que ses propres données
 WHERE f.user_id = auth.uid() OR f.user_id IS NULL OR is_admin();
 
@@ -46,7 +46,7 @@ DROP VIEW IF EXISTS public.vue_synthese_cultures;
 
 CREATE OR REPLACE VIEW public.vue_synthese_cultures
 WITH (security_invoker = true) AS
-SELECT 
+SELECT
   c.id,
   c.user_id,
   c.enterprise_id,
@@ -60,10 +60,10 @@ SELECT
   p.name as parcel_name,
   p.surface,
   -- Calculs d'agrégation
-  (SELECT SUM(weight_kg) FROM harvests h WHERE h.crop_id = c.id AND h.user_id = c.user_id) as total_harvest_kg,
-  (SELECT AVG(weight_kg) FROM harvests h WHERE h.crop_id = c.id AND h.user_id = c.user_id) as avg_harvest_kg
-FROM crops c
-LEFT JOIN parcelles p ON c.parcel_id = p.id
+  (SELECT SUM(weight_kg) FROM recole h WHERE h.crop_id = c.id AND h.user_id = c.user_id) as total_harvest_kg,
+  (SELECT AVG(weight_kg) FROM recole h WHERE h.crop_id = c.id AND h.user_id = c.user_id) as avg_harvest_kg
+FROM cultures c
+LEFT JOIN parcelle p ON c.parcel_id = p.id
 -- Filtre RLS : l'utilisateur ne voit que ses propres cultures
 WHERE c.user_id = auth.uid() OR c.user_id IS NULL OR is_admin();
 
@@ -75,7 +75,7 @@ DROP VIEW IF EXISTS public.vue_alertes_stock;
 
 CREATE OR REPLACE VIEW public.vue_alertes_stock
 WITH (security_invoker = true) AS
-SELECT 
+SELECT
   s.id,
   s.user_id,
   s.enterprise_id,
@@ -87,16 +87,16 @@ SELECT
   s.alert_threshold,
   s.last_restock_date,
   -- Calcul d'alerte
-  CASE 
-    WHEN s.quantity <= s.alert_threshold THEN true 
-    ELSE false 
+  CASE
+    WHEN s.quantity <= s.alert_threshold THEN true
+    ELSE false
   END as is_alert,
   -- Pourcentage restant
-  CASE 
-    WHEN s.max_quantity > 0 THEN (s.quantity::float / s.max_quantity::float) * 100 
-    ELSE 0 
+  CASE
+    WHEN s.max_quantity > 0 THEN (s.quantity::float / s.max_quantity::float) * 100
+    ELSE 0
   END as percentage_remaining
-FROM stocks s
+FROM stock_intrants s
 -- Filtre RLS : l'utilisateur ne voit que ses propres stocks
 WHERE s.user_id = auth.uid() OR s.user_id IS NULL OR is_admin();
 

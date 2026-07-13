@@ -1,5 +1,6 @@
 // KA Farm - Crops & Nurseries Module (With Sanitary Diagnostics)
 import { KAStorage } from '../storage.js';
+import { logger } from './logger.js';
 
 let liveStream = null;
 let currentSanitaryBase64 = '';
@@ -859,7 +860,7 @@ export const CropsModule = {
       }
       if (controls) controls.classList.remove('hidden');
     } catch (err) {
-      console.warn('getUserMedia failed', err);
+      logger.warn('getUserMedia failed', { error: err.message });
       alert("Accès caméra direct indisponible. Veuillez utiliser le bouton 'Importer' pour charger une photo existante ou prendre un cliché via votre smartphone.");
       if (placeholder) placeholder.classList.remove('hidden');
     }

@@ -1,6 +1,12 @@
 // KA Farm - Router & Page Protection Logic
 import { UserManager } from './user-manager.js';
-import { isAdmin } from './auth-client.js';
+import { KAStorage } from './storage.js';
+
+// Fonction locale pour vérifier si l'utilisateur est admin
+function isAdmin() {
+  const user = KAStorage.getCurrentUser();
+  return user && (user.role === 'admin' || user.role === 'super_admin');
+}
 
 export const Router = {
   // Routes config for active states in the sidebar

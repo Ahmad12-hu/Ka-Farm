@@ -50,10 +50,6 @@ export default defineConfig(() => {
           'pages/personal/settings': path.resolve(__dirname, 'pages/personal/settings.html'),
         }
       },
-      // Server-side files should NOT be bundled
-      rollup: {
-        external: [],
-      },
       outDir: 'dist',
       emptyOutDir: true,
     },

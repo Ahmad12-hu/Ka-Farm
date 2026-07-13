@@ -87,7 +87,7 @@
     </div>
 
     <script type="module">
-        import { Auth } from '/js/auth-client.js';
+        import { Auth } from '/js/auth.js';
 
         const form = document.getElementById('login-form');
         const errorDiv = document.getElementById('error-message');
@@ -101,23 +101,20 @@
             errorDiv.classList.add('hidden');
 
             try {
-                // Utiliser Supabase Auth
-                const result = await Auth.signIn(email, password);
+                // Utiliser localStorage Auth
+                const success = await Auth.login(email, password);
 
-                if (result.error) {
-                    errorDiv.textContent = result.error;
-                    errorDiv.classList.remove('hidden');
-                    return;
+                if (!success) {
+                    return; // Auth.login gère déjà l'alerte
                 }
 
                 // Vérifier que c'est bien l'admin
-                const user = result.data.user;
-                const ADMIN_EMAIL = 'admin@kafarm.sn'; // ⚠️ REMPLACER PAR VOTRE EMAIL
+                const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@kafarm.sn';
 
-                if (user.email !== ADMIN_EMAIL) {
+                if (email !== ADMIN_EMAIL) {
                     errorDiv.textContent = 'Accès refusé. Vous n\'êtes pas administrateur.';
                     errorDiv.classList.remove('hidden');
-                    await Auth.signOut();
+                    Auth.logout();
                     return;
                 }
 

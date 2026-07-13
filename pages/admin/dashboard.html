@@ -229,14 +229,13 @@
     </main>
 
     <script type="module">
-        import { supabase } from '/js/auth-client.js';
+        import { Auth } from '/js/auth.js';
         import { KAStorage } from '/js/storage.js';
 
         // Exposer logout globalement
         window.logout = async () => {
             if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-                await supabase.auth.signOut();
-                window.location.href = '/pages/admin/login.html';
+                Auth.logout();
             }
         };
 
@@ -361,19 +360,18 @@
         }
 
         // Vérifier l'authentification au chargement
-        async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
+        function checkAuth() {
+            const user = KAStorage.getCurrentUser();
+            if (!user) {
                 window.location.href = '/pages/admin/login.html';
                 return;
             }
 
-            const user = session.user;
-            const ADMIN_EMAIL = 'admin@kafarm.sn'; // ⚠️ REMPLACER PAR VOTRE EMAIL
+            const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@kafarm.sn';
 
             if (user.email !== ADMIN_EMAIL) {
                 alert('Accès refusé. Vous n\'êtes pas administrateur.');
-                await supabase.auth.signOut();
+                Auth.logout();
                 window.location.href = '/pages/admin/login.html';
                 return;
             }
@@ -382,13 +380,6 @@
             loadStats();
             loadLists();
         }
-
-        // Vérifier les changements d'authentification
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_OUT') {
-                window.location.href = '/pages/admin/login.html';
-            }
-        });
 
         // Lancer la vérification
         checkAuth();

@@ -36,13 +36,14 @@
       }
     }
   </script>
-  <script type="module" crossorigin src="/assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
-  <script type="module" crossorigin src="/assets/auth-client-B3Q7K5VC.js"></script>
-  <script type="module" crossorigin src="/assets/storage-C1IPJf-V.js"></script>
-  <script type="module" crossorigin src="/assets/user-manager-ficPWetn.js"></script>
-  <script type="module" crossorigin src="/assets/router-B_N331wq.js"></script>
-  <script type="module" crossorigin src="/assets/app-DhSchYKj.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/auth-client-DWkViO4m.css">
+  <script type="module" crossorigin src="/assets/pages/shared/market-prices-BNnxgAvG.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-client-B7Zwn_D1.js">
+  <link rel="modulepreload" crossorigin href="/assets/storage-C1IPJf-V.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-manager-ficPWetn.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-G2XwzYFz.js">
+  <link rel="modulepreload" crossorigin href="/assets/app-DhSchYKj.js">
+  <link rel="stylesheet" crossorigin href="/assets/auth-client-DlMOMEAv.css">
 </head>
 
 <body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen">
@@ -66,17 +67,134 @@
               <i data-lucide="trending-up" class="h-6 w-6 text-orange-500"></i> Prix du Marché
             </h2>
             <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-              Suivi des prix en temps réel et analyse des tendances saisonnières. (En construction)
+              Suivi des prix en temps réel et analyse des tendances saisonnières
             </p>
+          </div>
+          <div class="flex gap-2">
+            <select id="period-filter"
+              class="px-4 py-2 bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23] rounded-lg text-sm font-semibold focus:ring-2 focus:ring-brand-green focus:border-transparent">
+              <option value="7">7 derniers jours</option>
+              <option value="30" selected>30 derniers jours</option>
+              <option value="90">3 derniers mois</option>
+              <option value="365">Cette année</option>
+            </select>
+            <select id="crop-filter"
+              class="px-4 py-2 bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23] rounded-lg text-sm font-semibold focus:ring-2 focus:ring-brand-green focus:border-transparent">
+              <option value="all">Toutes les cultures</option>
+              <option value="tomate">Tomate</option>
+              <option value="oignon">Oignon</option>
+              <option value="piment">Piment</option>
+              <option value="pastèque">Pastèque</option>
+              <option value="melon">Melon</option>
+            </select>
           </div>
         </div>
 
+        <!-- Price Chart -->
+        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Évolution des Prix</h3>
+            <div class="flex gap-4 text-xs">
+              <div class="flex items-center gap-1">
+                <div class="w-3 h-3 bg-brand-green rounded"></div>
+                <span class="text-slate-600 dark:text-slate-400">Prix actuel</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <div class="w-3 h-3 bg-orange-500 rounded"></div>
+                <span class="text-slate-600 dark:text-slate-400">Moyenne</span>
+              </div>
+            </div>
+          </div>
+          <canvas id="priceChart" height="80"></canvas>
+        </div>
+
+        <!-- Price Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Moyen</p>
+                <p class="text-2xl font-black text-slate-800 dark:text-white mt-1" id="avg-price">250 FCFA</p>
+              </div>
+              <div class="p-3 bg-brand-green/10 rounded-xl">
+                <i data-lucide="bar-chart-3" class="h-6 w-6 text-brand-green"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Max</p>
+                <p class="text-2xl font-black text-slate-800 dark:text-white mt-1" id="max-price">350 FCFA</p>
+              </div>
+              <div class="p-3 bg-green-500/10 rounded-xl">
+                <i data-lucide="arrow-up" class="h-6 w-6 text-green-500"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Min</p>
+                <p class="text-2xl font-black text-slate-800 dark:text-white mt-1" id="min-price">180 FCFA</p>
+              </div>
+              <div class="p-3 bg-red-500/10 rounded-xl">
+                <i data-lucide="arrow-down" class="h-6 w-6 text-red-500"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Tendance</p>
+                <p class="text-2xl font-black text-slate-800 dark:text-white mt-1" id="trend">+5.2%</p>
+              </div>
+              <div class="p-3 bg-orange-500/10 rounded-xl">
+                <i data-lucide="trending-up" class="h-6 w-6 text-orange-500"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Price Table -->
         <div
-          class="p-10 bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-center">
-          <i data-lucide="construction" class="h-12 w-12 text-orange-500 mx-auto mb-4"></i>
-          <h3 class="text-lg font-bold text-slate-800 dark:text-white">Page en cours de développement</h3>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Cette fonctionnalité de suivi des prix du marché
-            sera bientôt disponible.</p>
+          class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl overflow-hidden">
+          <div class="p-6 border-b border-slate-100 dark:border-[#143E23]/30">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Prix par Culture</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Prix moyen au kg sur les marchés locaux</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-slate-50 dark:bg-[#061109]/50">
+                <tr>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    Culture</th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    Prix Min</th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    Prix Moyen</th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    Prix Max</th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    Tendance</th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    Dernière MAJ</th>
+                </tr>
+              </thead>
+              <tbody id="price-table-body" class="divide-y divide-slate-100 dark:divide-[#143E23]/30">
+                <!-- Dynamic content will be inserted here -->
+              </tbody>
+            </table>
+          </div>
         </div>
 
       </div>
@@ -84,6 +202,8 @@
   </div>
 
   <!-- Shared App & Module Entry Points -->
+
+  <!-- Market Prices Module -->
 
 </body>
 

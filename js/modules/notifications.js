@@ -1,5 +1,6 @@
 // KA Farm - Sanitary Alerts & Gemini AI Advisor Module
 import { KAStorage } from '../storage.js';
+import { logger } from './logger.js';
 
 let chatHistory = [];
 
@@ -243,7 +244,7 @@ export const NotificationsModule = {
 
       chatHistory.push({ role: 'advisor', text: data.text });
     } catch (err) {
-      console.error(err);
+      logger.error('Notifications: Error sending to advisor', { error: err.message });
       const loaderEl = document.getElementById(loadingId);
       if (loaderEl) loaderEl.remove();
 

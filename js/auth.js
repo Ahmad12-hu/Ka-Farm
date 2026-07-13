@@ -2,6 +2,7 @@
 import { KAStorage } from './storage.js';
 import { UserManager } from './user-manager.js';
 import { Crypto } from './modules/crypto.js';
+import { logger } from './modules/logger.js';
 
 export const Auth = {
   async login(email, password, remember = true) {
@@ -49,7 +50,7 @@ export const Auth = {
       window.location.href = '/pages/shared/dashboard.html';
       return true;
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error', { error: error.message });
       alert("Erreur lors de la connexion. Veuillez réessayer.");
       return false;
     }
@@ -108,7 +109,7 @@ export const Auth = {
       window.location.href = '/pages/shared/dashboard.html';
       return true;
     } catch (error) {
-      console.error('Signup error:', error);
+      logger.error('Signup error', { error: error.message });
       alert("Erreur lors de la création du compte. Veuillez réessayer.");
       return false;
     }

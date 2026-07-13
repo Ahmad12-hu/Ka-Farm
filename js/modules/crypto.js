@@ -1,6 +1,8 @@
 // KA Farm - Cryptographic Utilities
 // Uses Web Crypto API for secure password hashing (PBKDF2)
 
+import { logger } from './logger.js';
+
 export const Crypto = {
   /**
    * Hash a password using PBKDF2 with SHA-256
@@ -51,7 +53,7 @@ export const Crypto = {
         salt: saltBase64
       };
     } catch (error) {
-      console.error('Crypto error:', error);
+      logger.error('Crypto error', { error: error.message });
       throw new Error('Impossible de sécuriser le mot de passe');
     }
   },
@@ -68,7 +70,7 @@ export const Crypto = {
       const { hash: newHash } = await this.hashPassword(password, salt);
       return newHash === hash;
     } catch (error) {
-      console.error('Verification error:', error);
+      logger.error('Verification error', { error: error.message });
       return false;
     }
   },
