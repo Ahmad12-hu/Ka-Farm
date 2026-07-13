@@ -507,7 +507,7 @@ app.get('/api/weather', async (req, res) => {
       weather_code: data.current.weather_code,
       wind_speed: data.current.wind_speed_10m
     });
-    } catch (error) {
+  } catch (error) {
     logger.error('Error fetching weather', { error: error.message });
     return res.status(500).json({ error: 'Erreur lors de la récupération des données météo' });
   }

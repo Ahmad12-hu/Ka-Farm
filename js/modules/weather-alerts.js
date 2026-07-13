@@ -79,19 +79,49 @@ export const WeatherAlertsModule = {
     if (humidityHigh) humidityHigh.textContent = config.humidity?.high || 80;
   },
 
-  updateCurrentWeather() {
-    // Simulate current weather data (in production, fetch from weather API)
-    const currentWeather = KAStorage.getCurrentWeather() || {
+  async updateCurrentWeather() {
+    // Fetch real weather data from API
+    const tempEl = document.getElementById('current-temp');
+    const humidityEl = document.getElementById('current-humidity');
+    const windEl = document.getElementById('current-wind');
+    const rainEl = document.getElementById('current-rain');
+    
+    let currentWeather = KAStorage.getCurrentWeather() || {
       temperature: 25,
       humidity: 65,
       wind: 10,
       rainfall: 0
     };
     
-    const tempEl = document.getElementById('current-temp');
-    const humidityEl = document.getElementById('current-humidity');
-    const windEl = document.getElementById('current-wind');
-    const rainEl = document.getElementById('current-rain');
+    try {
+      // Try to get user's zone from settings
+      const userZone = localStorage.getItem('ka_farm_zone') || 'dakar';
+      const zoneCoords = {
+        dakar: { lat: 14.6937, lon: -17.4441 },
+        thiès: { lat: 14.7856, lon: -17.2543 },
+        kaolack: { lat: 14.15, lon: -16.0833 },
+        ziguinchor: { lat: 12.5833, lon: -16.2667 },
+        saint_louis: { lat: 16.0333, lon: -16.5 },
+        matam: { lat: 15.1667, lon: -13.2833 }
+      };
+      
+      const coords = zoneCoords[userZone] || zoneCoords.dakar;
+      
+      const response = await fetch(`/api/weather?lat=${coords.lat}&lon=${coords.lon}`);
+      if (response.ok) {
+        const data = await response.json();
+        currentWeather = {
+          temperature: data.temp || currentWeather.temperature,
+          humidity: data.humidity || currentWeather.humidity,
+          wind: data.wind_speed || currentWeather.wind,
+          rainfall: data.precipitation || currentWeather.rainfall
+        };
+        // Cache the real data
+        KAStorage.saveCurrentWeather(currentWeather);
+      }
+    } catch (err) {
+      console.warn('Weather API fetch failed, using cached/default data:', err);
+    }
     
     if (tempEl) tempEl.textContent = `${currentWeather.temperature}°C`;
     if (humidityEl) humidityEl.textContent = `${currentWeather.humidity}%`;
@@ -263,6 +293,11 @@ export const WeatherAlertsModule = {
     setInterval(() => {
       this.updateCurrentWeather();
     }, 5 * 60 * 1000);
+    
+    // Initial fetch on page load
+    setTimeout(() => {
+      this.updateCurrentWeather();
+    }, 2000);
   },
 
   render() {
