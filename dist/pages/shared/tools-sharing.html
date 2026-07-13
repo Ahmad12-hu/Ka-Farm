@@ -33,11 +33,12 @@
       }
     }
   </script>
-  <script type="module" crossorigin src="/assets/storage-D8ezjQDQ.js"></script>
-  <script type="module" crossorigin src="/assets/user-manager-B6xLT1GE.js"></script>
-  <script type="module" crossorigin src="/assets/router-BWcEEUQk.js"></script>
-  <script type="module" crossorigin src="/assets/app-DoqvS5x_.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/styles-CZVp1mR_.css">
+  <script type="module" crossorigin src="/assets/pages/shared/tools-sharing-se_WdQ7-.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/storage-D8ezjQDQ.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-manager-B6xLT1GE.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-BWcEEUQk.js">
+  <link rel="modulepreload" crossorigin href="/assets/app-DoqvS5x_.js">
+  <link rel="stylesheet" crossorigin href="/assets/styles-v5HjYrZG.css">
 </head>
 
 <body class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen">
@@ -61,24 +62,546 @@
               <i data-lucide="tools" class="h-6 w-6 text-cyan-500"></i> Bourse d'Outils
             </h2>
             <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-              Partagez et louez des outils entre fermes du Sénégal. (En construction)
+              Partagez et louez des outils entre fermes du Sénégal
             </p>
+          </div>
+          <button id="add-tool-btn"
+            class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition-colors">
+            <i data-lucide="plus" class="h-4 w-4"></i>
+            Ajouter un outil
+          </button>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Outils</p>
+                <p class="text-2xl font-black text-slate-800 dark:text-white mt-1" id="stat-total-tools">0</p>
+              </div>
+              <div class="p-3 bg-cyan-500/10 rounded-xl">
+                <i data-lucide="tool" class="h-6 w-6 text-cyan-500"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Disponibles</p>
+                <p class="text-2xl font-black text-slate-800 dark:text-white mt-1" id="stat-available-tools">0</p>
+              </div>
+              <div class="p-3 bg-green-500/10 rounded-xl">
+                <i data-lucide="check-circle" class="h-6 w-6 text-green-500"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Locations Actives</p>
+                <p class="text-2xl font-black text-slate-800 dark:text-white mt-1" id="stat-active-rentals">0</p>
+              </div>
+              <div class="p-3 bg-amber-500/10 rounded-xl">
+                <i data-lucide="clock" class="h-6 w-6 text-amber-500"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Total Locations</p>
+                <p class="text-2xl font-black text-slate-800 dark:text-white mt-1" id="stat-total-rentals">0</p>
+              </div>
+              <div class="p-3 bg-purple-500/10 rounded-xl">
+                <i data-lucide="calendar" class="h-6 w-6 text-purple-500"></i>
+              </div>
+            </div>
           </div>
         </div>
 
+        <!-- View Tabs -->
         <div
-          class="p-10 bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-center">
-          <i data-lucide="construction" class="h-12 w-12 text-cyan-500 mx-auto mb-4"></i>
-          <h3 class="text-lg font-bold text-slate-800 dark:text-white">Page en cours de développement</h3>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Cette fonctionnalité de partage d'outils sera
-            bientôt disponible.</p>
+          class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-1.5 flex gap-2">
+          <button id="view-catalog"
+            class="flex-1 px-4 py-2.5 bg-brand-green text-white text-sm font-bold rounded-xl transition-colors">
+            <i data-lucide="search" class="h-4 w-4 inline-block mr-2"></i>
+            Catalogue
+          </button>
+          <button id="view-my-rentals"
+            class="flex-1 px-4 py-2.5 bg-brand-slate text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-700 transition-colors">
+            <i data-lucide="calendar-check" class="h-4 w-4 inline-block mr-2"></i>
+            Mes Locations
+          </button>
+          <button id="view-my-tools"
+            class="flex-1 px-4 py-2.5 bg-brand-slate text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-700 transition-colors">
+            <i data-lucide="tool" class="h-4 w-4 inline-block mr-2"></i>
+            Mes Outils
+          </button>
+          <button id="view-favorites"
+            class="flex-1 px-4 py-2.5 bg-brand-slate text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-700 transition-colors">
+            <i data-lucide="heart" class="h-4 w-4 inline-block mr-2"></i>
+            Favoris
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="relative">
+              <i data-lucide="search" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="tools-search" placeholder="Rechercher un outil..."
+                class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-[#061109] border border-slate-200 dark:border-[#143E23] rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            </div>
+            <select id="filter-region"
+              class="px-4 py-2 bg-slate-50 dark:bg-[#061109] border border-slate-200 dark:border-[#143E23] rounded-lg text-sm focus:ring-2 focus:ring-cyan-500">
+              <option value="">Toutes les régions</option>
+              <option value="Niayes">Niayes</option>
+              <option value="Dakar">Dakar</option>
+              <option value="Thiès">Thiès</option>
+              <option value="Saint-Louis">Saint-Louis</option>
+              <option value="Kaolack">Kaolack</option>
+              <option value="Mbour">Mbour</option>
+              <option value="Fatick">Fatick</option>
+              <option value="Diourbel">Diourbel</option>
+            </select>
+            <select id="filter-tool-type"
+              class="px-4 py-2 bg-slate-50 dark:bg-[#061109] border border-slate-200 dark:border-[#143E23] rounded-lg text-sm focus:ring-2 focus:ring-cyan-500">
+              <option value="">Tous les types</option>
+              <option value="Irrigation">Irrigation</option>
+              <option value="Transport">Transport</option>
+              <option value="Traitement">Traitement</option>
+              <option value="Labour">Labour</option>
+              <option value="Désherbage">Désherbage</option>
+              <option value="Entretien">Entretien</option>
+              <option value="Récolte">Récolte</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Catalog Section -->
+        <div id="catalog-section">
+          <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Tools will be dynamically inserted here -->
+          </div>
+        </div>
+
+        <!-- My Rentals Section -->
+        <div id="my-rentals-section" class="hidden">
+          <div
+            class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-[#143E23]/30">
+              <h3 class="text-lg font-bold text-slate-800 dark:text-white">Mes Locations</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Historique et locations en cours</p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-slate-50 dark:bg-[#061109]/50">
+                  <tr>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Outil</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Propriétaire</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Début</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Fin</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Montant</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Statut</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="rentals-table-body" class="divide-y divide-slate-100 dark:divide-[#143E23]/30">
+                  <!-- Rentals will be dynamically inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- My Tools Section -->
+        <div id="my-tools-section" class="hidden">
+          <div
+            class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-[#143E23]/30">
+              <h3 class="text-lg font-bold text-slate-800 dark:text-white">Mes Outils</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Gérez vos outils partagés</p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-slate-50 dark:bg-[#061109]/50">
+                  <tr>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Nom</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Type</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Région</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Prix/Jour</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Disponibilité</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Note</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="my-tools-table-body" class="divide-y divide-slate-100 dark:divide-[#143E23]/30">
+                  <!-- My tools will be dynamically inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Favorites Section -->
+        <div id="favorites-section" class="hidden">
+          <div
+            class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-[#143E23]/30">
+              <h3 class="text-lg font-bold text-slate-800 dark:text-white">Mes Favoris</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Outils que vous avez sauvegardés</p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-slate-50 dark:bg-[#061109]/50">
+                  <tr>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Outil</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Type</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Propriétaire</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Région</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Prix/Jour</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Note</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="favorites-table-body" class="divide-y divide-slate-100 dark:divide-[#143E23]/30">
+                  <!-- Favorites will be dynamically inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
       </div>
     </main>
   </div>
 
+  <!-- Tool Detail Modal -->
+  <div id="tool-detail-modal"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- Modal content will be dynamically inserted -->
+  </div>
+
+  <!-- Rental Modal -->
+  <div id="rental-modal"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">Réserver l'outil</h2>
+        <button data-close-rental class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="bg-gray-800/50 rounded-lg p-4">
+          <p class="text-sm text-gray-400">Outil sélectionné</p>
+          <p class="text-lg font-semibold text-white" data-tool-name>--</p>
+          <p class="text-sm text-cyan-400" data-tool-price>--</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Date de début</label>
+            <input type="date" data-rental-start
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Date de fin</label>
+            <input type="date" data-rental-end
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Nombre d'heures</label>
+          <input type="number" data-rental-hours min="1"
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+        </div>
+
+        <div class="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-300">Total estimé:</span>
+            <span class="text-2xl font-bold text-cyan-400" data-rental-total>0 FCFA</span>
+          </div>
+        </div>
+
+        <div class="bg-gray-800/50 rounded-lg p-4">
+          <p class="text-sm text-gray-400 mb-1">Contact propriétaire:</p>
+          <p class="text-white font-medium" data-owner-info>--</p>
+        </div>
+
+        <button data-save-rental
+          class="w-full px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg transition-colors">
+          Confirmer la réservation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Tool Modal -->
+  <div id="add-tool-modal"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">Ajouter un outil</h2>
+        <button data-close-tool class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <form class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Nom de l'outil *</label>
+            <input type="text" name="tool-name" required
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Type *</label>
+            <select name="tool-type" required
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+              <option value="">Sélectionner</option>
+              <option value="Irrigation">Irrigation</option>
+              <option value="Transport">Transport</option>
+              <option value="Traitement">Traitement</option>
+              <option value="Labour">Labour</option>
+              <option value="Désherbage">Désherbage</option>
+              <option value="Entretien">Entretien</option>
+              <option value="Récolte">Récolte</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Marque</label>
+            <input type="text" name="tool-brand"
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Modèle</label>
+            <input type="text" name="tool-model"
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Année d'achat</label>
+            <input type="number" name="tool-year" min="1900" max="2099"
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">État</label>
+            <select name="tool-condition"
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+              <option value="Excellent">Excellent</option>
+              <option value="Bon">Bon</option>
+              <option value="Moyen">Moyen</option>
+              <option value="À réparer">À réparer</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Description *</label>
+          <textarea name="tool-description" rows="3" required
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Prix journalier (FCFA) *</label>
+            <input type="number" name="tool-daily-price" min="0" required
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Prix horaire (FCFA)</label>
+            <input type="number" name="tool-hourly-price" min="0"
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Durée minimum (heures)</label>
+            <input type="number" name="tool-min-hours" min="1" value="1"
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
+            <select name="tool-region" required
+              class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+              <option value="">Sélectionner</option>
+              <option value="Niayes">Niayes</option>
+              <option value="Dakar">Dakar</option>
+              <option value="Thiès">Thiès</option>
+              <option value="Saint-Louis">Saint-Louis</option>
+              <option value="Kaolack">Kaolack</option>
+              <option value="Mbour">Mbour</option>
+              <option value="Fatick">Fatick</option>
+              <option value="Diourbel">Diourbel</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Localisation *</label>
+          <input type="text" name="tool-location" required
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Instructions d'utilisation</label>
+          <textarea name="tool-usage" rows="2"
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Maintenance requise</label>
+          <textarea name="tool-maintenance" rows="2"
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" name="tool-insurance" id="tool-insurance"
+              class="w-4 h-4 text-cyan-500 bg-gray-800 border-gray-700 rounded focus:ring-cyan-500">
+            <label for="tool-insurance" class="text-sm text-gray-300">Assurance requise</label>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" name="tool-verified" id="tool-verified"
+              class="w-4 h-4 text-cyan-500 bg-gray-800 border-gray-700 rounded focus:ring-cyan-500">
+            <label for="tool-verified" class="text-sm text-gray-300">Outils vérifié</label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Caution (FCFA)</label>
+          <input type="number" name="tool-deposit" min="0" value="0"
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+          <textarea name="tool-notes" rows="2"
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"></textarea>
+        </div>
+
+        <button type="submit" data-save-tool
+          class="w-full px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg transition-colors">
+          Enregistrer l'outil
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div id="review-modal"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-brand-slate rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white">Laisser un avis</h2>
+        <button data-close-review class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="bg-gray-800/50 rounded-lg p-4">
+          <p class="text-sm text-gray-400">Outil</p>
+          <p class="text-lg font-semibold text-white" data-review-tool>--</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Note</label>
+          <div class="flex gap-2" id="review-stars">
+            <button type="button" data-rating="1"
+              class="text-3xl text-gray-500 hover:text-yellow-400 transition-colors">★</button>
+            <button type="button" data-rating="2"
+              class="text-3xl text-gray-500 hover:text-yellow-400 transition-colors">★</button>
+            <button type="button" data-rating="3"
+              class="text-3xl text-gray-500 hover:text-yellow-400 transition-colors">★</button>
+            <button type="button" data-rating="4"
+              class="text-3xl text-gray-500 hover:text-yellow-400 transition-colors">★</button>
+            <button type="button" data-rating="5"
+              class="text-3xl text-gray-500 hover:text-yellow-400 transition-colors">★</button>
+          </div>
+          <input type="hidden" name="review-rating" value="5">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Votre avis</label>
+          <textarea name="review-text" rows="4" required
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" name="review-again" id="review-again" checked
+            class="w-4 h-4 text-cyan-500 bg-gray-800 border-gray-700 rounded focus:ring-cyan-500">
+          <label for="review-again" class="text-sm text-gray-300">Louerait à nouveau</label>
+        </div>
+
+        <button type="submit" data-save-review
+          class="w-full px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg transition-colors">
+          Soumettre l'avis
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Shared App & Module Entry Points -->
+
+  <!-- Tools Sharing Module -->
 
 </body>
 
