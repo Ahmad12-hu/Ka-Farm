@@ -126,6 +126,7 @@
   <script type="module">
     import { UserManager } from '/js/user-manager.js';
     import { KAStorage } from '/js/storage.js';
+    import { Theme } from '/js/components/theme-toggle.js';
 
     // Global action helpers
     window.accessDashboard = (roleType) => {
@@ -161,6 +162,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       KAStorage.init();
       lucide.createIcons();
+
+      // Initialize theme toggle
+      Theme.initToggleInContainer('#theme-toggle-container');
 
       // Check user session for custom button label
       const user = UserManager.getCurrentUser();
@@ -226,22 +230,22 @@
 <body class="font-sans antialiased bg-[#040D06] text-slate-100 selection:bg-emerald-500 selection:text-white">
 
   <!-- Header / Navigation Bar -->
-  <header class="sticky top-0 z-50 bg-[#040D06]/90 backdrop-blur-md border-b border-emerald-950/40 px-4 sm:px-8 py-3">
+  <header class="sticky top-0 z-50 bg-[#040D06]/90 backdrop-blur-md border-b border-emerald-950/40 px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <!-- Logo & Title -->
-      <a href="#" class="flex items-center gap-3">
+      <a href="#" class="flex items-center gap-2 sm:gap-3">
         <div
-          class="h-10 w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-950/40">
-          <i data-lucide="sprout" class="h-5 w-5"></i>
+          class="h-8 w-8 sm:h-10 sm:w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-950/40">
+          <i data-lucide="sprout" class="h-4 w-4 sm:h-5 sm:w-5"></i>
         </div>
-        <div class="text-left">
+        <div class="text-left hidden sm:block">
           <span class="block text-sm font-black uppercase tracking-wider text-white">KA Farm</span>
           <span class="block text-[10px] font-bold text-emerald-400">SÉNÉGAL • AGROÉCOLOGIE</span>
         </div>
       </a>
 
       <!-- Navigation Links (Desktop) -->
-      <nav class="hidden md:flex items-center gap-8 text-xs font-bold text-slate-300">
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-bold text-slate-300">
         <a href="#vision" class="hover:text-emerald-400 transition-colors">Notre Vision</a>
         <a href="#exploitation" class="hover:text-emerald-400 transition-colors">L'Exploitation</a>
         <a href="#meteo" class="hover:text-emerald-400 transition-colors">Météo Sénégal</a>
@@ -252,15 +256,16 @@
       </nav>
 
       <!-- Access Button -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div id="theme-toggle-container"></div>
         <button onclick="window.tryAccessDefault()"
-          class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-950/20 flex items-center gap-2 cursor-pointer">
+          class="hidden sm:flex px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-950/20 items-center gap-2 cursor-pointer">
           <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
           <span id="login-btn-text">Espace de Gestion</span>
         </button>
         <!-- Mobile hamburger -->
         <button onclick="const menu = document.getElementById('mobile-menu'); menu.classList.toggle('hidden');"
-          class="md:hidden p-2 text-slate-300 hover:text-white rounded-lg">
+          class="lg:hidden p-2 text-slate-300 hover:text-white rounded-lg">
           <i data-lucide="menu" class="h-5 w-5"></i>
         </button>
       </div>
@@ -268,27 +273,27 @@
 
     <!-- Mobile Navigation Drawer -->
     <div id="mobile-menu"
-      class="hidden md:hidden border-t border-emerald-950/40 mt-3 py-4 space-y-3 text-left animate-fadeIn">
+      class="hidden lg:hidden border-t border-emerald-950/40 mt-2 sm:mt-3 py-3 sm:py-4 space-y-2 sm:space-y-3 text-left animate-fadeIn bg-[#040D06]">
       <a href="#vision" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
-        class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Notre
+        class="block px-4 py-2.5 text-xs sm:text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Notre
         Vision</a>
       <a href="#exploitation" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
-        class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">L'Exploitation</a>
+        class="block px-4 py-2.5 text-xs sm:text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">L'Exploitation</a>
       <a href="#meteo" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
-        class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Météo
+        class="block px-4 py-2.5 text-xs sm:text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Météo
         Sénégal</a>
       <a href="#ai-advisor" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
-        class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Conseiller
+        class="block px-4 py-2.5 text-xs sm:text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Conseiller
         IA</a>
       <a href="/pages/shared/elevage.html" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
-        class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Élevage</a>
+        class="block px-4 py-2.5 text-xs sm:text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Élevage</a>
       <a href="/pages/shared/training.html" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
-        class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Guide
+        class="block px-4 py-2.5 text-xs sm:text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Guide
         & Formation</a>
       <a href="#membres" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
-        class="block px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Équipe
+        class="block px-4 py-2.5 text-xs sm:text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Équipe
         & Accès</a>
-      <div class="px-4 pt-2">
+      <div class="px-4 pt-2 border-t border-emerald-950/30 mt-2">
         <button onclick="window.tryAccessDefault()"
           class="w-full text-center py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl">
           <span id="mobile-login-btn-text">Espace de Gestion</span>
@@ -809,6 +814,7 @@
   <!-- Script logic for Interactive AI Chat and Contact Forms -->
   <script type="module">
     import { KAStorage } from '/js/storage.js';
+    import { Toast } from '/js/components/toast.js';
 
     // Interactive Preloaded question sender
     window.sendPreloadedQuestion = async (text) => {
@@ -929,7 +935,7 @@
         });
         KAStorage.saveAlerts(alerts);
 
-        alert(`Merci ${name} ! Votre message a bien été transmis à l'équipe KA Farm.`);
+        Toast.success(`Merci ${name} ! Votre message a bien été transmis à l'équipe KA-Farm.`);
         contactForm.reset();
       });
     }

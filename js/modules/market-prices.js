@@ -32,13 +32,34 @@ export const MarketPricesModule = {
   // INITIALIZATION
   // ============================================================
 
-  init() {
+  async init() {
     this.storage = KAStorage;
+    await this.waitForElements();
     this.cacheElements();
     this.setupListeners();
-    this.render();
     this.loadInitialData();
+    this.renderHorizontalChart();
+    this.renderPriceTable();
+    this.renderSummaryCards();
+    
+    // Mark as initialized
+    window.MarketPricesInitialized = true;
     console.log('MarketPricesModule initialized');
+  },
+  
+  waitForElements() {
+    return new Promise((resolve) => {
+      const check = () => {
+        const container = document.getElementById('market-prices-module');
+        const filters = document.getElementById('period-filter');
+        if (container && filters) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
   },
 
   cacheElements() {
@@ -168,37 +189,18 @@ export const MarketPricesModule = {
       addAlertBtn.addEventListener('click', () => this.openAlertModal());
     }
 
-    // Search
-    const searchInput = document.getElementById('market-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        this.state.searchQuery = e.target.value;
-        this.render();
-      });
-    }
-
     // Filters
-    const regionFilter = document.getElementById('filter-region');
-    if (regionFilter) {
-      regionFilter.addEventListener('change', (e) => {
-        this.state.selectedRegion = e.target.value;
-        this.render();
+    const periodFilter = document.getElementById('period-filter');
+    if (periodFilter) {
+      periodFilter.addEventListener('change', () => {
+        this.renderHorizontalChart();
       });
     }
 
-    const cropFilter = document.getElementById('filter-crop');
+    const cropFilter = document.getElementById('crop-filter');
     if (cropFilter) {
-      cropFilter.addEventListener('change', (e) => {
-        this.state.selectedCrop = e.target.value;
-        this.render();
-      });
-    }
-
-    const seasonFilter = document.getElementById('filter-season');
-    if (seasonFilter) {
-      seasonFilter.addEventListener('change', (e) => {
-        this.state.selectedSeason = e.target.value;
-        this.render();
+      cropFilter.addEventListener('change', () => {
+        this.renderHorizontalChart();
       });
     }
   },
@@ -900,10 +902,245 @@ export const MarketPricesModule = {
     this.storage.acknowledgePriceAlert(alertId, userName);
     this.loadInitialData();
     this.render();
+  },
+
+  // ============================================================
+  // HORIZONTAL CHART RENDERING (Image Design)
+  // ============================================================
+
+  renderHorizontalChart() {
+    const container = document.getElementById('market-prices-module');
+    if (!container) return;
+
+    // Filter controls
+    const period = document.getElementById('period-filter')?.value || '30';
+    const cropFilter = document.getElementById('crop-filter')?.value || 'all';
+
+    let data = this.getDemoData(period);
+    if (cropFilter !== 'all') {
+      data = data.filter(d => d.crop.toLowerCase().includes(cropFilter));
+    }
+
+    if (data.length === 0) {
+      container.innerHTML = '<p class="text-center text-slate-400 py-8">Aucune donnée disponible</p>';
+      return;
+    }
+
+    const maxValue = Math.max(...data.map(d => d.max)) * 1.1;
+
+    container.innerHTML = `
+      <!-- Chart Card -->
+      <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white">Évolution des Prix</h3>
+          <div class="flex gap-4 text-xs">
+            <div class="flex items-center gap-1">
+              <div class="w-3 h-3 bg-brand-green rounded"></div>
+              <span class="text-slate-600 dark:text-slate-400">Prix actuel</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <div class="w-3 h-3 bg-orange-500 rounded"></div>
+              <span class="text-slate-600 dark:text-slate-400">Moyenne</span>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          ${data.map(item => {
+            const avgWidth = (item.avg / maxValue) * 100;
+            const maxWidth = (item.max / maxValue) * 100;
+            const minWidth = (item.min / maxValue) * 100;
+            return `
+              <div class="space-y-2">
+                <div class="text-xs font-bold text-slate-700 dark:text-slate-300">${item.crop}</div>
+                <div class="relative h-8 bg-slate-100 dark:bg-[#061109]/30 rounded-lg overflow-hidden">
+                  <!-- Max bar (background) -->
+                  <div class="absolute inset-y-0 left-0 bg-brand-green/20 rounded-lg" style="width: ${maxWidth}%"></div>
+                  <!-- Avg bar (middle) -->
+                  <div class="absolute inset-y-0 left-0 bg-emerald-500 rounded-lg" style="width: ${avgWidth}%"></div>
+                  <!-- Min bar (overlay) -->
+                  <div class="absolute inset-y-0 left-0 bg-red-500/60 rounded-lg" style="width: ${minWidth}%"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                  <span>Min: ${item.min} FCFA</span>
+                  <span class="text-brand-green font-black">${item.avg} FCFA</span>
+                  <span>Max: ${item.max} FCFA</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Moyen</p>
+              <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">${this.calculateAvg(data)} FCFA</p>
+            </div>
+            <div class="p-3 bg-brand-green/10 rounded-xl">
+              <svg class="h-6 w-6 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Max</p>
+              <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">${Math.max(...data.map(d => d.max))} FCFA</p>
+            </div>
+            <div class="p-3 bg-green-500/10 rounded-xl">
+              <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Min</p>
+              <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">${Math.min(...data.map(d => d.min))} FCFA</p>
+            </div>
+            <div class="p-3 bg-red-500/10 rounded-xl">
+              <svg class="h-6 w-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Tendance</p>
+              <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">+${this.calculateAvgTrend(data)}%</p>
+            </div>
+            <div class="p-3 bg-orange-500/10 rounded-xl">
+              <svg class="h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Price Table -->
+      <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl overflow-hidden">
+        <div class="p-6 border-b border-slate-100 dark:border-[#143E23]/30">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white">Prix par Culture</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Prix moyen au kg sur les marchés locaux</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-slate-50 dark:bg-[#061109]/50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Culture</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Min</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Moyen</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Max</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Tendance</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Dernière MAJ</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-[#143E23]/30">
+              ${data.map(item => {
+                const trendColor = item.trend >= 0 ? 'text-green-500' : 'text-red-500';
+                const trendIcon = item.trend >= 0 ? 'arrow-up' : 'arrow-down';
+                return `
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm font-bold text-slate-800 dark:text-white">${item.crop}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-slate-600 dark:text-slate-400">${item.min} FCFA</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm font-bold text-brand-green">${item.avg} FCFA</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-slate-600 dark:text-slate-400">${item.max} FCFA</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center gap-1 ${trendColor}">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${item.trend >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6-6' : 'M13 7h8m0 0v8m0-8l-8-8-4 4-6 6'}"></path>
+                        </svg>
+                        <span class="text-sm font-bold">${Math.abs(item.trend)}%</span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-slate-500 dark:text-slate-400">${new Date(item.date).toLocaleDateString('fr-FR')}</div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Lucide icons initialization
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  },
+
+  renderPriceTable() {
+    // Already rendered in renderHorizontalChart
+  },
+
+  renderSummaryCards() {
+    // Already rendered in renderHorizontalChart
+  },
+
+  calculateAvg(data) {
+    return Math.round(data.reduce((sum, d) => sum + d.avg, 0) / data.length);
+  },
+
+  calculateAvgTrend(data) {
+    return (data.reduce((sum, d) => sum + d.trend, 0) / data.length).toFixed(1);
+  },
+
+  getDemoData(period) {
+    const demoData = {
+      '7': [
+        { crop: 'Tomate Mongal F1', min: 200, max: 300, avg: 250, trend: 5.2, date: '2026-07-07' },
+        { crop: 'Oignon Rouge de Galmi', min: 150, max: 250, avg: 200, trend: -2.1, date: '2026-07-07' },
+        { crop: 'Piment Fort', min: 300, max: 450, avg: 375, trend: 8.5, date: '2026-07-07' },
+        { crop: 'Pastèque', min: 100, max: 180, avg: 140, trend: 3.2, date: '2026-07-07' },
+        { crop: 'Melon', min: 250, max: 400, avg: 325, trend: -1.5, date: '2026-07-07' },
+      ],
+      '30': [
+        { crop: 'Tomate Mongal F1', min: 180, max: 320, avg: 250, trend: 5.2, date: '2026-07-07' },
+        { crop: 'Oignon Rouge de Galmi', min: 140, max: 260, avg: 200, trend: -2.1, date: '2026-07-07' },
+        { crop: 'Piment Fort', min: 280, max: 480, avg: 375, trend: 8.5, date: '2026-07-07' },
+        { crop: 'Pastèque', min: 90, max: 190, avg: 140, trend: 3.2, date: '2026-07-07' },
+        { crop: 'Melon', min: 230, max: 420, avg: 325, trend: -1.5, date: '2026-07-07' },
+      ],
+      '90': [
+        { crop: 'Tomate Mongal F1', min: 170, max: 330, avg: 250, trend: 5.2, date: '2026-07-07' },
+        { crop: 'Oignon Rouge de Galmi', min: 130, max: 270, avg: 200, trend: -2.1, date: '2026-07-07' },
+        { crop: 'Piment Fort', min: 260, max: 500, avg: 375, trend: 8.5, date: '2026-07-07' },
+        { crop: 'Pastèque', min: 80, max: 200, avg: 140, trend: 3.2, date: '2026-07-07' },
+        { crop: 'Melon', min: 220, max: 440, avg: 325, trend: -1.5, date: '2026-07-07' },
+      ],
+      '365': [
+        { crop: 'Tomate Mongal F1', min: 150, max: 350, avg: 250, trend: 5.2, date: '2026-07-07' },
+        { crop: 'Oignon Rouge de Galmi', min: 120, max: 280, avg: 200, trend: -2.1, date: '2026-07-07' },
+        { crop: 'Piment Fort', min: 250, max: 550, avg: 375, trend: 8.5, date: '2026-07-07' },
+        { crop: 'Pastèque', min: 70, max: 220, avg: 140, trend: 3.2, date: '2026-07-07' },
+        { crop: 'Melon', min: 200, max: 500, avg: 325, trend: -1.5, date: '2026-07-07' },
+      ]
+    };
+    return demoData[period] || demoData['30'];
   }
 };
 
-// Initialize module when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  MarketPricesModule.init();
-});
+// Module initialized by app.js or fallback script in HTML

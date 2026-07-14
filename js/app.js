@@ -3,6 +3,7 @@ import { KAStorage } from './storage.js';
 import { UserManager } from './user-manager.js';
 import { WolofAudio } from './wolof-audio.js';
 import { ErrorHandler } from './modules/error-handler.js';
+import { MarketPricesModule } from './modules/market-prices.js';
 
 // Global variables for other scripts to use
 window.KAStorage = KAStorage;
@@ -301,6 +302,11 @@ export const App = {
     this.injectFooter();
     this.setupGlobalListeners();
     this.updateBadges();
+    
+    // Initialize MarketPricesModule if on market-prices page
+    if (window.location.pathname.includes('market-prices.html')) {
+      MarketPricesModule.init();
+    }
   },
 
   applyTheme(dark) {
