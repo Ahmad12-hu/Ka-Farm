@@ -922,58 +922,56 @@ async function startServer() {
         return res.status(500).json({ error: 'Clé GEMINI_API_KEY non configurée' });
       }
 
-      const ai = new GoogleGenAI(apiKey);
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build'
+          }
+        }
+      });
 
       const systemInstruction = "Tu es KA-Farm Agro-Advisor, un conseiller horticole et maraîcher expert d'Afrique de l'Ouest (Sénégal), chaleureux, pragmatique, direct et scientifique. Tu réponds en français. Tu es spécialisé exclusivement dans le maraîchage (cultures de légumes, fines herbes, fruits de jardin, pépinières, irrigation goutte-à-goutte ou aspersion, maladies horticoles comme la mineuse de la tomate Tuta absoluta, le mildiou, l'oïdium, les thrips, et l'usage de biopesticides locaux comme le neem ou le piment). Tu aides à diagnostiquer les ravageurs et maladies des légumes, planifier les pépinières maraîchères et le repiquage, optimiser l'arrosage et les amendements (compost organique, fumier) de manière écologique et agroécologique. Donne des réponses concises, claires, structurées et adaptées aux conditions locales ouest-africaines.";
 
-      // Formatage correct de l'historique pour l'API Gemini
-      const chatHistory = [];
+      const contents = [];
+
       if (history && Array.isArray(history) && history.length > 0) {
-        history.forEach(m => {
-          chatHistory.push({
+        history.forEach((m) => {
+          if (!m?.text) return;
+          contents.push({
             role: m.role === 'user' ? 'user' : 'model',
             parts: [{ text: m.text }]
           });
         });
       }
 
-      // Choisir le modèle en fonction de la présence d'une image
-      const modelName = image ? 'gemini-1.5-flash' : 'gemini-1.5-flash'; // gemini-pro-vision is also an option
-      if (image && !modelName.includes('vision') && !modelName.includes('flash')) {
-        console.warn("Attention: Le modèle utilisé ne supporte peut-être pas les images. Utilisation de gemini-1.5-flash.");
+      const modelName = 'gemini-2.5-flash';
+      const requestParts = [{ text: prompt }];
+
+      if (image) {
+        const mimeMatch = image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/);
+        if (!mimeMatch) {
+          return res.status(400).json({ error: 'Format d\'image invalide' });
+        }
+
+        requestParts.push({
+          inlineData: {
+            mimeType: mimeMatch[1],
+            data: image.split(',')[1]
+          }
+        });
       }
 
-      const model = ai.getGenerativeModel({
+      const response = await ai.models.generateContent({
         model: modelName,
-        systemInstruction: {
-          role: 'system',
-          parts: [{ text: systemInstruction }],
-        },
-      });
-
-      const chat = model.startChat({
-        history: chatHistory,
-        generationConfig: {
-          temperature: 0.7,
+        contents: contents.length > 0 ? [...contents, { role: 'user', parts: requestParts }] : requestParts,
+        config: {
+          systemInstruction,
+          temperature: 0.7
         }
       });
 
-      let result;
-      if (image) {
-        // Handle image input
-        const imagePart = {
-          inlineData: {
-            mimeType: image.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/)[1],
-            data: image.split(',')[1]
-          }
-        };
-        result = await model.generateContent([prompt, imagePart]);
-      } else {
-        // Handle text-only input
-        result = await chat.sendMessage(prompt);
-      }
-      const response = result.response;
-      const text = response.text();
+      const text = response.text;
 
       if (!text) {
         throw new Error('Impossible de générer une réponse de l\'IA.');
