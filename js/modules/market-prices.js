@@ -39,8 +39,6 @@ export const MarketPricesModule = {
     this.setupListeners();
     this.loadInitialData();
     this.renderVerticalChart();
-    this.renderPriceTable();
-    this.renderSummaryCards();
     
     // Mark as initialized
     window.MarketPricesInitialized = true;
@@ -193,14 +191,14 @@ export const MarketPricesModule = {
     const periodFilter = document.getElementById('period-filter');
     if (periodFilter) {
       periodFilter.addEventListener('change', () => {
-        this.renderHorizontalChart();
+        this.renderCharts();
       });
     }
 
     const cropFilter = document.getElementById('crop-filter');
     if (cropFilter) {
       cropFilter.addEventListener('change', () => {
-        this.renderHorizontalChart();
+        this.renderCharts();
       });
     }
   },
@@ -468,6 +466,7 @@ export const MarketPricesModule = {
   renderCharts() {
     this.renderPriceTrendChart();
     this.renderSeasonComparisonChart();
+    this.renderVerticalChart();
   },
 
   renderPriceTrendChart() {
@@ -917,11 +916,20 @@ export const MarketPricesModule = {
     const cropFilter = document.getElementById('crop-filter')?.value || 'all';
 
     let data = this.getDemoData(period);
-    const maxValue = Math.max(...data.map(d => d.max)) * 1.1;
     
     if (cropFilter && cropFilter !== 'all') {
       data = data.filter(d => d.crop.toLowerCase().includes(cropFilter));
     }
+
+    if (data.length === 0) {
+      container.innerHTML = '<p class="text-center text-slate-400 py-8">Aucune donnée disponible</p>';
+      return;
+    }
+
+    const maxPrice = Math.max(...data.map(d => d.max));
+    const minPrice = Math.min(...data.map(d => d.min));
+    const avgTrend = this.calculateAvgTrend(data);
+    const maxValue = maxPrice * 1.1;
 
     // Generate vertical chart HTML
     const chartHTML = `
@@ -1011,7 +1019,7 @@ export const MarketPricesModule = {
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Max</p>
-                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${Math.max(...data.map(d => d.max))} FCFA</p>
+                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${maxPrice} FCFA</p>
               </div>
               <div class="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1025,7 +1033,7 @@ export const MarketPricesModule = {
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Min</p>
-                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${Math.min(...data.map(d => d.min))} FCFA</p>
+                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${minPrice} FCFA</p>
               </div>
               <div class="p-3 rounded-2xl bg-rose-500/10 text-rose-500">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1039,7 +1047,7 @@ export const MarketPricesModule = {
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Tendance moyenne</p>
-                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${this.calculateAvgTrend(data)}%</p>
+                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${avgTrend}%</p>
               </div>
               <div class="p-3 rounded-2xl bg-orange-500/10 text-orange-500">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1115,22 +1123,20 @@ export const MarketPricesModule = {
   },
 
   renderPriceTable() {
-    // Already rendered in renderHorizontalChart
+    // Intentionally left blank: table rendering is handled in the main view flow.
   },
 
   renderSummaryCards() {
-    // Already rendered in renderHorizontalChart
-  },
-
-  renderCharts() {
-    this.renderVerticalChart();
+    // Intentionally left blank: summary cards are rendered elsewhere in the module.
   },
 
   calculateAvg(data) {
+    if (!data || data.length === 0) return 0;
     return Math.round(data.reduce((sum, d) => sum + d.avg, 0) / data.length);
   },
 
   calculateAvgTrend(data) {
+    if (!data || data.length === 0) return '0.0';
     return (data.reduce((sum, d) => sum + d.trend, 0) / data.length).toFixed(1);
   },
 
