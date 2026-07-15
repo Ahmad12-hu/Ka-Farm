@@ -22,8 +22,7 @@ const KEY_MAP = {
   'ka_farm_employee_payments': 'employee_payments',
   'ka_farm_cheptel': 'cheptel',
   'ka_farm_elevage_production': 'elevage_production',
-  'ka_farm_elevage_health': 'elevage_health',
-  'ka_farm_messages': 'messages'
+  'ka_farm_elevage_health': 'elevage_health'
 };
 
 // Unique ID builder helper for each record in a collection
@@ -41,9 +40,6 @@ function getItemId(key, item) {
 
 // Order preservation sorting helper
 function sortItems(key, items) {
-  if (key === 'ka_farm_messages') {
-    return items.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  }
   if (key === 'ka_farm_finances') {
     return items.sort((a, b) => new Date(b.date) - new Date(a.date));
   }

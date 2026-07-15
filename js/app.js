@@ -529,13 +529,6 @@ export const App = {
               <i data-lucide="graduation-cap" class="h-4 w-4 text-cyan-400"></i>
               Guides de Formation
             </a>
-            <a href="/pages/shared/discussion.html" data-tab="discussion" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-emerald-300">
-              <div class="flex items-center gap-3">
-                <i data-lucide="message-square" class="h-4 w-4 text-emerald-400"></i>
-                Discussion Frères
-              </div>
-              <span id="messages-badge" class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded-full font-bold hidden">0</span>
-            </a>
           </div>
 
           <div class="space-y-1">

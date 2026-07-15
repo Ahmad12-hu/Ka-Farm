@@ -1,6 +1,7 @@
 // KA Farm - Crops & Nurseries Module (With Sanitary Diagnostics)
 import { KAStorage } from '../storage.js';
 import { logger } from './logger.js';
+import { ErrorHandler } from './error-handler.js';
 
 let liveStream = null;
 let currentSanitaryBase64 = '';
@@ -496,7 +497,7 @@ export const CropsModule = {
             const updatedNurseries = nurseries.filter(n => n.id !== id);
             KAStorage.saveNurseries(updatedNurseries);
             
-            alert('Pépinière transplantée avec succès !');
+            ErrorHandler.showToast('Pépinière transplantée avec succès !', 'success');
             this.populateParcelOptions();
             this.renderCrops();
             this.renderNurseries();
@@ -591,7 +592,7 @@ export const CropsModule = {
 
         // Hide modal
         document.getElementById('crop-form-modal').classList.add('hidden');
-        alert('Nouvelle planche de culture enregistrée !');
+        ErrorHandler.showToast('Nouvelle planche de culture enregistrée !', 'success');
       });
     }
 
@@ -626,7 +627,7 @@ export const CropsModule = {
         
         // Hide modal
         document.getElementById('nursery-form-modal').classList.add('hidden');
-        alert('Nouvelle pépinière planifiée !');
+        ErrorHandler.showToast('Nouvelle pépinière planifiée !', 'success');
       });
     }
 
@@ -726,7 +727,7 @@ export const CropsModule = {
       const notes = document.getElementById('form-treat-notes').value;
 
       if (!cropId || !productName || !dateApplied) {
-        alert("Veuillez remplir tous les champs obligatoires.");
+        ErrorHandler.showToast("Veuillez remplir tous les champs obligatoires.", "error");
         return;
       }
 
@@ -753,7 +754,7 @@ export const CropsModule = {
       document.getElementById('treatment-modal').classList.add('hidden');
       
       // Notify & Render
-      alert('Traitement enregistré et DAR planifié !');
+      ErrorHandler.showToast('Traitement enregistré et DAR planifié !', 'success');
       this.renderTreatments();
     };
 
@@ -861,7 +862,8 @@ export const CropsModule = {
       if (controls) controls.classList.remove('hidden');
     } catch (err) {
       logger.warn('getUserMedia failed', { error: err.message });
-      alert("Accès caméra direct indisponible. Veuillez utiliser le bouton 'Importer' pour charger une photo existante ou prendre un cliché via votre smartphone.");
+      ErrorHandler.log(err, 'Crops.startLiveCamera');
+      ErrorHandler.showToast("Accès caméra direct indisponible. Veuillez utiliser le bouton 'Importer'.", "error");
       if (placeholder) placeholder.classList.remove('hidden');
     }
   },
@@ -981,7 +983,7 @@ export const CropsModule = {
     const notes = document.getElementById('sanitary-notes').value;
     
     if (!currentSanitaryBase64) {
-      alert("Veuillez d'abord capturer ou importer une photo.");
+      ErrorHandler.showToast("Veuillez d'abord capturer ou importer une photo.", "error");
       return;
     }
     

@@ -1,5 +1,6 @@
 // KA Farm - Financial & Compost Calculator Module
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 export const FinancesModule = {
   marketsData: {
@@ -315,7 +316,7 @@ export const FinancesModule = {
     window.exportFinancesCSV = () => {
       const finances = KAStorage.getFinances();
       if (finances.length === 0) {
-        alert("Aucune transaction à exporter !");
+        ErrorHandler.showToast("Aucune transaction à exporter !", "error");
         return;
       }
       const headers = ["ID", "Description", "Type de Flux", "Rubrique", "Date", "Montant (FCFA)"];
@@ -579,7 +580,7 @@ export const FinancesModule = {
         document.getElementById('form-fin-date').value = todayStr;
 
         document.getElementById('finance-modal').classList.add('hidden');
-        alert('Flux de trésorerie enregistré avec succès !');
+        ErrorHandler.showToast('Flux de trésorerie enregistré avec succès !', 'success');
       });
     }
 

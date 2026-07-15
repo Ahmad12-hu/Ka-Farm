@@ -1,5 +1,6 @@
 // KA Farm - Training & Formation Module - Comprehensive Senegal-focused Agricultural Education
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 export const TrainingModule = {
   currentLanguage: 'fr', // 'fr' or 'wo'
@@ -59,9 +60,9 @@ export const TrainingModule = {
           badge.textContent = `Score: ${this.quizScore}/3`;
           badge.classList.remove('hidden');
         }
-        alert('✓ Correct ! Excellent travail agricole !');
+        ErrorHandler.showToast('✓ Correct ! Excellent travail agricole !', 'success');
       } else {
-        alert('✗ Incorrect. Révisez les fiches techniques ci-dessus pour progresser.');
+        ErrorHandler.showToast('✗ Incorrect. Révisez les fiches techniques ci-dessus pour progresser.', 'error');
       }
     };
   },

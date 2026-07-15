@@ -102,8 +102,6 @@ const DEFAULT_ELEVAGE_HEALTH = [
   { id: 'HEA-002', date: '2026-06-18', target: 'Génisses Laitières', intervention: 'Déparasitage systématique', practitioner: 'Samba Sow (Interne)', cost: 8000, notes: 'Administration orale de vermifuge.' }
 ];
 
-const DEFAULT_MESSAGES = [];
-
 const DEFAULT_TREATMENTS = [
   { id: 'TR-001', parcelId: 'P-001', parcelName: 'Parcelle Nord - Planche 2', cropId: 'C-101', cropName: 'Tomate Mongal F1', category: 'bio-phytosanitaire', productName: 'Purin de Neem', dateApplied: '2026-06-20', dar: 3, target: 'Chenilles et pucerons', notes: 'Traitement préventif appliqué le matin. Respecter le DAR de 3 jours.', harvestReady: true, enterprise_id: 'ka_farm' },
   { id: 'TR-002', parcelId: 'P-002', parcelName: 'Parcelle Est - Grand Champ', cropId: 'C-102', cropName: 'Oignon Rouge de Galmi', category: 'chimique-phytosanitaire', productName: 'Décis (Insecticide chimique)', dateApplied: '2026-06-23', dar: 7, target: 'Tuta Absoluta', notes: 'Traitement curatif suite à l\'alerte sur les chenilles.', harvestReady: false, enterprise_id: 'ka_farm' },
@@ -264,7 +262,6 @@ export const KAStorage = {
     if (!scopedCheck('ka_farm_cheptel')) this.saveCheptel(DEFAULT_CHEPTEL);
     if (!scopedCheck('ka_farm_elevage_production')) this.saveElevageProduction(DEFAULT_ELEVAGE_PRODUCTION);
     if (!scopedCheck('ka_farm_elevage_health')) this.saveElevageHealth(DEFAULT_ELEVAGE_HEALTH);
-    if (!scopedCheck('ka_farm_messages')) this.saveMessages(DEFAULT_MESSAGES);
     if (!scopedCheck('ka_farm_treatments')) this.saveTreatments(DEFAULT_TREATMENTS);
     if (!scopedCheck('ka_farm_crop_profits')) this.saveCropProfits(DEFAULT_CROP_PROFITS);
     // Rotation des cultures
@@ -414,13 +411,6 @@ export const KAStorage = {
   },
   saveEmployeePayments(payments) {
     this.set('ka_farm_employee_payments', payments);
-  },
-
-  getMessages() {
-    return this.get('ka_farm_messages', DEFAULT_MESSAGES);
-  },
-  saveMessages(messages) {
-    this.set('ka_farm_messages', messages);
   },
 
   getTreatments() {

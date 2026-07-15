@@ -1,6 +1,7 @@
 // KA Farm - Gestion des Parcelles Module
 import { KAStorage } from '../storage.js';
 import { logger } from './logger.js';
+import { ErrorHandler } from './error-handler.js';
 
 let parcelles = [];
 let selectedParcelId = null;

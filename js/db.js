@@ -83,8 +83,7 @@ const COLLECTIONS = {
   ka_farm_employee_payments: 'employee_payments',
   ka_farm_cheptel: 'cheptel',
   ka_farm_elevage_production: 'elevage_production',
-  ka_farm_elevage_health: 'elevage_health',
-  ka_farm_messages: 'messages'
+  ka_farm_elevage_health: 'elevage_health'
 };
 
 function getEnterpriseId() {

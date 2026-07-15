@@ -1,5 +1,6 @@
 // KA Farm - Gestion des Employés Module
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 let employees = [];
 let attendance = [];
@@ -604,7 +605,7 @@ export const EmployeesModule = {
     this.render();
 
     // Alert toast
-    alert('Pointage journalier enregistré avec succès !');
+    ErrorHandler.showToast('Pointage journalier enregistré avec succès !', 'success');
   },
 
   submitPayment() {

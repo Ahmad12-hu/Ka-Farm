@@ -34,7 +34,6 @@ export default defineConfig(() => {
           'pages/shared/stocks': path.resolve(__dirname, 'pages/shared/stocks.html'),
           'pages/shared/elevage': path.resolve(__dirname, 'pages/shared/elevage.html'),
           'pages/shared/training': path.resolve(__dirname, 'pages/shared/training.html'),
-          'pages/shared/discussion': path.resolve(__dirname, 'pages/shared/discussion.html'),
           'pages/shared/treatments': path.resolve(__dirname, 'pages/shared/treatments.html'),
           'pages/shared/profitability': path.resolve(__dirname, 'pages/shared/profitability.html'),
           'pages/shared/market-prices': path.resolve(__dirname, 'pages/shared/market-prices.html'),

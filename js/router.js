@@ -25,7 +25,6 @@ export const Router = {
     '/pages/shared/stocks.html': 'stocks',
     '/pages/shared/elevage.html': 'elevage',
     '/pages/shared/training.html': 'training',
-    '/pages/shared/discussion.html': 'discussion',
     '/pages/shared/calendar.html': 'calendar',
     '/pages/shared/profitability.html': 'profitability',
     '/pages/shared/market-prices.html': 'market-prices',

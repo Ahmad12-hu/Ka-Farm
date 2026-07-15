@@ -5,6 +5,46 @@ import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import path from 'path';
 import fs from 'fs';
 import { logger } from '../js/modules/logger.js';
+import { z } from 'zod';
+
+// Validation schemas for API inputs
+const CropSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  name: z.string().min(1, 'Nom requis'),
+  field: z.string().optional(),
+  sowingDate: z.string().optional(),
+  harvestDate: z.string().optional(),
+  status: z.string().optional(),
+  waterStatus: z.string().optional(),
+  fertilizerStatus: z.string().optional()
+});
+
+const ParcelleSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  name: z.string().min(1, 'Nom requis'),
+  surface: z.number().optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  status: z.string().optional()
+});
+
+const EmployeeSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  name: z.string().min(1, 'Nom requis'),
+  phone: z.string().optional(),
+  role: z.string().optional(),
+  dailyRate: z.number().optional(),
+  status: z.string().optional()
+});
+
+const FinanceSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  description: z.string().min(1, 'Description requise'),
+  type: z.enum(['Revenu', 'Dépense']).optional(),
+  category: z.string().optional(),
+  amount: z.number().positive('Montant doit être positif').optional(),
+  date: z.string().optional()
+});
 
 // Initialize Firebase
 const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
@@ -23,6 +63,20 @@ try {
 
 const app = express();
 app.use(express.json());
+
+// Rate limiting middleware
+const rateLimit = require('express-rate-limit');
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { error: 'Trop de requêtes. Veuillez réessayer dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Apply rate limiting to all API routes
+app.use('/api', apiLimiter);
 
 // In-memory fallback stores
 let serverMessages = [
@@ -112,29 +166,36 @@ app.get('/api/crops', async (req, res) => {
 });
 
 app.post('/api/crops', async (req, res) => {
-  const crop = req.body;
-  if (!crop || !crop.id || !crop.name) {
-    return res.status(400).json({ error: 'ID et nom requis' });
+  try {
+    const crop = CropSchema.parse(req.body);
+    const existing = serverCrops.find(c => c.id === crop.id);
+    if (existing) {
+      const idx = serverCrops.findIndex(c => c.id === crop.id);
+      serverCrops[idx] = { ...existing, ...crop };
+    } else {
+      serverCrops.push(crop);
+    }
+    await saveToFirestore('crops', serverCrops);
+    res.json({ success: true, crop });
+  } catch (error) {
+    logger.error('Error saving crop', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  const existing = serverCrops.find(c => c.id === crop.id);
-  if (existing) {
-    const idx = serverCrops.findIndex(c => c.id === crop.id);
-    serverCrops[idx] = { ...existing, ...crop };
-  } else {
-    serverCrops.push(crop);
-  }
-  await saveToFirestore('crops', serverCrops);
-  res.json({ success: true, crop });
 });
 
 app.put('/api/crops/:id', async (req, res) => {
-  const { id } = req.params;
-  const patch = req.body;
-  const idx = serverCrops.findIndex(c => c.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Culture non trouvée' });
-  serverCrops[idx] = { ...serverCrops[idx], ...patch };
-  await saveToFirestore('crops', serverCrops);
-  res.json({ success: true, crop: serverCrops[idx] });
+  try {
+    const { id } = req.params;
+    const patch = CropSchema.partial().parse(req.body);
+    const idx = serverCrops.findIndex(c => c.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Culture non trouvée' });
+    serverCrops[idx] = { ...serverCrops[idx], ...patch };
+    await saveToFirestore('crops', serverCrops);
+    res.json({ success: true, crop: serverCrops[idx] });
+  } catch (error) {
+    logger.error('Error updating crop', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
+  }
 });
 
 app.delete('/api/crops/:id', async (req, res) => {
@@ -151,29 +212,36 @@ app.get('/api/parcelles', async (req, res) => {
 });
 
 app.post('/api/parcelles', async (req, res) => {
-  const parcelle = req.body;
-  if (!parcelle || !parcelle.id || !parcelle.name) {
-    return res.status(400).json({ error: 'ID et nom requis' });
+  try {
+    const parcelle = ParcelleSchema.parse(req.body);
+    const existing = serverParcelles.find(p => p.id === parcelle.id);
+    if (existing) {
+      const idx = serverParcelles.findIndex(p => p.id === parcelle.id);
+      serverParcelles[idx] = { ...existing, ...parcelle };
+    } else {
+      serverParcelles.push(parcelle);
+    }
+    await saveToFirestore('parcelles', serverParcelles);
+    res.json({ success: true, parcelle });
+  } catch (error) {
+    logger.error('Error saving parcelle', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  const existing = serverParcelles.find(p => p.id === parcelle.id);
-  if (existing) {
-    const idx = serverParcelles.findIndex(p => p.id === parcelle.id);
-    serverParcelles[idx] = { ...existing, ...parcelle };
-  } else {
-    serverParcelles.push(parcelle);
-  }
-  await saveToFirestore('parcelles', serverParcelles);
-  res.json({ success: true, parcelle });
 });
 
 app.put('/api/parcelles/:id', async (req, res) => {
-  const { id } = req.params;
-  const patch = req.body;
-  const idx = serverParcelles.findIndex(p => p.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Parcelle non trouvée' });
-  serverParcelles[idx] = { ...serverParcelles[idx], ...patch };
-  await saveToFirestore('parcelles', serverParcelles);
-  res.json({ success: true, parcelle: serverParcelles[idx] });
+  try {
+    const { id } = req.params;
+    const patch = ParcelleSchema.partial().parse(req.body);
+    const idx = serverParcelles.findIndex(p => p.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Parcelle non trouvée' });
+    serverParcelles[idx] = { ...serverParcelles[idx], ...patch };
+    await saveToFirestore('parcelles', serverParcelles);
+    res.json({ success: true, parcelle: serverParcelles[idx] });
+  } catch (error) {
+    logger.error('Error updating parcelle', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
+  }
 });
 
 app.delete('/api/parcelles/:id', async (req, res) => {
@@ -229,19 +297,21 @@ app.get('/api/finances', async (req, res) => {
 });
 
 app.post('/api/finances', async (req, res) => {
-  const finance = req.body;
-  if (!finance || !finance.id || !finance.description) {
-    return res.status(400).json({ error: 'ID et description requis' });
+  try {
+    const finance = FinanceSchema.parse(req.body);
+    const existing = serverFinances.find(f => f.id === finance.id);
+    if (existing) {
+      const idx = serverFinances.findIndex(f => f.id === finance.id);
+      serverFinances[idx] = { ...existing, ...finance };
+    } else {
+      serverFinances.push(finance);
+    }
+    await saveToFirestore('finances', serverFinances);
+    res.json({ success: true, finance });
+  } catch (error) {
+    logger.error('Error saving finance', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  const existing = serverFinances.find(f => f.id === finance.id);
-  if (existing) {
-    const idx = serverFinances.findIndex(f => f.id === finance.id);
-    serverFinances[idx] = { ...existing, ...finance };
-  } else {
-    serverFinances.push(finance);
-  }
-  await saveToFirestore('finances', serverFinances);
-  res.json({ success: true, finance });
 });
 
 app.delete('/api/finances/:id', async (req, res) => {
@@ -258,29 +328,36 @@ app.get('/api/employees', async (req, res) => {
 });
 
 app.post('/api/employees', async (req, res) => {
-  const employee = req.body;
-  if (!employee || !employee.id || !employee.name) {
-    return res.status(400).json({ error: 'ID et nom requis' });
+  try {
+    const employee = EmployeeSchema.parse(req.body);
+    const existing = serverEmployees.find(e => e.id === employee.id);
+    if (existing) {
+      const idx = serverEmployees.findIndex(e => e.id === employee.id);
+      serverEmployees[idx] = { ...existing, ...employee };
+    } else {
+      serverEmployees.push(employee);
+    }
+    await saveToFirestore('employees', serverEmployees);
+    res.json({ success: true, employee });
+  } catch (error) {
+    logger.error('Error saving employee', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  const existing = serverEmployees.find(e => e.id === employee.id);
-  if (existing) {
-    const idx = serverEmployees.findIndex(e => e.id === employee.id);
-    serverEmployees[idx] = { ...existing, ...employee };
-  } else {
-    serverEmployees.push(employee);
-  }
-  await saveToFirestore('employees', serverEmployees);
-  res.json({ success: true, employee });
 });
 
 app.put('/api/employees/:id', async (req, res) => {
-  const { id } = req.params;
-  const patch = req.body;
-  const idx = serverEmployees.findIndex(e => e.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Employé non trouvé' });
-  serverEmployees[idx] = { ...serverEmployees[idx], ...patch };
-  await saveToFirestore('employees', serverEmployees);
-  res.json({ success: true, employee: serverEmployees[idx] });
+  try {
+    const { id } = req.params;
+    const patch = EmployeeSchema.partial().parse(req.body);
+    const idx = serverEmployees.findIndex(e => e.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Employé non trouvé' });
+    serverEmployees[idx] = { ...serverEmployees[idx], ...patch };
+    await saveToFirestore('employees', serverEmployees);
+    res.json({ success: true, employee: serverEmployees[idx] });
+  } catch (error) {
+    logger.error('Error updating employee', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
+  }
 });
 
 app.delete('/api/employees/:id', async (req, res) => {
