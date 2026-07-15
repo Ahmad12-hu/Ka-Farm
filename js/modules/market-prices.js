@@ -38,7 +38,7 @@ export const MarketPricesModule = {
     this.cacheElements();
     this.setupListeners();
     this.loadInitialData();
-    this.renderHorizontalChart();
+    this.renderVerticalChart();
     this.renderPriceTable();
     this.renderSummaryCards();
     
@@ -428,7 +428,7 @@ export const MarketPricesModule = {
 
     alerts.sort((a, b) => {
       if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
-      if (a.acknowledged !== b.acknowledged) return a.acknowledged ? 1 : -1;
+      if (a.acknowledged !== b.acknowledged) return b.acknowledged ? -1 : 1;
       return new Date(b.trigger_date || b.created_at) - new Date(a.trigger_date || a.created_at);
     });
 
@@ -905,10 +905,10 @@ export const MarketPricesModule = {
   },
 
   // ============================================================
-  // HORIZONTAL CHART RENDERING (Image Design)
+  // VERTICAL CHART RENDERING (Elegant Market Chart)
   // ============================================================
 
-  renderHorizontalChart() {
+  renderVerticalChart() {
     const container = document.getElementById('market-prices-module');
     if (!container) return;
 
@@ -917,174 +917,196 @@ export const MarketPricesModule = {
     const cropFilter = document.getElementById('crop-filter')?.value || 'all';
 
     let data = this.getDemoData(period);
-    if (cropFilter !== 'all') {
+    const maxValue = Math.max(...data.map(d => d.max)) * 1.1;
+    
+    if (cropFilter && cropFilter !== 'all') {
       data = data.filter(d => d.crop.toLowerCase().includes(cropFilter));
     }
 
-    if (data.length === 0) {
-      container.innerHTML = '<p class="text-center text-slate-400 py-8">Aucune donnée disponible</p>';
-      return;
-    }
-
-    const maxValue = Math.max(...data.map(d => d.max)) * 1.1;
-
-    container.innerHTML = `
-      <!-- Chart Card -->
-      <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-bold text-slate-800 dark:text-white">Évolution des Prix</h3>
-          <div class="flex gap-4 text-xs">
-            <div class="flex items-center gap-1">
-              <div class="w-3 h-3 bg-brand-green rounded"></div>
-              <span class="text-slate-600 dark:text-slate-400">Prix actuel</span>
+    // Generate vertical chart HTML
+    const chartHTML = `
+      <div class="bg-gradient-to-br from-white to-orange-50/70 dark:from-[#0B2112]/95 dark:to-[#061109]/95 border border-orange-100 dark:border-[#143E23]/40 rounded-3xl p-6 shadow-[0_20px_60px_-30px_rgba(249,115,22,0.35)]">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[10px] font-extrabold uppercase tracking-[0.2em] mb-3">
+              <span class="h-2 w-2 rounded-full bg-orange-500 animate-pulse"></span>
+              Analyse verticale des prix
             </div>
-            <div class="flex items-center gap-1">
-              <div class="w-3 h-3 bg-orange-500 rounded"></div>
-              <span class="text-slate-600 dark:text-slate-400">Moyenne</span>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white">Diagramme vertical des marchés</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-semibold">Prix min, moyen et max par culture sur la période sélectionnée</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              <span class="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.15)]"></span>
+              <span class="font-bold text-slate-700 dark:text-slate-300">Prix moyen</span>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-orange-500/10 border border-orange-500/20">
+              <span class="h-3 w-3 rounded-full bg-orange-500"></span>
+              <span class="font-bold text-slate-700 dark:text-slate-300">Plage min/max</span>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900/5 dark:bg-white/5 border border-slate-200/70 dark:border-white/10">
+              <span class="h-3 w-3 rounded-full bg-slate-500"></span>
+              <span class="font-bold text-slate-700 dark:text-slate-300">Tendance</span>
             </div>
           </div>
         </div>
-        <div class="space-y-4">
-          ${data.map(item => {
-            const avgWidth = (item.avg / maxValue) * 100;
-            const maxWidth = (item.max / maxValue) * 100;
-            const minWidth = (item.min / maxValue) * 100;
-            return `
-              <div class="space-y-2">
-                <div class="text-xs font-bold text-slate-700 dark:text-slate-300">${item.crop}</div>
-                <div class="relative h-8 bg-slate-100 dark:bg-[#061109]/30 rounded-lg overflow-hidden">
-                  <!-- Max bar (background) -->
-                  <div class="absolute inset-y-0 left-0 bg-brand-green/20 rounded-lg" style="width: ${maxWidth}%"></div>
-                  <!-- Avg bar (middle) -->
-                  <div class="absolute inset-y-0 left-0 bg-emerald-500 rounded-lg" style="width: ${avgWidth}%"></div>
-                  <!-- Min bar (overlay) -->
-                  <div class="absolute inset-y-0 left-0 bg-red-500/60 rounded-lg" style="width: ${minWidth}%"></div>
-                </div>
-                <div class="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-                  <span>Min: ${item.min} FCFA</span>
-                  <span class="text-brand-green font-black">${item.avg} FCFA</span>
-                  <span>Max: ${item.max} FCFA</span>
-                </div>
+
+        <div class="overflow-x-auto pb-2">
+          <div class="min-w-[720px]">
+            <div class="relative h-[420px] rounded-3xl bg-slate-950/5 dark:bg-black/20 border border-white/50 dark:border-white/5 p-5">
+              <div class="absolute left-5 right-5 top-5 bottom-20 flex flex-col justify-between pointer-events-none">
+                ${[0.25, 0.5, 0.75, 1].map(step => {
+                  const val = Math.round(maxValue * step);
+                  return `
+                    <div class="flex items-center gap-3">
+                      <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 w-16">${val} FCFA</span>
+                      <div class="h-px flex-1 border-t border-dashed border-slate-200 dark:border-white/10"></div>
+                    </div>
+                  `;
+                }).join('')}
               </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
 
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Moyen</p>
-              <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">${this.calculateAvg(data)} FCFA</p>
-            </div>
-            <div class="p-3 bg-brand-green/10 rounded-xl">
-              <svg class="h-6 w-6 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Max</p>
-              <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">${Math.max(...data.map(d => d.max))} FCFA</p>
-            </div>
-            <div class="p-3 bg-green-500/10 rounded-xl">
-              <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Min</p>
-              <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">${Math.min(...data.map(d => d.min))} FCFA</p>
-            </div>
-            <div class="p-3 bg-red-500/10 rounded-xl">
-              <svg class="h-6 w-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-2xl p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Tendance</p>
-              <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">+${this.calculateAvgTrend(data)}%</p>
-            </div>
-            <div class="p-3 bg-orange-500/10 rounded-xl">
-              <svg class="h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Price Table -->
-      <div class="bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl overflow-hidden">
-        <div class="p-6 border-b border-slate-100 dark:border-[#143E23]/30">
-          <h3 class="text-lg font-bold text-slate-800 dark:text-white">Prix par Culture</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Prix moyen au kg sur les marchés locaux</p>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-slate-50 dark:bg-[#061109]/50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Culture</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Min</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Moyen</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Max</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Tendance</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Dernière MAJ</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-[#143E23]/30">
-              ${data.map(item => {
-                const trendColor = item.trend >= 0 ? 'text-green-500' : 'text-red-500';
-                const trendIcon = item.trend >= 0 ? 'arrow-up' : 'arrow-down';
-                return `
-                  <tr>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-bold text-slate-800 dark:text-white">${item.crop}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-slate-600 dark:text-slate-400">${item.min} FCFA</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-bold text-brand-green">${item.avg} FCFA</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-slate-600 dark:text-slate-400">${item.max} FCFA</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="flex items-center gap-1 ${trendColor}">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${item.trend >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6-6' : 'M13 7h8m0 0v8m0-8l-8-8-4 4-6 6'}"></path>
-                        </svg>
-                        <span class="text-sm font-bold">${Math.abs(item.trend)}%</span>
+              <div class="absolute left-5 right-5 bottom-16 top-10 flex items-end justify-between gap-3">
+                ${data.map((item, index) => {
+                  const minHeight = Math.max(8, (item.min / maxValue) * 100);
+                  const avgHeight = Math.max(12, (item.avg / maxValue) * 100);
+                  const maxHeight = Math.max(16, (item.max / maxValue) * 100);
+                  const trendUp = item.trend >= 0;
+                  const accent = trendUp ? 'from-emerald-400 to-emerald-600' : 'from-rose-400 to-rose-600';
+                  const ring = trendUp ? 'ring-emerald-500/20' : 'ring-rose-500/20';
+                  return `
+                    <div class="flex-1 min-w-[120px] h-full flex flex-col items-center justify-end group">
+                      <div class="flex-1 w-full flex items-end justify-center relative">
+                        <div class="absolute bottom-0 w-1 rounded-full bg-slate-200 dark:bg-white/10" style="height: ${maxHeight}%"></div>
+                        <div class="absolute bottom-0 w-10 sm:w-12 rounded-2xl bg-gradient-to-t ${accent} shadow-lg ${ring} ring-1 ring-inset" style="height: ${avgHeight}%"></div>
+                        <div class="absolute bottom-[${Math.max(0, avgHeight - 2)}%] flex items-center gap-1 -translate-y-2">
+                          <div class="h-3 w-3 rounded-full bg-white dark:bg-slate-900 border-2 ${trendUp ? 'border-emerald-500' : 'border-rose-500'} shadow"></div>
+                          <span class="text-[10px] font-black ${trendUp ? 'text-emerald-500' : 'text-rose-500'}">${item.avg}</span>
+                        </div>
+                        <div class="absolute bottom-[${Math.max(0, minHeight)}%] h-0.5 w-14 bg-slate-400/60 dark:bg-slate-300/40 rounded-full"></div>
+                        <div class="absolute bottom-[${Math.max(0, maxHeight)}%] h-0.5 w-14 bg-slate-900/70 dark:bg-white/70 rounded-full"></div>
                       </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-slate-500 dark:text-slate-400">${new Date(item.date).toLocaleDateString('fr-FR')}</div>
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
+                      <div class="mt-4 text-center space-y-1 w-full px-1">
+                        <div class="h-10 flex items-center justify-center">
+                          <span class="text-xs font-black text-slate-800 dark:text-white leading-tight line-clamp-2">${item.crop}</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-1 ${trendUp ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-extrabold">
+                          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${trendUp ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6-6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'}"></path>
+                          </svg>
+                          <span>${Math.abs(item.trend)}%</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold">${item.min} → ${item.avg} → ${item.max} FCFA</p>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="rounded-2xl p-4 bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 backdrop-blur-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Max</p>
+                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${Math.max(...data.map(d => d.max))} FCFA</p>
+              </div>
+              <div class="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl p-4 bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 backdrop-blur-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Min</p>
+                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${Math.min(...data.map(d => d.min))} FCFA</p>
+              </div>
+              <div class="p-3 rounded-2xl bg-rose-500/10 text-rose-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl p-4 bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 backdrop-blur-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Tendance moyenne</p>
+                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${this.calculateAvgTrend(data)}%</p>
+              </div>
+              <div class="p-3 rounded-2xl bg-orange-500/10 text-orange-500">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6-6"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Price Table -->
+        <div class="mt-6 bg-white dark:bg-[#0B2112]/20 border border-slate-100 dark:border-[#143E23]/30 rounded-3xl overflow-hidden">
+          <div class="p-6 border-b border-slate-100 dark:border-[#143E23]/30">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Prix par Culture</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Prix moyen au kg sur les marchés locaux</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-slate-50 dark:bg-[#061109]/50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Culture</th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Min</th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Moyen</th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Prix Max</th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Tendance</th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Dernière MAJ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-[#143E23]/30">
+                ${data.map(item => {
+                  const trendColor = item.trend >= 0 ? 'text-emerald-500' : 'text-rose-500';
+                  return `
+                    <tr class="hover:bg-orange-50/40 dark:hover:bg-white/5 transition-colors">
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-slate-800 dark:text-white">${item.crop}</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-slate-600 dark:text-slate-400">${item.min} FCFA</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-emerald-500">${item.avg} FCFA</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-slate-600 dark:text-slate-400">${item.max} FCFA</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-1 ${trendColor}">
+                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${item.trend >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6-6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'}"></path>
+                          </svg>
+                          <span class="text-sm font-bold">${Math.abs(item.trend)}%</span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-slate-500 dark:text-slate-400">${new Date(item.date).toLocaleDateString('fr-FR')}</div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
+
+    container.innerHTML = chartHTML;
 
     // Lucide icons initialization
     if (window.lucide) {
@@ -1098,6 +1120,10 @@ export const MarketPricesModule = {
 
   renderSummaryCards() {
     // Already rendered in renderHorizontalChart
+  },
+
+  renderCharts() {
+    this.renderVerticalChart();
   },
 
   calculateAvg(data) {
