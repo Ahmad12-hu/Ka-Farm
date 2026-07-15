@@ -4,6 +4,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import path from 'path';
 import fs from 'fs';
+import { logger } from '../js/modules/logger.js';
 
 // Initialize Firebase
 const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
@@ -420,7 +421,7 @@ app.post('/api/stocks', async (req, res) => {
 // ==================== GEMINI AI ====================
 app.post('/api/gemini', async (req, res) => {
   try {
-    const { prompt, history } = req.body;
+    const { prompt, history, image } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt requis' });
     }
@@ -441,13 +442,32 @@ app.post('/api/gemini', async (req, res) => {
 
     const systemInstruction = "Tu es KA-Farm Agro-Advisor, un conseiller horticole et maraîcher expert d'Afrique de l'Ouest (Sénégal), chaleureux, pragmatique, direct et scientifique. Tu réponds en français. Tu es spécialisé exclusivement dans le maraîchage (cultures de légumes, fines herbes, fruits de jardin, pépinières, irrigation goutte-à-goutte ou aspersion, maladies horticoles comme la mineuse de la tomate Tuta absoluta, le mildiou, l'oïdium, les thrips, et l'usage de biopesticides locaux comme le neem ou le piment). Tu aides à diagnostiquer les ravageurs et maladies des légumes, planifier les pépinières maraîchères et le repiquage, optimiser l'arrosage et les amendements (compost organique, fumier) de manière écologique et agroécologique. Donne des réponses concises, claires, structurées et adaptées aux conditions locales ouest-africaines.";
 
-    let contents = prompt;
+    const contents = [];
     if (history && Array.isArray(history) && history.length > 0) {
-      const formattedHistory = history.map((m) => `${m.role === 'user' ? 'Utilisateur' : 'Conseiller'}: ${m.text}`).join('\n');
-      contents = `${formattedHistory}\nUtilisateur: ${prompt}\nConseiller:`;
+      history.forEach((m) => {
+        if (!m?.text) return;
+        contents.push({
+          role: m.role === 'user' ? 'user' : 'model',
+          parts: [{ text: m.text }]
+        });
+      });
     }
 
-    const modelsToTry = ['gemini-3.5-flash', 'gemini-flash-latest'];
+    const requestParts = [{ text: prompt }];
+    if (image) {
+      const mimeMatch = image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/);
+      if (!mimeMatch) {
+        return res.status(400).json({ error: 'Format d\'image invalide' });
+      }
+      requestParts.push({
+        inlineData: {
+          mimeType: mimeMatch[1],
+          data: image.split(',')[1]
+        }
+      });
+    }
+
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
     let response = null;
     let lastError = null;
 
@@ -456,9 +476,9 @@ app.post('/api/gemini', async (req, res) => {
         try {
           response = await ai.models.generateContent({
             model: model,
-            contents: contents,
+            contents: contents.length > 0 ? [...contents, { role: 'user', parts: requestParts }] : requestParts,
             config: {
-              systemInstruction: systemInstruction,
+              systemInstruction,
               temperature: 0.7,
             }
           });
