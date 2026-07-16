@@ -976,27 +976,63 @@ export const MarketPricesModule = {
 
               <div class="absolute left-5 right-5 bottom-16 top-10 flex items-end justify-between gap-3">
                 ${data.map((item, index) => {
-                  const minHeight = Math.max(8, (item.min / maxValue) * 100);
-                  const avgHeight = Math.max(12, (item.avg / maxValue) * 100);
-                  const maxHeight = Math.max(16, (item.max / maxValue) * 100);
+                  const minHeightPct = (item.min / maxValue) * 100;
+                  const avgHeightPct = (item.avg / maxValue) * 100;
+                  const maxHeightPct = (item.max / maxValue) * 100;
                   const trendUp = item.trend >= 0;
-                  const accent = trendUp ? 'from-emerald-400 to-emerald-600' : 'from-rose-400 to-rose-600';
-                  const ring = trendUp ? 'ring-emerald-500/20' : 'ring-rose-500/20';
+                  const accentColor = trendUp ? 'emerald' : 'rose';
+                  const avgColor = trendUp ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600';
+                  const minColor = trendUp ? 'border-emerald-300' : 'border-rose-300';
+                  const maxColor = trendUp ? 'border-emerald-600' : 'border-rose-600';
+                  const dotColor = trendUp ? 'border-emerald-500' : 'border-rose-500';
+                  const textColor = trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
                   return `
-                    <div class="flex-1 min-w-[120px] h-full flex flex-col items-center justify-end group">
+                    <div class="flex-1 min-w-[140px] h-full flex flex-col items-center justify-end group">
                       <div class="flex-1 w-full flex items-end justify-center relative">
-                        <div class="absolute bottom-0 w-1 rounded-full bg-slate-200 dark:bg-white/10" style="height: ${maxHeight}%"></div>
-                        <div class="absolute bottom-0 w-10 sm:w-12 rounded-2xl bg-gradient-to-t ${accent} shadow-lg ${ring} ring-1 ring-inset" style="height: ${avgHeight}%"></div>
-                        <div class="absolute bottom-[${Math.max(0, avgHeight - 2)}%] flex items-center gap-1 -translate-y-2">
-                          <div class="h-3 w-3 rounded-full bg-white dark:bg-slate-900 border-2 ${trendUp ? 'border-emerald-500' : 'border-rose-500'} shadow"></div>
-                          <span class="text-[10px] font-black ${trendUp ? 'text-emerald-500' : 'text-rose-500'}">${item.avg}</span>
+                        <!-- Min bar -->
+                        <div class="absolute bottom-0 w-1.5 rounded-full bg-gradient-to-t from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-500 shadow-sm" 
+                             style="height: ${Math.max(6, minHeightPct)}%"></div>
+                        
+                        <!-- Average bar -->
+                        <div class="absolute bottom-0 w-12 sm:w-14 rounded-xl bg-gradient-to-t ${avgColor} shadow-lg ring-1 ring-inset ${trendUp ? 'ring-emerald-500/30' : 'ring-rose-500/30'} hover:shadow-xl transition-all duration-300 cursor-pointer"
+                             style="height: ${Math.max(10, avgHeightPct)}%">
+                           <div class="absolute inset-0 rounded-xl bg-white/10 backdrop-blur-[1px]"></div>
                         </div>
-                        <div class="absolute bottom-[${Math.max(0, minHeight)}%] h-0.5 w-14 bg-slate-400/60 dark:bg-slate-300/40 rounded-full"></div>
-                        <div class="absolute bottom-[${Math.max(0, maxHeight)}%] h-0.5 w-14 bg-slate-900/70 dark:bg-white/70 rounded-full"></div>
+                        
+                        <!-- Max bar -->
+                        <div class="absolute bottom-0 w-1.5 rounded-full bg-gradient-to-t ${maxColor} dark:from-${accentColor}-600 dark:to-${accentColor}-500 shadow-sm" 
+                             style="height: ${Math.max(8, maxHeightPct)}%"></div>
+                        
+                        <!-- Average value label -->
+                        <div class="absolute -top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+                          <div class="h-3.5 w-3.5 rounded-full bg-white dark:bg-slate-900 border-2 ${dotColor} shadow-lg ring-2 ${trendUp ? 'ring-emerald-500/20' : 'ring-rose-500/20'}"></div>
+                          <span class="text-[11px] font-black ${textColor} bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded-md shadow-sm whitespace-nowrap">
+                            ${Math.round(item.avg).toLocaleString('fr-FR')}
+                          </span>
+                        </div>
+                        
+                        <!-- Min/Max indicators -->
+                        <div class="absolute bottom-[${Math.max(2, minHeightPct)}%] -left-1">
+                          <div class="h-1 w-3 rounded-full bg-slate-400/70 dark:bg-slate-300/50"></div>
+                        </div>
+                        <div class="absolute bottom-[${Math.max(2, maxHeightPct)}%] -right-1">
+                          <div class="h-1 w-3 rounded-full ${maxColor.replace('border-', 'bg-')}"></div>
+                        </div>
+                        
+                        <!-- Tooltip au survol -->
+                        <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+                          <div class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
+                            <div class="flex flex-col gap-0.5">
+                              <div>Min: ${Math.round(item.min).toLocaleString('fr-FR')} FCFA</div>
+                              <div>Moy: ${Math.round(item.avg).toLocaleString('fr-FR')} FCFA</div>
+                              <div>Max: ${Math.round(item.max).toLocaleString('fr-FR')} FCFA</div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="mt-4 text-center space-y-1 w-full px-1">
-                        <div class="h-10 flex items-center justify-center">
-                          <span class="text-xs font-black text-slate-800 dark:text-white leading-tight line-clamp-2">${item.crop}</span>
+                      <div class="mt-3 text-center space-y-0.5 w-full px-1">
+                        <div class="h-8 flex items-center justify-center">
+                          <span class="text-[11px] font-black text-slate-800 dark:text-white leading-tight line-clamp-2">${item.crop}</span>
                         </div>
                         <div class="flex items-center justify-center gap-1 ${trendUp ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-extrabold">
                           <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
