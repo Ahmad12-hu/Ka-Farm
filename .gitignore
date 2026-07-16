@@ -38,3 +38,6 @@ manifests/
 *.tmp
 *.temp
 .nyc_output/
+
+.vercel
+.env*

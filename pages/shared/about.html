@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>À Propos - KA Farm</title>
+
+    <!-- Favicon & Branding -->
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+    <link rel="apple-touch-icon" href="/assets/logo.svg">
+
+    <!-- Tailwind CSS CDN & Lucide Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom separated Stylesheets -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#06130B',
+                            slate: '#0B2112',
+                            green: '#10B981',
+                            hover: '#059669',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+    <!-- Mobile Top Header Placeholder -->
+    <div id="mobile-header-placeholder"></div>
+
+    <div class="min-h-screen flex flex-col lg:flex-row">
+        <!-- Sidebar Placeholder -->
+        <div id="sidebar-placeholder"></div>
+
+        <!-- Main Content Stage -->
+        <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
+            <div class="w-full max-w-4xl mx-auto space-y-8">
+
+                <!-- Hero Presentation -->
+                <div
+                    class="p-8 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left shadow-sm space-y-6">
+                    <h1 class="text-3xl md:text-4xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+                        <i data-lucide="sprout" class="h-9 w-9 text-emerald-500"></i>
+                        Gérez Votre Ferme Intelligemment avec KA-Farm
+                    </h1>
+                    <p class="text-base text-slate-600 dark:text-slate-300 leading-relaxed font-semibold max-w-3xl">
+                        KA-Farm est la solution de gestion agricole numérique de référence au Sénégal. Chaque exploitant
+                        bénéficie d'un environnement sécurisé pour piloter ses cultures, son élevage, sa trésorerie et
+                        ses ressources humaines. Multi-utilisateurs, multi-exploitations, une plateforme unifiée.
+                    </p>
+                    <div class="pt-2">
+                        <a href="https://ka-farm.vercel.app/#exploitation" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl transition-colors">
+                            ACCÉDER À LA PLATEFORME
+                            <i data-lucide="external-link" class="h-4 w-4"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Shared App Entry Points -->
+    <script type="module" src="/js/router.js"></script>
+    <script type="module" src="/js/app.js"></script>
+</body>
+
+</html>

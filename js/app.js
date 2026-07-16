@@ -541,6 +541,10 @@ export const App = {
               <i data-lucide="settings" class="h-4 w-4"></i>
               Paramètres
             </a>
+            <a href="/pages/shared/about.html" data-tab="about" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
+              <i data-lucide="info" class="h-4 w-4"></i>
+              À Propos
+            </a>
             <button onclick="window.handleLogout()" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:bg-[#0E2F19] hover:text-white cursor-pointer transition-all">
               <i data-lucide="log-out" class="h-4 w-4"></i>
               Déconnexion
