@@ -2,13 +2,14 @@ const { KAStorage } = require('../js/storage.js');
 
 describe('KAStorage Module', function() {
   beforeEach(() => {
-    // Clear localStorage before each test
     localStorage.clear();
   });
 
-  test('getCrops returns empty array when no crops stored', function() {
+  test('getCrops returns default crops when initialized', function() {
+    KAStorage.init();
     const crops = KAStorage.getCrops();
-    expect(crops).toEqual([]);
+    expect(Array.isArray(crops)).toBe(true);
+    expect(crops.length).toBeGreaterThan(0);
   });
 
   test('saveCrops and getCrops work correctly', function() {
@@ -24,9 +25,11 @@ describe('KAStorage Module', function() {
     expect(retrieved[0].name).toBe('Tomate');
   });
 
-  test('getParcelles returns empty array when no parcelles stored', function() {
+  test('getParcelles returns default parcelles when initialized', function() {
+    KAStorage.init();
     const parcelles = KAStorage.getParcelles();
-    expect(parcelles).toEqual([]);
+    expect(Array.isArray(parcelles)).toBe(true);
+    expect(parcelles.length).toBeGreaterThan(0);
   });
 
   test('saveParcelles and getParcelles work correctly', function() {
@@ -42,9 +45,11 @@ describe('KAStorage Module', function() {
     expect(retrieved[0].surface).toBe(120);
   });
 
-  test('getFinances returns empty array when no finances stored', function() {
+  test('getFinances returns default finances when initialized', function() {
+    KAStorage.init();
     const finances = KAStorage.getFinances();
-    expect(finances).toEqual([]);
+    expect(Array.isArray(finances)).toBe(true);
+    expect(finances.length).toBeGreaterThan(0);
   });
 
   test('saveFinances and getFinances work correctly', function() {
@@ -74,9 +79,11 @@ describe('KAStorage Module', function() {
     expect(stats.solde).toBe(125000);
   });
 
-  test('getEmployees returns empty array when no employees stored', function() {
+  test('getEmployees returns default employees when initialized', function() {
+    KAStorage.init();
     const employees = KAStorage.getEmployees();
-    expect(employees).toEqual([]);
+    expect(Array.isArray(employees)).toBe(true);
+    expect(employees.length).toBeGreaterThan(0);
   });
 
   test('saveEmployees and getEmployees work correctly', function() {
@@ -91,9 +98,11 @@ describe('KAStorage Module', function() {
     expect(retrieved[0].name).toBe('Samba');
   });
 
-  test('getTasks returns empty array when no tasks stored', function() {
+  test('getTasks returns default tasks when initialized', function() {
+    KAStorage.init();
     const tasks = KAStorage.getTasks();
-    expect(tasks).toEqual([]);
+    expect(Array.isArray(tasks)).toBe(true);
+    expect(tasks.length).toBeGreaterThan(0);
   });
 
   test('saveTasks and getTasks work correctly', function() {

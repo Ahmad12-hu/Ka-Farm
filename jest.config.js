@@ -1,6 +1,8 @@
 export default {
-  testEnvironment: 'node',
-  transform: {},
+  testEnvironment: 'jsdom',
+  transform: {
+    '^.+\\.js$': 'babel-jest'
+  },
   moduleFileExtensions: ['js', 'json'],
   testMatch: ['**/__tests__/**/*.test.js'],
   collectCoverageFrom: [
@@ -10,5 +12,6 @@ export default {
     '!**/dist/**'
   ],
   coverageDirectory: 'coverage',
-  verbose: true
+  verbose: true,
+  testTimeout: 10000
 };

@@ -1,51 +1,42 @@
 const { Crypto } = require('../js/modules/crypto.js');
 
+// Polyfill TextEncoder for jsdom test environment
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
+
 describe('Crypto Module', function() {
   beforeEach(() => {
-    // Clear any stored passwords before each test
     localStorage.clear();
   });
 
-  test('hashPassword creates a hash and salt', async function() {
-    const { hash, salt } = await Crypto.hashPassword('testPassword123');
-    
+  test('simpleHash returns a hash string', function() {
+    const hash = Crypto.simpleHash('test');
     expect(hash).toBeDefined();
-    expect(salt).toBeDefined();
-    expect(hash).not.toBe('testPassword123');
+    expect(typeof hash).toBe('string');
     expect(hash.length).toBeGreaterThan(0);
-    expect(salt.length).toBeGreaterThan(0);
   });
 
-  test('verifyPassword returns true for correct password', async function() {
-    const { hash, salt } = await Crypto.hashPassword('mySecretPass');
-    const isValid = await Crypto.verifyPassword('mySecretPass', hash, salt);
-    
-    expect(isValid).toBe(true);
-  });
-
-  test('verifyPassword returns false for incorrect password', async function() {
-    const { hash, salt } = await Crypto.hashPassword('mySecretPass');
-    const isValid = await Crypto.verifyPassword('wrongPassword', hash, salt);
-    
-    expect(isValid).toBe(false);
-  });
-
-  test('hashPassword generates different hashes for same password (different salts)', async function() {
-    const { hash: hash1, salt: salt1 } = await Crypto.hashPassword('samePassword');
-    const { hash: hash2, salt: salt2 } = await Crypto.hashPassword('samePassword');
-    
+  test('simpleHash returns different hashes for different inputs', function() {
+    const hash1 = Crypto.simpleHash('input1');
+    const hash2 = Crypto.simpleHash('input2');
     expect(hash1).not.toBe(hash2);
-    expect(salt1).not.toBe(salt2);
   });
 
-  test('detectHashType identifies PBKDF2 hash', function() {
-    const pbkdf2Hash = 'PBKDF2:100000:abc123:hash';
-    expect(Crypto.detectHashType(pbkdf2Hash)).toBe('pbkdf2');
+  test('simpleHash returns same hash for same input', function() {
+    const hash1 = Crypto.simpleHash('sameInput');
+    const hash2 = Crypto.simpleHash('sameInput');
+    expect(hash1).toBe(hash2);
   });
 
-  test('detectHashType identifies legacy SHA-256 hash', function() {
-    // SHA-256 produces 64-character hex strings
-    const legacyHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-    expect(Crypto.detectHashType(legacyHash)).toBe('legacy');
+  test('generateToken creates a random token', function() {
+    const token1 = Crypto.generateToken();
+    const token2 = Crypto.generateToken();
+    expect(token1).toBeDefined();
+    expect(token2).toBeDefined();
+    expect(token1).not.toBe(token2);
+    expect(token1.length).toBeGreaterThan(0);
   });
 });

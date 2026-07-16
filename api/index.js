@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { logger } from '../js/modules/logger.js';
 import { z } from 'zod';
+import { Cache } from '../js/modules/cache.js';
 
 // Validation schemas for API inputs
 const CropSchema = z.object({
@@ -44,6 +45,55 @@ const FinanceSchema = z.object({
   category: z.string().optional(),
   amount: z.number().positive('Montant doit être positif').optional(),
   date: z.string().optional()
+});
+
+const TaskSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  title: z.string().min(1, 'Titre requis'),
+  category: z.string().optional(),
+  dueDate: z.string().optional(),
+  assignee: z.string().optional(),
+  priority: z.string().optional(),
+  completed: z.boolean().optional()
+});
+
+const CheptelSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  name: z.string().min(1, 'Nom requis'),
+  type: z.string().optional(),
+  breed: z.string().optional(),
+  quantity: z.number().int().positive('Quantité doit être positive').optional(),
+  unit: z.string().optional(),
+  status: z.string().optional(),
+  purpose: z.string().optional()
+});
+
+const ElevageProductionSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  date: z.string().min(1, 'Date requise'),
+  type: z.string().min(1, 'Type requis'),
+  quantity: z.number().positive('Quantité doit être positive').optional(),
+  unit: z.string().optional(),
+  notes: z.string().optional()
+});
+
+const ElevageHealthSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  date: z.string().min(1, 'Date requise'),
+  target: z.string().min(1, 'Cible requise'),
+  intervention: z.string().min(1, 'Intervention requise'),
+  practitioner: z.string().optional(),
+  cost: z.number().nonnegative('Coût doit être positif').optional(),
+  notes: z.string().optional()
+});
+
+const MessageSchema = z.object({
+  id: z.string().optional(),
+  senderEmail: z.string().email('Email invalide').min(1, 'Email requis'),
+  senderName: z.string().optional(),
+  text: z.string().min(1, 'Message requis'),
+  timestamp: z.string().optional(),
+  isPrivate: z.boolean().optional()
 });
 
 // Initialize Firebase
@@ -161,7 +211,7 @@ async function saveToFirestore(collection, data) {
 
 // ==================== CROPS ====================
 app.get('/api/crops', async (req, res) => {
-  const data = await syncWithFirestore('crops', serverCrops);
+  const data = await Cache.memo('crops_list', async () => await syncWithFirestore('crops', serverCrops), 30000);
   res.json(data);
 });
 
@@ -175,6 +225,7 @@ app.post('/api/crops', async (req, res) => {
     } else {
       serverCrops.push(crop);
     }
+    await Cache.invalidate('crops_list');
     await saveToFirestore('crops', serverCrops);
     res.json({ success: true, crop });
   } catch (error) {
@@ -207,7 +258,7 @@ app.delete('/api/crops/:id', async (req, res) => {
 
 // ==================== PARCELLES ====================
 app.get('/api/parcelles', async (req, res) => {
-  const data = await syncWithFirestore('parcelles', serverParcelles);
+  const data = await Cache.memo('parcelles_list', async () => await syncWithFirestore('parcelles', serverParcelles), 30000);
   res.json(data);
 });
 
@@ -221,6 +272,7 @@ app.post('/api/parcelles', async (req, res) => {
     } else {
       serverParcelles.push(parcelle);
     }
+    await Cache.invalidate('parcelles_list');
     await saveToFirestore('parcelles', serverParcelles);
     res.json({ success: true, parcelle });
   } catch (error) {
@@ -253,34 +305,41 @@ app.delete('/api/parcelles/:id', async (req, res) => {
 
 // ==================== TASKS ====================
 app.get('/api/tasks', async (req, res) => {
-  const data = await syncWithFirestore('tasks', serverTasks);
+  const data = await Cache.memo('tasks_list', async () => await syncWithFirestore('tasks', serverTasks), 15000);
   res.json(data);
 });
 
 app.post('/api/tasks', async (req, res) => {
-  const task = req.body;
-  if (!task || !task.id || !task.title) {
-    return res.status(400).json({ error: 'ID et titre requis' });
+  try {
+    const task = TaskSchema.parse(req.body);
+    const existing = serverTasks.find(t => t.id === task.id);
+    if (existing) {
+      const idx = serverTasks.findIndex(t => t.id === task.id);
+      serverTasks[idx] = { ...existing, ...task };
+    } else {
+      serverTasks.push(task);
+    }
+    await saveToFirestore('tasks', serverTasks);
+    res.json({ success: true, task });
+  } catch (error) {
+    logger.error('Error saving task', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  const existing = serverTasks.find(t => t.id === task.id);
-  if (existing) {
-    const idx = serverTasks.findIndex(t => t.id === task.id);
-    serverTasks[idx] = { ...existing, ...task };
-  } else {
-    serverTasks.push(task);
-  }
-  await saveToFirestore('tasks', serverTasks);
-  res.json({ success: true, task });
 });
 
 app.put('/api/tasks/:id', async (req, res) => {
-  const { id } = req.params;
-  const patch = req.body;
-  const idx = serverTasks.findIndex(t => t.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Tâche non trouvée' });
-  serverTasks[idx] = { ...serverTasks[idx], ...patch };
-  await saveToFirestore('tasks', serverTasks);
-  res.json({ success: true, task: serverTasks[idx] });
+  try {
+    const { id } = req.params;
+    const patch = TaskSchema.partial().parse(req.body);
+    const idx = serverTasks.findIndex(t => t.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Tâche non trouvée' });
+    serverTasks[idx] = { ...serverTasks[idx], ...patch };
+    await saveToFirestore('tasks', serverTasks);
+    res.json({ success: true, task: serverTasks[idx] });
+  } catch (error) {
+    logger.error('Error updating task', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
+  }
 });
 
 app.delete('/api/tasks/:id', async (req, res) => {
@@ -292,7 +351,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
 
 // ==================== FINANCES ====================
 app.get('/api/finances', async (req, res) => {
-  const data = await syncWithFirestore('finances', serverFinances);
+  const data = await Cache.memo('finances_list', async () => await syncWithFirestore('finances', serverFinances), 30000);
   res.json(data);
 });
 
@@ -323,7 +382,7 @@ app.delete('/api/finances/:id', async (req, res) => {
 
 // ==================== EMPLOYEES ====================
 app.get('/api/employees', async (req, res) => {
-  const data = await syncWithFirestore('employees', serverEmployees);
+  const data = await Cache.memo('employees_list', async () => await syncWithFirestore('employees', serverEmployees), 30000);
   res.json(data);
 });
 
@@ -369,34 +428,41 @@ app.delete('/api/employees/:id', async (req, res) => {
 
 // ==================== ELEVAGE / CHEPTEL ====================
 app.get('/api/cheptel', async (req, res) => {
-  const data = await syncWithFirestore('cheptel', serverCheptel);
+  const data = await Cache.memo('cheptel_list', async () => await syncWithFirestore('cheptel', serverCheptel), 30000);
   res.json(data);
 });
 
 app.post('/api/cheptel', async (req, res) => {
-  const group = req.body;
-  if (!group || !group.id || !group.name) {
-    return res.status(400).json({ error: 'ID et nom requis' });
+  try {
+    const group = CheptelSchema.parse(req.body);
+    const existing = serverCheptel.find(c => c.id === group.id);
+    if (existing) {
+      const idx = serverCheptel.findIndex(c => c.id === group.id);
+      serverCheptel[idx] = { ...existing, ...group };
+    } else {
+      serverCheptel.push(group);
+    }
+    await saveToFirestore('cheptel', serverCheptel);
+    res.json({ success: true, group });
+  } catch (error) {
+    logger.error('Error saving cheptel', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  const existing = serverCheptel.find(c => c.id === group.id);
-  if (existing) {
-    const idx = serverCheptel.findIndex(c => c.id === group.id);
-    serverCheptel[idx] = { ...existing, ...group };
-  } else {
-    serverCheptel.push(group);
-  }
-  await saveToFirestore('cheptel', serverCheptel);
-  res.json({ success: true, group });
 });
 
 app.put('/api/cheptel/:id', async (req, res) => {
-  const { id } = req.params;
-  const patch = req.body;
-  const idx = serverCheptel.findIndex(c => c.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Groupe d\'élevage non trouvé' });
-  serverCheptel[idx] = { ...serverCheptel[idx], ...patch };
-  await saveToFirestore('cheptel', serverCheptel);
-  res.json({ success: true, group: serverCheptel[idx] });
+  try {
+    const { id } = req.params;
+    const patch = CheptelSchema.partial().parse(req.body);
+    const idx = serverCheptel.findIndex(c => c.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Groupe d\'élevage non trouvé' });
+    serverCheptel[idx] = { ...serverCheptel[idx], ...patch };
+    await saveToFirestore('cheptel', serverCheptel);
+    res.json({ success: true, group: serverCheptel[idx] });
+  } catch (error) {
+    logger.error('Error updating cheptel', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
+  }
 });
 
 app.delete('/api/cheptel/:id', async (req, res) => {
@@ -414,13 +480,15 @@ app.get('/api/elevage/production', async (req, res) => {
 });
 
 app.post('/api/elevage/production', async (req, res) => {
-  const log = req.body;
-  if (!log || !log.id || !log.type) {
-    return res.status(400).json({ error: 'ID et type requis' });
+  try {
+    const log = ElevageProductionSchema.parse(req.body);
+    serverElevageProduction.push(log);
+    await saveToFirestore('elevage_production', serverElevageProduction);
+    res.json({ success: true, log });
+  } catch (error) {
+    logger.error('Error saving elevage production', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  serverElevageProduction.push(log);
-  await saveToFirestore('elevage_production', serverElevageProduction);
-  res.json({ success: true, log });
 });
 
 app.delete('/api/elevage/production/:id', async (req, res) => {
@@ -438,13 +506,15 @@ app.get('/api/elevage/health', async (req, res) => {
 });
 
 app.post('/api/elevage/health', async (req, res) => {
-  const log = req.body;
-  if (!log || !log.id || !log.intervention) {
-    return res.status(400).json({ error: 'ID et intervention requis' });
+  try {
+    const log = ElevageHealthSchema.parse(req.body);
+    serverElevageHealth.push(log);
+    await saveToFirestore('elevage_health', serverElevageHealth);
+    res.json({ success: true, log });
+  } catch (error) {
+    logger.error('Error saving elevage health', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  serverElevageHealth.push(log);
-  await saveToFirestore('elevage_health', serverElevageHealth);
-  res.json({ success: true, log });
 });
 
 app.delete('/api/elevage/health/:id', async (req, res) => {
@@ -461,21 +531,23 @@ app.get('/api/messages', async (req, res) => {
 });
 
 app.post('/api/messages', async (req, res) => {
-  const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
-  if (!senderEmail || !text) {
-    return res.status(400).json({ error: 'Champs requis manquants' });
+  try {
+    const { id, senderEmail, senderName, text, timestamp, isPrivate } = MessageSchema.parse(req.body);
+    const newMsg = {
+      id: id || 'msg-' + Date.now(),
+      senderEmail,
+      senderName: senderName || senderEmail,
+      text,
+      timestamp: timestamp || new Date().toISOString(),
+      isPrivate: !!isPrivate
+    };
+    serverMessages.push(newMsg);
+    await saveToFirestore('messages', serverMessages);
+    res.json({ success: true, message: newMsg });
+  } catch (error) {
+    logger.error('Error saving message', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
-  const newMsg = {
-    id: id || 'msg-' + Date.now(),
-    senderEmail,
-    senderName: senderName || senderEmail,
-    text,
-    timestamp: timestamp || new Date().toISOString(),
-    isPrivate: !!isPrivate
-  };
-  serverMessages.push(newMsg);
-  await saveToFirestore('messages', serverMessages);
-  res.json({ success: true, message: newMsg });
 });
 
 // ==================== STOCKS ====================

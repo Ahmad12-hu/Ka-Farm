@@ -1,5 +1,49 @@
+// Polyfill TextEncoder for jsdom test environment
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
+
+// Mock @google/genai to avoid ESM parsing issues in Jest
+jest.mock('@google/genai', () => ({
+  GoogleGenAI: jest.fn().mockImplementation(() => ({
+    models: {
+      generateContent: jest.fn().mockResolvedValue({ text: 'Mocked AI response' })
+    }
+  }))
+}));
+
+// Mock Firebase modules
+jest.mock('firebase/app', () => ({
+  initializeApp: jest.fn()
+}));
+
+jest.mock('firebase/firestore', () => ({
+  getFirestore: jest.fn(),
+  doc: jest.fn(),
+  getDoc: jest.fn(),
+  setDoc: jest.fn()
+}));
+
+// Mock fetch for weather API test
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({
+      current: {
+        temperature_2m: 32,
+        relative_humidity_2m: 65,
+        precipitation: 0,
+        weather_code: 0,
+        wind_speed_10m: 15
+      }
+    })
+  })
+);
+
 const request = require('supertest');
-const app = require('../api/index.js');
+const app = require('../api/index.js').default;
 
 describe('API Endpoints', function() {
   describe('GET /api/crops', function() {

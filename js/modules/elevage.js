@@ -1,3 +1,4 @@
+
 // KA Farm - Training & Formation Module - Comprehensive Senegal-focused Agricultural Education
 import { KAStorage } from '../storage.js';
 import { ErrorHandler } from './error-handler.js';
