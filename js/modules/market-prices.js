@@ -1050,47 +1050,77 @@ export const MarketPricesModule = {
           </div>
         </div>
 
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="rounded-2xl p-4 bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 backdrop-blur-sm">
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="rounded-2xl p-4 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Max</p>
-                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${maxPrice} FCFA</p>
+                <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">Prix Max</p>
+                <p class="text-xl font-black text-slate-900 dark:text-white mt-0.5">${maxPrice.toLocaleString('fr-FR')}</p>
+                <p class="text-[10px] text-slate-500 font-semibold">FCFA</p>
               </div>
-              <div class="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              <div class="p-2 rounded-xl bg-emerald-500/20">
+                <svg class="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                 </svg>
               </div>
             </div>
           </div>
 
-          <div class="rounded-2xl p-4 bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 backdrop-blur-sm">
+          <div class="rounded-2xl p-4 bg-gradient-to-br from-rose-500/10 to-rose-500/5 border border-rose-500/20">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Prix Min</p>
-                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${minPrice} FCFA</p>
+                <p class="text-[10px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider">Prix Min</p>
+                <p class="text-xl font-black text-slate-900 dark:text-white mt-0.5">${minPrice.toLocaleString('fr-FR')}</p>
+                <p class="text-[10px] text-slate-500 font-semibold">FCFA</p>
               </div>
-              <div class="p-3 rounded-2xl bg-rose-500/10 text-rose-500">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+              <div class="p-2 rounded-xl bg-rose-500/20">
+                <svg class="h-5 w-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
                 </svg>
               </div>
             </div>
           </div>
 
-          <div class="rounded-2xl p-4 bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 backdrop-blur-sm">
+          <div class="rounded-2xl p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Tendance moyenne</p>
-                <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">${avgTrend}%</p>
+                <p class="text-[10px] text-orange-600 dark:text-orange-400 font-bold uppercase tracking-wider">Tendance Moy.</p>
+                <p class="text-xl font-black text-slate-900 dark:text-white mt-0.5">${avgTrend}%</p>
+                <p class="text-[10px] text-slate-500 font-semibold">sur la période</p>
               </div>
-              <div class="p-3 rounded-2xl bg-orange-500/10 text-orange-500">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6-6"></path>
+              <div class="p-2 rounded-xl bg-orange-500/20">
+                <svg class="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6-6"></path>
                 </svg>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Multi-Chart Grid (Style MQL5) -->
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- Chart 1: Prix par jour de la semaine -->
+          <div class="rounded-2xl bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 p-4">
+            <h4 class="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-3">Prix moyen par jour</h4>
+            <canvas id="chart-by-day" height="180"></canvas>
+          </div>
+
+          <!-- Chart 2: Prix par mois -->
+          <div class="rounded-2xl bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 p-4">
+            <h4 class="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-3">Prix moyen par mois</h4>
+            <canvas id="chart-by-month" height="180"></canvas>
+          </div>
+
+          <!-- Chart 3: Volume par jour -->
+          <div class="rounded-2xl bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 p-4">
+            <h4 class="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-3">Volume des transactions par jour</h4>
+            <canvas id="chart-volume-day" height="180"></canvas>
+          </div>
+
+          <!-- Chart 4: Volume par mois -->
+          <div class="rounded-2xl bg-white/80 dark:bg-white/5 border border-slate-100 dark:border-white/10 p-4">
+            <h4 class="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-3">Volume des transactions par mois</h4>
+            <canvas id="chart-volume-month" height="180"></canvas>
           </div>
         </div>
 
@@ -1156,6 +1186,185 @@ export const MarketPricesModule = {
     if (window.lucide) {
       window.lucide.createIcons();
     }
+
+    // Initialize the MQL5-style multi-chart grid
+    this.renderMultiCharts();
+  },
+
+  renderMultiCharts() {
+    // Initialize the 4 charts in the MQL5-style grid
+    this.renderChartByDay();
+    this.renderChartByMonth();
+    this.renderChartVolumeDay();
+    this.renderChartVolumeMonth();
+  },
+
+  renderChartByDay() {
+    const canvas = document.getElementById('chart-by-day');
+    if (!canvas) return;
+
+    const data = this.getDemoData('30');
+    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const dayData = days.map((day, i) => ({
+      label: day,
+      value: data.reduce((sum, d) => sum + d.avg, 0) / data.length * (0.7 + Math.random() * 0.6)
+    }));
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Prix (FCFA)',
+          data: dayData.map(d => d.value),
+          backgroundColor: 'rgba(16, 185, 129, 0.7)',
+          borderColor: '#10B981',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { 
+            beginAtZero: true, 
+            ticks: { color: '#9CA3AF', font: { size: 9 } },
+            grid: { color: '#E5E7EB' }
+          },
+          x: { 
+            ticks: { color: '#9CA3AF', font: { size: 9 } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  },
+
+  renderChartByMonth() {
+    const canvas = document.getElementById('chart-by-month');
+    if (!canvas) return;
+
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const data = this.getDemoData('365');
+    const monthData = months.map((month, i) => ({
+      label: month,
+      value: data.reduce((sum, d) => sum + d.avg, 0) / data.length * (0.6 + Math.random() * 0.8)
+    }));
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: [{
+          label: 'Prix (FCFA)',
+          data: monthData.map(d => d.value),
+          backgroundColor: 'rgba(59, 130, 246, 0.7)',
+          borderColor: '#3B82F6',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { 
+            beginAtZero: true, 
+            ticks: { color: '#9CA3AF', font: { size: 9 } },
+            grid: { color: '#E5E7EB' }
+          },
+          x: { 
+            ticks: { color: '#9CA3AF', font: { size: 9 } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  },
+
+  renderChartVolumeDay() {
+    const canvas = document.getElementById('chart-volume-day');
+    if (!canvas) return;
+
+    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const volumeData = days.map(() => Math.floor(5 + Math.random() * 15));
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Volume',
+          data: volumeData,
+          backgroundColor: 'rgba(245, 158, 11, 0.7)',
+          borderColor: '#F59E0B',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { 
+            beginAtZero: true, 
+            ticks: { color: '#9CA3AF', font: { size: 9 } },
+            grid: { color: '#E5E7EB' }
+          },
+          x: { 
+            ticks: { color: '#9CA3AF', font: { size: 9 } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  },
+
+  renderChartVolumeMonth() {
+    const canvas = document.getElementById('chart-volume-month');
+    if (!canvas) return;
+
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const volumeData = months.map(() => Math.floor(20 + Math.random() * 80));
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: [{
+          label: 'Volume',
+          data: volumeData,
+          backgroundColor: 'rgba(139, 92, 246, 0.7)',
+          borderColor: '#8B5CF6',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { 
+            beginAtZero: true, 
+            ticks: { color: '#9CA3AF', font: { size: 9 } },
+            grid: { color: '#E5E7EB' }
+          },
+          x: { 
+            ticks: { color: '#9CA3AF', font: { size: 9 } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
   },
 
   renderPriceTable() {
