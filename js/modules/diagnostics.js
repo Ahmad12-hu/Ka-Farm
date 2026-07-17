@@ -1,6 +1,7 @@
 // KA Farm - Diagnostic des Cultures Module
 import { KAStorage } from '../storage.js';
 import { logger } from './logger.js';
+import { ErrorHandler } from './error-handler.js';
 
 let diagnostics = [];
 let diagnosticHistory = [];
@@ -652,13 +653,17 @@ const SYMPTOM_TO_DISEASE = {
 
 export const DiagnosticsModule = {
   init() {
-    diagnostics = KAStorage.getDiagnostics() || [];
-    diagnosticHistory = KAStorage.getDiagnosticHistory() || [];
-    
-    this.render();
-    this.setupListeners();
-    this.setupAIDiagnosticListeners();
-    this.loadDiseaseLibrary();
+    try {
+      diagnostics = KAStorage.getDiagnostics() || [];
+      diagnosticHistory = KAStorage.getDiagnosticHistory() || [];
+      
+      this.render();
+      this.setupListeners();
+      this.setupAIDiagnosticListeners();
+      this.loadDiseaseLibrary();
+    } catch (err) {
+      ErrorHandler.log(err, 'DiagnosticsModule.init');
+    }
   },
 
   loadDiseaseLibrary() {
@@ -871,13 +876,13 @@ export const DiagnosticsModule = {
     const affectedPart = document.getElementById('wizard-affected-part').value;
     
     // Validate current step
-    if (currentStep === 1 && !crop) {
-      alert('Veuillez sélectionner une culture.');
+      if (currentStep === 1 && !crop) {
+      ErrorHandler.showToast('Veuillez sélectionner une culture.', 'error');
       return;
     }
     
     if (currentStep === 2 && !affectedPart) {
-      alert('Veuillez sélectionner la partie atteinte de la plante.');
+      ErrorHandler.showToast('Veuillez sélectionner la partie atteinte de la plante.', 'error');
       return;
     }
     
@@ -890,7 +895,7 @@ export const DiagnosticsModule = {
       });
       
       if (selectedSymptoms.length === 0) {
-        alert('Veuillez sélectionner au moins un symptôme.');
+        ErrorHandler.showToast('Veuillez sélectionner au moins un symptôme.', 'error');
         return;
       }
       
@@ -1078,7 +1083,7 @@ export const DiagnosticsModule = {
 
   saveDiagnostic() {
     if (!currentDiagnostic || !currentDiagnostic.cropType) {
-      alert("Impossible d'enregistrer un diagnostic incomplet.");
+      ErrorHandler.showToast("Impossible d'enregistrer un diagnostic incomplet.", 'error');
       return;
     }
 
@@ -1097,7 +1102,7 @@ export const DiagnosticsModule = {
     this.render();
     window.closeDiagnosticWizard();
 
-    alert(`Diagnostic pour "${currentDiagnostic.cropType}" enregistré avec succès ! Vous pouvez le consulter dans l'historique.`);
+    ErrorHandler.showToast(`Diagnostic pour "${currentDiagnostic.cropType}" enregistré avec succès ! Vous pouvez le consulter dans l'historique.`, 'success');
 
     currentDiagnostic = null;
   },
@@ -1435,7 +1440,7 @@ export const DiagnosticsModule = {
     this.render();
     this.closeDiagnosticDetailModal();
     
-    alert(`Diagnostic #${diagId} marqué comme résolu.`);
+    ErrorHandler.showToast(`Diagnostic #${diagId} marqué comme résolu.`, 'success');
   },
 
   deleteDiagnostic(diagId) {
@@ -1453,7 +1458,7 @@ export const DiagnosticsModule = {
         KAStorage.setDiagnosticHistory(diagnosticHistory);
         this.render();
         this.closeDiagnosticDeleteModal();
-        alert(`Diagnostic #${diagId} supprimé avec succès.`);
+        ErrorHandler.showToast(`Diagnostic #${diagId} supprimé avec succès.`, 'success');
       };
       
       deleteModal.classList.remove('hidden');
@@ -1517,7 +1522,7 @@ export const DiagnosticsModule = {
         if (!file) return;
 
         if (file.size > 4 * 1024 * 1024) { // Gemini 4MB limit
-            alert("L'image est trop volumineuse (max 4MB).");
+            ErrorHandler.showToast("L'image est trop volumineuse (max 4MB).", 'error');
             return;
         }
 
@@ -1539,7 +1544,7 @@ export const DiagnosticsModule = {
     const submitBtn = document.querySelector('#ai-diagnostic-form button[type="submit"]');
 
     if (!aiImageBase64) {
-        alert("Veuillez sélectionner une image pour l'analyse.");
+        ErrorHandler.showToast("Veuillez sélectionner une image pour l'analyse.", 'error');
         return;
     }
 
@@ -1620,7 +1625,7 @@ export const DiagnosticsModule = {
         `;
 
     } catch (error) {
-        logger.error('Erreur du diagnostic IA', { error: error.message });
+        ErrorHandler.log(error, 'DiagnosticsModule.handleAIDiagnosticSubmit', 'error');
         resultContainer.innerHTML = `
             <div class="p-4 bg-rose-500/10 rounded-xl border border-rose-500/20">
                 <p class="text-sm font-bold text-rose-500">Erreur d'analyse</p>

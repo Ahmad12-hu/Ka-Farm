@@ -1,19 +1,24 @@
 // KA Farm - Personal Workspace Logic
 import { KAStorage } from '../storage.js';
 import { UserManager } from '../user-manager.js';
+import { ErrorHandler } from './error-handler.js';
 
 export const PersonalModule = {
   init() {
-    this.currentUser = UserManager.getCurrentUser();
-    if (!this.currentUser) return;
-    
-    this.renderProfile();
-    this.renderMyTasks();
-    this.renderMySales();
-    this.setupListeners();
+    try {
+      this.currentUser = UserManager.getCurrentUser();
+      if (!this.currentUser) return;
 
-    if (window.lucide) {
-      window.lucide.createIcons();
+      this.renderProfile();
+      this.renderMyTasks();
+      this.renderMySales();
+      this.setupListeners();
+
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    } catch (err) {
+      ErrorHandler.log(err, 'PersonalModule.init');
     }
   },
 
@@ -265,7 +270,7 @@ export const PersonalModule = {
             KAStorage.saveUsers(users);
           }
 
-          alert('Profil mis à jour avec succès !');
+          ErrorHandler.showToast('Profil mis à jour avec succès !', 'success');
           window.location.reload();
         }
       });
@@ -307,7 +312,7 @@ export const PersonalModule = {
           window.App.updateBadges();
         }
         
-        alert('Nouvelle tâche ajoutée !');
+        ErrorHandler.showToast('Nouvelle tâche ajoutée !', 'success');
       });
     }
 
@@ -343,7 +348,7 @@ export const PersonalModule = {
         this.renderMySales();
         this.renderProfile();
 
-        alert('Vente enregistrée avec succès !');
+        ErrorHandler.showToast('Vente enregistrée avec succès !', 'success');
       });
     }
   }

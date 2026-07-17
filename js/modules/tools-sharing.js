@@ -2,6 +2,7 @@
 // Fonctionnalité 2.6 : Partage et location d'outils agricoles entre fermes
 
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 // ============================================================
 // MAIN MODULE EXPORT
@@ -29,12 +30,16 @@ export const ToolsSharingModule = {
   // ============================================================
 
   init() {
-    this.storage = KAStorage;
-    this.cacheElements();
-    this.setupListeners();
-    this.render();
-    this.loadInitialData();
-    console.log('ToolsSharingModule initialized');
+    try {
+      this.storage = KAStorage;
+      this.cacheElements();
+      this.setupListeners();
+      this.render();
+      this.loadInitialData();
+      console.log('ToolsSharingModule initialized');
+    } catch (err) {
+      ErrorHandler.log(err, 'ToolsSharingModule.init');
+    }
   },
 
   cacheElements() {
@@ -793,8 +798,8 @@ export const ToolsSharingModule = {
     this.closeRentalModal();
     this.loadInitialData();
     this.render();
-    
-    alert('Location réservée avec succès!');
+
+    ErrorHandler.showToast('Location réservée avec succès!', 'success');
   },
 
   returnTool(rentalId) {
@@ -817,8 +822,8 @@ export const ToolsSharingModule = {
 
     this.loadInitialData();
     this.render();
-    
-    alert('Outils retourné avec succès!');
+
+    ErrorHandler.showToast('Outils retourné avec succès!', 'success');
   },
 
   // ============================================================
@@ -919,8 +924,8 @@ export const ToolsSharingModule = {
     this.closeAddToolModal();
     this.loadInitialData();
     this.render();
-    
-    alert('Outil enregistré avec succès!');
+
+    ErrorHandler.showToast('Outil enregistré avec succès!', 'success');
   },
 
   editTool(toolId) {
@@ -999,8 +1004,8 @@ export const ToolsSharingModule = {
     this.closeReviewModal();
     this.loadInitialData();
     this.render();
-    
-    alert('Avis soumis avec succès!');
+
+    ErrorHandler.showToast('Avis soumis avec succès!', 'success');
   },
 
   // ============================================================
@@ -1009,17 +1014,17 @@ export const ToolsSharingModule = {
 
   toggleFavorite(toolId) {
     const isFavorited = this.storage.isToolFavorited(this.state.currentUserFarmId, toolId);
-    
+
     if (isFavorited) {
       this.storage.removeToolFavorite(this.state.currentUserFarmId, toolId);
-      alert('Retiré des favoris');
+      ErrorHandler.showToast('Retiré des favoris', 'success');
     } else {
       this.storage.addToolFavorite({
         id: `TF-${Date.now()}`,
         farm_id: this.state.currentUserFarmId,
         tool_id: toolId
       });
-      alert('Ajouté aux favoris');
+      ErrorHandler.showToast('Ajouté aux favoris', 'success');
     }
 
     this.loadInitialData();

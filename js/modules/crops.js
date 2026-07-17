@@ -10,25 +10,29 @@ const CROP_LIBRARY_DATA = KAStorage.getCropLibrary();
 
 export const CropsModule = {
   init() {
-    this.populateParcelOptions();
-    this.renderCrops();
-    this.renderNurseries();
-    this.renderTreatments();
-    this.renderLibrary(); // Option 4
-    this.initYieldEstimator();
-    this.setupListeners();
+    try {
+      this.populateParcelOptions();
+      this.renderCrops();
+      this.renderNurseries();
+      this.renderTreatments();
+      this.renderLibrary(); // Option 4
+      this.initYieldEstimator();
+      this.setupListeners();
 
-    // Support search query parameter for fiches de culture
-    const urlParams = new URLSearchParams(window.location.search);
-    const searchParam = urlParams.get('search');
-    if (searchParam) {
-      const searchInput = document.getElementById('library-search');
-      if (searchInput) {
-        searchInput.value = searchParam;
-        if (window.filterLibraryCrops) {
-          window.filterLibraryCrops();
+      // Support search query parameter for fiches de culture
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      if (searchParam) {
+        const searchInput = document.getElementById('library-search');
+        if (searchInput) {
+          searchInput.value = searchParam;
+          if (window.filterLibraryCrops) {
+            window.filterLibraryCrops();
+          }
         }
       }
+    } catch (err) {
+      ErrorHandler.log(err, 'CropsModule.init');
     }
   },
 
@@ -861,7 +865,6 @@ export const CropsModule = {
       }
       if (controls) controls.classList.remove('hidden');
     } catch (err) {
-      logger.warn('getUserMedia failed', { error: err.message });
       ErrorHandler.log(err, 'Crops.startLiveCamera');
       ErrorHandler.showToast("Accès caméra direct indisponible. Veuillez utiliser le bouton 'Importer'.", "error");
       if (placeholder) placeholder.classList.remove('hidden');
@@ -1017,7 +1020,7 @@ export const CropsModule = {
     const notesTextarea = document.getElementById('sanitary-notes');
     if (notesTextarea) notesTextarea.value = '';
 
-    alert('Diagnostic sanitaire enregistré avec succès !');
+    ErrorHandler.showToast('Diagnostic sanitaire enregistré avec succès !', 'success');
   },
 
   deleteSanitaryRecord(cropId, recordId) {

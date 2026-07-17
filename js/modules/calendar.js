@@ -1,5 +1,6 @@
 // KA Farm - Agricultural Calendar & Dynamic Task Reminders Module
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 let currentDate = new Date();
 let selectedYear = currentDate.getFullYear();
@@ -90,11 +91,15 @@ const CROP_METADATA = {
 
 export const CalendarModule = {
   init() {
-    this.renderMonthCalendar();
-    this.renderSuggestedReminders();
-    this.populatePlanificationModal();
-    this.setupListeners();
-    this.checkUpcomingAlerts();
+    try {
+      this.renderMonthCalendar();
+      this.renderSuggestedReminders();
+      this.populatePlanificationModal();
+      this.setupListeners();
+      this.checkUpcomingAlerts();
+    } catch (err) {
+      ErrorHandler.log(err, 'CalendarModule.init');
+    }
   },
 
   // Renders the monthly grid
@@ -192,7 +197,7 @@ export const CalendarModule = {
       // Onclick tooltip/info
       container.onclick = () => {
         const listText = events.map(evt => `• [${evt.type}] ${evt.title}`).join('\n');
-        alert(`Événements du jour (${day} ${MONTHS_FR[selectedMonth]}):\n\n${listText}`);
+        ErrorHandler.showToast(`Événements du jour (${day} ${MONTHS_FR[selectedMonth]}):\n\n${listText}`, 'info');
       };
     }
 
@@ -268,7 +273,7 @@ export const CalendarModule = {
     const sowingDateStr = document.getElementById('sim-date').value;
 
     if (!sowingDateStr) {
-      alert("Veuillez sélectionner une date de semis.");
+      ErrorHandler.showToast("Veuillez sélectionner une date de semis.", 'error');
       return;
     }
 
@@ -602,7 +607,7 @@ export const CalendarModule = {
         }, 300);
       }
 
-      alert(`Rappel ajouté à vos tâches d'entretien d'aujourd'hui : "${title}" !`);
+      ErrorHandler.showToast(`Rappel ajouté à vos tâches d'entretien d'aujourd'hui : "${title}" !`, 'success');
     };
 
     // Add all reminders
@@ -632,7 +637,7 @@ export const CalendarModule = {
         window.App.updateBadges();
       }
 
-      alert(`${suggestions.length} rappels agricoles ont été inscrits avec succès dans votre agenda !`);
+      ErrorHandler.showToast(`${suggestions.length} rappels agricoles ont été inscrits avec succès dans votre agenda !`, 'success');
     };
 
     // Save active planned cycle
@@ -645,7 +650,7 @@ export const CalendarModule = {
       const needNursery = document.getElementById('plan-nursery').value === 'oui';
 
       if (!parcelId || !cropName || !sowingDateStr) {
-        alert("Veuillez remplir l'ensemble des champs.");
+        ErrorHandler.showToast("Veuillez remplir l'ensemble des champs.", 'error');
         return;
       }
 
@@ -741,7 +746,7 @@ export const CalendarModule = {
         window.App.updateBadges();
       }
 
-      alert(`Cycle horticole de ${cropName} lancé avec succès sur la parcelle "${parcelles[parcelIdx].name}" !\n\nUn calendrier de tâches automatiques a été synchronisé.`);
+      ErrorHandler.showToast(`Cycle horticole de ${cropName} lancé avec succès sur la parcelle "${parcelles[parcelIdx].name}" !\n\nUn calendrier de tâches automatiques a été synchronisé.`, 'success');
     };
   }
 };

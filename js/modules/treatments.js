@@ -1,5 +1,6 @@
 // KA Farm - Carnet Phytosanitaire & DAR Module
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 let treatments = [];
 let parcelles = [];
@@ -87,13 +88,17 @@ const CATEGORY_LABELS = {
 
 export const TreatmentsModule = {
   init() {
-    treatments = KAStorage.getTreatments();
-    parcelles = KAStorage.getParcelles();
-    crops = KAStorage.getCrops();
-    
-    this.render();
-    this.setupListeners();
-    this.loadParcelsAndCrops();
+    try {
+      treatments = KAStorage.getTreatments();
+      parcelles = KAStorage.getParcelles();
+      crops = KAStorage.getCrops();
+      
+      this.render();
+      this.setupListeners();
+      this.loadParcelsAndCrops();
+    } catch (err) {
+      ErrorHandler.log(err, 'TreatmentsModule.init');
+    }
   },
 
   loadParcelsAndCrops() {
@@ -398,34 +403,34 @@ window.submitAddTreatment = (e) => {
   const quantityUsed = parseFloat(quantityInput.value);
   const unit = unitInput.value;
   
-  if (!parcelId || !productName || !dateApplied || !quantityUsed || quantityUsed <= 0) {
-    alert('Veuillez remplir les champs obligatoires: Parcelle, Produit, Quantité et Date.');
-    return;
-  }
+    if (!parcelId || !productName || !dateApplied || !quantityUsed || quantityUsed <= 0) {
+      ErrorHandler.showToast('Veuillez remplir les champs obligatoires: Parcelle, Produit, Quantité et Date.', 'error');
+      return;
+    }
   
   // --- Stock Deduction Logic ---
   const stocks = KAStorage.getStocks();
   const stockItemIndex = stocks.findIndex(s => s.name.toLowerCase() === productName.toLowerCase());
 
-  if (stockItemIndex !== -1) {
-    const stockItem = stocks[stockItemIndex];
-    // Basic unit conversion for simplicity (g->kg, ml->L)
-    let quantityToDeduct = quantityUsed;
-    if (stockItem.unit.toLowerCase() === 'kg' && unit.toLowerCase() === 'g') quantityToDeduct /= 1000;
-    if (stockItem.unit.toLowerCase() === 'l' && unit.toLowerCase() === 'ml') quantityToDeduct /= 1000;
+    if (stockItemIndex !== -1) {
+      const stockItem = stocks[stockItemIndex];
+      // Basic unit conversion for simplicity (g->kg, ml->L)
+      let quantityToDeduct = quantityUsed;
+      if (stockItem.unit.toLowerCase() === 'kg' && unit.toLowerCase() === 'g') quantityToDeduct /= 1000;
+      if (stockItem.unit.toLowerCase() === 'l' && unit.toLowerCase() === 'ml') quantityToDeduct /= 1000;
 
-    if (stockItem.quantity < quantityToDeduct) {
-      alert(`Stock insuffisant pour "${productName}".\nStock actuel: ${stockItem.quantity} ${stockItem.unit}\nQuantité demandée: ${quantityToDeduct.toFixed(2)} ${stockItem.unit}`);
-      return;
+      if (stockItem.quantity < quantityToDeduct) {
+        ErrorHandler.showToast(`Stock insuffisant pour "${productName}". Disponible: ${stockItem.quantity} ${stockItem.unit}`, 'error');
+        return;
+      }
+      stocks[stockItemIndex].quantity -= quantityToDeduct;
+      KAStorage.saveStocks(stocks);
+    } else {
+      // If product not in stock, ask user if they want to proceed
+      if (!confirm(`Le produit "${productName}" n'a pas été trouvé dans vos stocks. Voulez-vous quand même enregistrer ce traitement ?`)) {
+        return;
+      }
     }
-    stocks[stockItemIndex].quantity -= quantityToDeduct;
-    KAStorage.saveStocks(stocks);
-  } else {
-    // If product not in stock, ask user if they want to proceed
-    if (!confirm(`Le produit "${productName}" n'a pas été trouvé dans vos stocks. Voulez-vous quand même enregistrer ce traitement ?`)) {
-      return;
-    }
-  }
   // --- End of Stock Deduction ---
 
   // Get parcel and crop names
@@ -472,8 +477,7 @@ window.submitAddTreatment = (e) => {
   TreatmentsModule.render();
   window.closeAddTreatmentModal();
   
-  // Show success message
-  alert('Traitement phytosanitaire enregistré avec succès ! Le DAR est maintenant suivi.');
+  ErrorHandler.showToast('Traitement phytosanitaire enregistré avec succès ! Le DAR est maintenant suivi.', 'success');
 };
 
 window.editTreatment = (id) => {
@@ -510,6 +514,8 @@ window.editTreatment = (id) => {
 
 window.deleteTreatment = (id) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce traitement ? Cette action ne peut pas être annulée.')) return;
+  
+  ErrorHandler.showToast('Traitement supprimé avec succès', 'success');
   
   treatments = treatments.filter(t => t.id !== id);
   KAStorage.set('ka_farm_treatments', treatments);

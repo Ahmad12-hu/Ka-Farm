@@ -1,11 +1,16 @@
 // KA Farm - Dashboard Statistics & Overview Module
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 export const DashboardModule = {
   init() {
-    this.selectedZone = localStorage.getItem('ka_farm_zone') || 'Dakar';
-    this.render();
-    this.setupListeners();
+    try {
+      this.selectedZone = localStorage.getItem('ka_farm_zone') || 'Dakar';
+      this.render();
+      this.setupListeners();
+    } catch (err) {
+      ErrorHandler.log(err, 'DashboardModule.init');
+    }
     this.setupGlobalSearch();
 
     // Redessiner le graphique D3 si le thème sombre/clair change
@@ -15,8 +20,14 @@ export const DashboardModule = {
   },
 
   render() {
-    const crops = KAStorage.getCrops();
-    const tasks = KAStorage.getTasks();
+    let crops, tasks;
+    try {
+      crops = KAStorage.getCrops();
+      tasks = KAStorage.getTasks();
+    } catch (err) {
+      ErrorHandler.log(err, 'DashboardModule.render');
+      return;
+    }
     const nurseries = KAStorage.getNurseries();
     const stocks = KAStorage.getStocks();
     const finances = KAStorage.getFinances();
@@ -252,7 +263,7 @@ export const DashboardModule = {
           }
         }
       } catch (err) {
-        console.warn('API weather call failed, keeping preset defaults:', err);
+        ErrorHandler.log(err, 'DashboardModule.updateWeatherWidget', 'warn');
       } finally {
         if (weatherGrid) {
           weatherGrid.classList.remove('opacity-75');

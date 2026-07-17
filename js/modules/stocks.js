@@ -1,13 +1,18 @@
 // KA Farm - Stocks & Inputs Management Module
 import { KAStorage } from '../storage.js';
 import { logger } from './logger.js';
+import { ErrorHandler } from './error-handler.js';
 
 export const StocksModule = {
   isOfflineSimulated: localStorage.getItem('ka_stocks_offline_simulated') === 'true',
 
   async init() {
-    this.updateNetworkBadge();
-    await this.refreshStocksFromServer();
+    try {
+      this.updateNetworkBadge();
+      await this.refreshStocksFromServer();
+    } catch (err) {
+      ErrorHandler.log(err, 'StocksModule.init');
+    }
 
     const urlParams = new URLSearchParams(window.location.search);
     const searchParam = urlParams.get('search');
@@ -75,7 +80,7 @@ export const StocksModule = {
   async refreshStocksFromServer() {
     const isOffline = this.isOfflineSimulated || !navigator.onLine;
     if (isOffline) {
-      console.log("Stocks Module: simulated or real offline mode. Displaying from cache.");
+      ErrorHandler.log(new Error("Offline mode"), 'StocksModule.refreshStocksFromServer', 'info');
       this.renderStocks();
       return;
     }
@@ -89,7 +94,7 @@ export const StocksModule = {
       KAStorage.saveStocks(remoteStocks);
       this.renderStocks();
     } catch (e) {
-      console.warn("Stocks Module: Failed to fetch from API, falling back to cache.", e);
+      ErrorHandler.log(e, 'StocksModule.refreshStocksFromServer', 'warn');
       this.renderStocks();
     }
   },
@@ -373,7 +378,7 @@ export const StocksModule = {
     window.exportStocksCSV = () => {
       const stocks = KAStorage.getStocks();
       if (stocks.length === 0) {
-        alert("Aucun produit enregistré en stock !");
+        ErrorHandler.showToast("Aucun produit enregistré en stock !", "error");
         return;
       }
       const headers = ["ID", "Nom de l'Intrant", "Catégorie", "Quantité Actuelle", "Capacité Max", "Unité de Mesure", "Taux de Remplissage (%)"];
@@ -403,7 +408,7 @@ export const StocksModule = {
     window.exportStocksPDF = () => {
       const stocks = KAStorage.getStocks();
       if (stocks.length === 0) {
-        alert("Aucun produit enregistré en stock !");
+        ErrorHandler.showToast("Aucun produit enregistré en stock !", "error");
         return;
       }
       const zone = localStorage.getItem('ka_farm_zone') || 'Dakar (Sénégal)';
@@ -662,7 +667,7 @@ export const StocksModule = {
         if (window.App && typeof window.App.updateBadges === 'function') {
           window.App.updateBadges();
         }
-        alert('Nouvel intrant enregistré avec succès !');
+        ErrorHandler.showToast('Nouvel intrant enregistré avec succès !', 'success');
       });
     }
 
@@ -713,7 +718,7 @@ export const StocksModule = {
         const isAdd = opType === 'add';
 
         if (!isAdd && item.quantity < amt) {
-          alert(`Erreur : Vous essayez de prélever ${amt} ${item.unit}, mais il ne reste que ${item.quantity} ${item.unit} en stock !`);
+          ErrorHandler.showToast(`Erreur : Vous essayez de prélever ${amt} ${item.unit}, mais il ne reste que ${item.quantity} ${item.unit} en stock !`, "error");
           return;
         }
 
@@ -738,7 +743,7 @@ export const StocksModule = {
           window.App.updateBadges();
         }
 
-        alert(`Quantité de "${item.name}" mise à jour avec succès (${prevQty} → ${item.quantity} ${item.unit}).`);
+        ErrorHandler.showToast(`Quantité de "${item.name}" mise à jour avec succès (${prevQty} → ${item.quantity} ${item.unit}).`, "success");
       });
     }
 

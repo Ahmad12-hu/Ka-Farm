@@ -1,5 +1,6 @@
 // KA Farm - Rotation des Cultures Module
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 let plantFamilies = [];
 let cropFamilies = [];
@@ -75,10 +76,14 @@ const daysBetween = (date1, date2) => {
 
 export const RotationModule = {
   init() {
-    this.loadData();
-    this.render();
-    this.setupListeners();
-    this.startAutoRefresh();
+    try {
+      this.loadData();
+      this.render();
+      this.setupListeners();
+      this.startAutoRefresh();
+    } catch (err) {
+      ErrorHandler.log(err, 'RotationModule.init');
+    }
   },
 
   loadData() {
@@ -773,7 +778,7 @@ export const RotationModule = {
     const notes = document.getElementById('planner-notes')?.value || '';
     
     if (!parcelId || !startDate) {
-      alert('Veuillez sélectionner une parcelle et une date de début');
+      ErrorHandler.showToast('Veuillez sélectionner une parcelle et une date de début', 'error');
       return;
     }
     
@@ -781,7 +786,7 @@ export const RotationModule = {
     const sequenceItems = sequenceContainer?.querySelectorAll('div[id^="sequence-item-"]');
     
     if (!sequenceItems || sequenceItems.length === 0) {
-      alert('Veuillez ajouter au moins une culture à la séquence');
+      ErrorHandler.showToast('Veuillez ajouter au moins une culture à la séquence', 'error');
       return;
     }
     
@@ -836,7 +841,7 @@ export const RotationModule = {
     this.render();
     this.closeRotationPlannerModal();
     
-    alert('Plan de rotation enregistré avec succès !');
+    ErrorHandler.showToast('Plan de rotation enregistré avec succès !', 'success');
   },
 
   savePlantFamily(event) {
@@ -850,7 +855,7 @@ export const RotationModule = {
     const incompatible = document.getElementById('family-incompatible')?.value.split(',').map(s => s.trim()).filter(s => s) || [];
     
     if (!name) {
-      alert('Veuillez saisir un nom de famille');
+      ErrorHandler.showToast('Veuillez saisir un nom de famille', 'error');
       return;
     }
     
@@ -876,7 +881,7 @@ export const RotationModule = {
     this.render();
     this.cancelFamilyForm();
     
-    alert('Famille de plantes enregistrée avec succès !');
+    ErrorHandler.showToast('Famille de plantes enregistrée avec succès !', 'success');
   },
 
   saveCropFamily(event) {
@@ -886,13 +891,13 @@ export const RotationModule = {
     const familyId = document.getElementById('crop-family-family')?.value;
     
     if (!cropName || !familyId) {
-      alert('Veuillez sélectionner une culture et une famille');
+      ErrorHandler.showToast('Veuillez sélectionner une culture et une famille', 'error');
       return;
     }
     
     const family = KAStorage.getFamilyById(familyId);
     if (!family) {
-      alert('Famille introuvable');
+      ErrorHandler.showToast('Famille introuvable', 'error');
       return;
     }
     
@@ -910,7 +915,7 @@ export const RotationModule = {
     this.render();
     this.cancelCropFamilyForm();
     
-    alert('Association culture-famille enregistrée avec succès !');
+    ErrorHandler.showToast('Association culture-famille enregistrée avec succès !', 'success');
   },
 
   deleteFamily(familyId) {
@@ -921,7 +926,7 @@ export const RotationModule = {
     this.loadData();
     this.render();
     
-    alert('Famille supprimée avec succès !');
+    ErrorHandler.showToast('Famille supprimée avec succès !', 'success');
   },
 
   deleteCropFamily(cropFamilyId) {
@@ -934,7 +939,7 @@ export const RotationModule = {
     this.loadData();
     this.render();
     
-    alert('Association supprimée avec succès !');
+    ErrorHandler.showToast('Association supprimée avec succès !', 'success');
   },
 
   confirmDeleteRotation() {
@@ -948,7 +953,7 @@ export const RotationModule = {
     this.render();
     this.closeDeleteModal();
     
-    alert('Enregistrement de rotation supprimé avec succès !');
+    ErrorHandler.showToast('Enregistrement de rotation supprimé avec succès !', 'success');
   },
 
   showFamilyDetails(familyId) {
@@ -967,19 +972,8 @@ export const RotationModule = {
       return f ? f.name : id;
     }).join(', ');
     
-    alert(`
-Familles de Plantes: ${family.name}
-
-Description: ${family.description}
-
-Années minimum entre rotations: ${family.min_rotation_years}
-
-Cultures dans cette famille: ${cropsInFamily.length > 0 ? cropsInFamily.join(', ') : 'Aucune'}
-
-Familles compatibles: ${compatibleFamilies || 'Aucune'}
-
-Familles incompatibles: ${incompatibleFamilies || 'Aucune'}
-    `);
+    const message = `Familles de Plantes: ${family.name}\n\nDescription: ${family.description}\n\nAnnées minimum entre rotations: ${family.min_rotation_years}\n\nCultures dans cette famille: ${cropsInFamily.length > 0 ? cropsInFamily.join(', ') : 'Aucune'}\n\nFamilles compatibles: ${compatibleFamilies || 'Aucune'}\n\nFamilles incompatibles: ${incompatibleFamilies || 'Aucune'}`;
+    ErrorHandler.showToast(message, 'info');
   },
 
   openParcelRotationDetail(parcelId) {
@@ -989,7 +983,7 @@ Familles incompatibles: ${incompatibleFamilies || 'Aucune'}
     const rotations = KAStorage.getRotationHistoryByParcel(parcelId);
     
     if (rotations.length === 0) {
-      alert(`Aucune rotation enregistrée pour la parcelle : ${parcel.name}`);
+      ErrorHandler.showToast(`Aucune rotation enregistrée pour la parcelle : ${parcel.name}`, 'error');
       return;
     }
     
@@ -1008,7 +1002,7 @@ Familles incompatibles: ${incompatibleFamilies || 'Aucune'}
       message += '\n';
     });
     
-    alert(message);
+    ErrorHandler.showToast(message, 'info');
   },
 
   checkRotationCompatibility() {
@@ -1016,7 +1010,7 @@ Familles incompatibles: ${incompatibleFamilies || 'Aucune'}
     const cropName = document.getElementById('quick-check-crop')?.value;
     
     if (!parcelId || !cropName) {
-      alert('Veuillez sélectionner une parcelle et une culture');
+      ErrorHandler.showToast('Veuillez sélectionner une parcelle et une culture', 'error');
       return;
     }
     

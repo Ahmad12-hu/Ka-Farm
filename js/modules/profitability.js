@@ -1,5 +1,6 @@
 // KA Farm - Calculateur de Rentabilité par Culture Module
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 let cropProfits = [];
 let parcelles = [];
@@ -28,13 +29,17 @@ const CHART_COLORS = [
 
 export const ProfitabilityModule = {
   init() {
-    cropProfits = KAStorage.getCropProfits();
-    parcelles = KAStorage.getParcelles();
-    
-    this.render();
-    this.setupListeners();
-    this.loadParcels();
-    this.initChart();
+    try {
+      cropProfits = KAStorage.getCropProfits();
+      parcelles = KAStorage.getParcelles();
+
+      this.render();
+      this.setupListeners();
+      this.loadParcels();
+      this.initChart();
+    } catch (err) {
+      ErrorHandler.log(err, 'ProfitabilityModule.init');
+    }
   },
 
   loadParcels() {
@@ -383,7 +388,7 @@ window.submitAddProfit = (e) => {
   const idInput = document.getElementById('form-profit-id');
   
   if (!cropSelect || !yieldInput || !priceInput) {
-    alert('Veuillez remplir les champs obligatoires: Culture, Production et Prix de vente.');
+    ErrorHandler.showToast('Veuillez remplir les champs obligatoires: Culture, Production et Prix de vente.', 'error');
     return;
   }
   
@@ -443,7 +448,7 @@ window.submitAddProfit = (e) => {
   window.closeAddProfitModal();
   
   // Show success message
-  alert(`Analyse de rentabilité pour ${cropName} enregistrée avec succès ! Marge nette: ${Math.round(netMargin).toLocaleString('fr-FR')} F`);
+  ErrorHandler.showToast(`Analyse de rentabilité pour ${cropName} enregistrée avec succès ! Marge nette: ${Math.round(netMargin).toLocaleString('fr-FR')} F`, 'success');
 };
 
 window.editProfit = (id) => {
@@ -488,7 +493,7 @@ window.deleteProfit = (id) => {
       KAStorage.setCropProfits(cropProfits);
       ProfitabilityModule.render();
       window.closeDeleteModal();
-      alert(`Analyse de rentabilité pour ${cropName} supprimée avec succès.`);
+      ErrorHandler.showToast(`Analyse de rentabilité pour ${cropName} supprimée avec succès.`, 'success');
     };
     
     deleteModal.classList.remove('hidden');

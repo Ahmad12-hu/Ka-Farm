@@ -1,5 +1,6 @@
 // KA Farm - Alertes Climatiques Module
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 let weatherAlerts = [];
 let weatherAlertHistory = [];
@@ -38,13 +39,17 @@ const WEATHER_ICONS = {
 
 export const WeatherAlertsModule = {
   init() {
-    weatherAlerts = KAStorage.getWeatherAlerts() || [];
-    weatherAlertHistory = KAStorage.getWeatherAlertHistory() || [];
-    
-    this.render();
-    this.setupListeners();
-    this.loadConfig();
-    this.startAutoRefresh();
+    try {
+      weatherAlerts = KAStorage.getWeatherAlerts() || [];
+      weatherAlertHistory = KAStorage.getWeatherAlertHistory() || [];
+
+      this.render();
+      this.setupListeners();
+      this.loadConfig();
+      this.startAutoRefresh();
+    } catch (err) {
+      ErrorHandler.log(err, 'WeatherAlertsModule.init');
+    }
   },
 
   loadConfig() {
@@ -562,7 +567,7 @@ window.submitWeatherAlert = (e) => {
   const idInput = document.getElementById('form-alert-id');
   
   if (!typeSelect || !messageInput || !triggerValueInput || !severitySelect) {
-    alert('Veuillez remplir les champs obligatoires : Type, Message, Valeur de déclenchement et Sévérité.');
+    ErrorHandler.showToast('Veuillez remplir les champs obligatoires : Type, Message, Valeur de déclenchement et Sévérité.', 'error');
     return;
   }
   
@@ -577,7 +582,7 @@ window.submitWeatherAlert = (e) => {
   const existingId = idInput?.value || '';
   
   if (!alertType || !message || triggerValue <= 0 || !severity) {
-    alert('Veuillez remplir tous les champs obligatoires.');
+    ErrorHandler.showToast('Veuillez remplir tous les champs obligatoires.', 'error');
     return;
   }
   
@@ -640,7 +645,7 @@ window.submitWeatherAlert = (e) => {
   WeatherAlertsModule.render();
   window.closeAddWeatherAlertModal();
   
-  alert(`Alerte climatique "${alertType}" ${existingId ? 'mise à jour' : 'créée'} avec succès !`);
+  ErrorHandler.showToast(`Alerte climatique "${alertType}" ${existingId ? 'mise à jour' : 'créée'} avec succès !`, 'success');
 };
 
 window.editWeatherAlert = (id) => {
@@ -685,7 +690,7 @@ window.deleteWeatherAlert = (id) => {
       KAStorage.setWeatherAlerts(weatherAlerts);
       WeatherAlertsModule.render();
       window.closeDeleteWeatherAlertModal();
-      alert(`Alerte climatique supprimée avec succès.`);
+      ErrorHandler.showToast(`Alerte climatique supprimée avec succès.`, 'success');
     };
     
     deleteModal.classList.remove('hidden');
@@ -834,7 +839,7 @@ window.confirmAcknowledgeAlert = () => {
   WeatherAlertsModule.render();
   window.closeAcknowledgeModal();
   
-  alert(`Alerte #${alert.id} acquittée avec succès.`);
+  ErrorHandler.showToast(`Alerte #${alert.id} acquittée avec succès.`, 'success');
 };
 
 window.acknowledgeAllAlerts = () => {
@@ -852,9 +857,9 @@ window.acknowledgeAllAlerts = () => {
   if (count > 0) {
     KAStorage.setWeatherAlertHistory(weatherAlertHistory);
     WeatherAlertsModule.render();
-    alert(`${count} alerte(s) acquittée(s) avec succès.`);
+    ErrorHandler.showToast(`${count} alerte(s) acquittée(s) avec succès.`, 'success');
   } else {
-    alert('Aucune alerte active à acquitter.');
+    ErrorHandler.showToast('Aucune alerte active à acquitter.', 'error');
   }
 };
 
@@ -864,7 +869,7 @@ window.refreshWeatherAlerts = () => {
   weatherAlertHistory = KAStorage.getWeatherAlertHistory() || [];
   WeatherAlertsModule.updateCurrentWeather();
   WeatherAlertsModule.render();
-  alert('Alertes climatiques actualisées.');
+  ErrorHandler.showToast('Alertes climatiques actualisées.', 'success');
 };
 
 // Start module when DOM is loaded

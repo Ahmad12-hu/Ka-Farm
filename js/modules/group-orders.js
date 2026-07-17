@@ -2,6 +2,7 @@
 // Fonctionnalité 2.7 : Module coopératif pour commandes groupées
 
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 // ============================================================
 // MAIN MODULE EXPORT
@@ -29,12 +30,16 @@ export const GroupOrdersModule = {
   // ============================================================
 
   init() {
-    this.storage = KAStorage;
-    this.cacheElements();
-    this.setupListeners();
-    this.render();
-    this.loadInitialData();
-    console.log('GroupOrdersModule initialized');
+    try {
+      this.storage = KAStorage;
+      this.cacheElements();
+      this.setupListeners();
+      this.render();
+      this.loadInitialData();
+      console.log('GroupOrdersModule initialized');
+    } catch (err) {
+      ErrorHandler.log(err, 'GroupOrdersModule.init');
+    }
   },
 
   cacheElements() {
@@ -522,7 +527,7 @@ export const GroupOrdersModule = {
     this.loadInitialData();
     this.render();
     
-    alert('Commande enregistrée avec succès!');
+    ErrorHandler.showToast('Commande enregistrée avec succès!', 'success');
   },
 
   editOrder(orderId) {
@@ -600,7 +605,7 @@ export const GroupOrdersModule = {
     const orderId = form.elements['item-order'].value;
     const order = this.storage.getGroupOrderById(orderId);
     if (!order) {
-      alert('Veuillez sélectionner une commande valide');
+      ErrorHandler.showToast('Veuillez sélectionner une commande valide', 'error');
       return;
     }
 
@@ -639,7 +644,7 @@ export const GroupOrdersModule = {
     this.loadInitialData();
     this.render();
     
-    alert('Article ajouté avec succès!');
+    ErrorHandler.showToast('Article ajouté avec succès!', 'success');
   },
 
   markAsReceived(itemId) {
@@ -667,7 +672,7 @@ export const GroupOrdersModule = {
       
       this.loadInitialData();
       this.render();
-      alert('Réception confirmée!');
+      ErrorHandler.showToast('Réception confirmée!', 'success');
     }
   },
 
@@ -739,7 +744,7 @@ export const GroupOrdersModule = {
     this.loadInitialData();
     this.render();
     
-    alert('Ferme enregistrée avec succès!');
+    ErrorHandler.showToast('Ferme enregistrée avec succès!', 'success');
   },
 
   editFarm(farmId) {

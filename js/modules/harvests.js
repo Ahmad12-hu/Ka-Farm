@@ -1,10 +1,15 @@
 import { KAStorage } from '../storage.js';
 import { logger } from './logger.js';
+import { ErrorHandler } from './error-handler.js';
 
 const HarvestsModule = {
   async init() {
-    console.log("Initialisation du module des récoltes...");
-    this.fetchAndRenderHarvests();
+    try {
+      ErrorHandler.log(new Error("Init"), 'HarvestsModule.init', 'info');
+      await this.fetchAndRenderHarvests();
+    } catch (err) {
+      ErrorHandler.log(err, 'HarvestsModule.init');
+    }
   },
 
   async fetchAndRenderHarvests() {
@@ -54,7 +59,7 @@ const HarvestsModule = {
       }
 
     } catch (err) {
-      logger.error("Erreur lors de la récupération des récoltes", { error: err.message });
+      ErrorHandler.log(err, 'HarvestsModule.fetchAndRenderHarvests', 'error');
       loadingRow.innerHTML = `<td colspan="6" class="p-8 text-center text-rose-400 font-semibold">Erreur: Impossible de charger les données.</td>`;
     }
   }

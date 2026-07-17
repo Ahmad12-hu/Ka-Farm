@@ -1,6 +1,7 @@
 // KA Farm - Sanitary Alerts & Gemini AI Advisor Module
 import { KAStorage } from '../storage.js';
 import { logger } from './logger.js';
+import { ErrorHandler } from './error-handler.js';
 
 let chatHistory = [];
 
@@ -316,7 +317,7 @@ export const NotificationsModule = {
     window.simulateDemoAlert = () => {
       const crops = KAStorage.getCrops();
       if (crops.length === 0) {
-        alert("Aucune culture n'est actuellement configurée dans votre base.");
+        ErrorHandler.showToast("Aucune culture n'est actuellement configurée dans votre base.", 'error');
         return;
       }
 
@@ -328,7 +329,7 @@ export const NotificationsModule = {
 
       // Check if demo already simulated
       if (targetCrop.photos.some(p => p.id === 'demo-alert-1')) {
-        alert("L'alerte de démonstration est déjà active ! Regardez le panneau de gauche.");
+        ErrorHandler.showToast("L'alerte de démonstration est déjà active ! Regardez le panneau de gauche.", 'error');
         return;
       }
 

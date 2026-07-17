@@ -232,6 +232,10 @@
         import { Auth } from '/js/auth.js';
         import { KAStorage } from '/js/storage.js';
 
+        // Error Handler for toast notifications
+        import { ErrorHandler } from '/js/modules/error-handler.js';
+        window.ErrorHandler = ErrorHandler;
+
         // Exposer logout globalement
         window.logout = async () => {
             if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
@@ -241,7 +245,9 @@
 
         // Ouvrir une section (placeholder pour futures pages)
         window.openSection = (section) => {
-            alert(`La page de gestion "${section}" sera disponible prochainement.\n\nEn attendant, utilisez les pages classiques de KA Farm.`);
+            if (window.ErrorHandler) {
+                window.ErrorHandler.showToast(`La page de gestion "${section}" sera disponible prochainement.\n\nEn attendant, utilisez les pages classiques de KA Farm.`, 'error');
+            }
         };
 
         // Charger les statistiques
@@ -370,7 +376,9 @@
             const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@kafarm.sn';
 
             if (user.email !== ADMIN_EMAIL) {
-                alert('Accès refusé. Vous n\'êtes pas administrateur.');
+                if (window.ErrorHandler) {
+                    window.ErrorHandler.showToast('Accès refusé. Vous n\'êtes pas administrateur.', 'error');
+                }
                 Auth.logout();
                 window.location.href = '/pages/admin/login.html';
                 return;
