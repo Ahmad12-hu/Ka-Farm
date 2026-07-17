@@ -4,81 +4,609 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>À Propos - KA Farm</title>
+    <title>À Propos - KA Farm Sénégal</title>
 
     <!-- Favicon & Branding -->
     <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
     <link rel="apple-touch-icon" href="/assets/logo.svg">
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap"
+        rel="stylesheet">
+
     <!-- Tailwind CSS CDN & Lucide Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Custom separated Stylesheets -->
-    <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
 
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
                     colors: {
                         brand: {
-                            dark: '#06130B',
+                            dark: '#040C06',
                             slate: '#0B2112',
                             green: '#10B981',
                             hover: '#059669',
+                            light: '#ECFDF5',
                         }
                     }
                 }
             }
         }
     </script>
+
+    <style>
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.4);
+        }
+
+        body {
+            background-color: #040D06;
+            color: #E2E8F0;
+        }
+
+        /* Animations */
+        @keyframes smoothSlideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-up {
+            animation: smoothSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        /* Card hover lift effect */
+        .feature-card {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3) !important;
+        }
+    </style>
 </head>
 
-<body
-    class="bg-slate-50 dark:bg-[#061109] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+<body class="font-sans antialiased bg-[#040D06] text-slate-100 selection:bg-emerald-500 selection:text-white">
 
-    <!-- Mobile Top Header Placeholder -->
-    <div id="mobile-header-placeholder"></div>
-
-    <div class="min-h-screen flex flex-col lg:flex-row">
-        <!-- Sidebar Placeholder -->
-        <div id="sidebar-placeholder"></div>
-
-        <!-- Main Content Stage -->
-        <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
-            <div class="w-full max-w-4xl mx-auto space-y-8">
-
-                <!-- Hero Presentation -->
+    <!-- Header / Navigation Bar -->
+    <header
+        class="sticky top-0 z-50 bg-[#040D06]/90 backdrop-blur-md border-b border-emerald-950/40 px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Logo & Title -->
+            <a href="/index.html" class="flex items-center gap-2 sm:gap-3">
                 <div
-                    class="p-8 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left shadow-sm space-y-6">
-                    <h1 class="text-3xl md:text-4xl font-black text-slate-800 dark:text-white flex items-center gap-3">
-                        <i data-lucide="sprout" class="h-9 w-9 text-emerald-500"></i>
-                        Gérez Votre Ferme Intelligemment avec KA-Farm
-                    </h1>
-                    <p class="text-base text-slate-600 dark:text-slate-300 leading-relaxed font-semibold max-w-3xl">
-                        KA-Farm est la solution de gestion agricole numérique de référence au Sénégal. Chaque exploitant
-                        bénéficie d'un environnement sécurisé pour piloter ses cultures, son élevage, sa trésorerie et
-                        ses ressources humaines. Multi-utilisateurs, multi-exploitations, une plateforme unifiée.
+                    class="h-8 w-8 sm:h-10 sm:w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-950/40">
+                    <i data-lucide="sprout" class="h-4 w-4 sm:h-5 sm:w-5"></i>
+                </div>
+                <div class="text-left hidden sm:block">
+                    <span class="block text-sm font-black uppercase tracking-wider text-white">KA Farm</span>
+                    <span class="block text-[10px] font-bold text-emerald-400">SÉNÉGAL • AGROÉCOLOGIE</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links (Desktop) -->
+            <nav class="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-bold text-slate-300">
+                <a href="/index.html" class="hover:text-emerald-400 transition-colors">Accueil</a>
+                <a href="/pages/shared/dashboard.html" class="hover:text-emerald-400 transition-colors">Tableau de
+                    Bord</a>
+                <a href="#mission" class="hover:text-emerald-400 transition-colors">Mission</a>
+                <a href="#equipe" class="hover:text-emerald-400 transition-colors">Équipe</a>
+                <a href="#valeurs" class="hover:text-emerald-400 transition-colors">Valeurs</a>
+            </nav>
+
+            <!-- Access Button -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <a href="/pages/shared/dashboard.html"
+                    class="hidden sm:flex px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-950/20 items-center gap-2 cursor-pointer">
+                    <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+                    <span>Espace de Gestion</span>
+                </a>
+                <!-- Mobile hamburger -->
+                <button onclick="const menu = document.getElementById('mobile-menu'); menu.classList.toggle('hidden');"
+                    class="lg:hidden p-2 text-slate-300 hover:text-white rounded-lg">
+                    <i data-lucide="menu" class="h-5 w-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobile-menu"
+            class="hidden lg:hidden border-t border-emerald-950/40 mt-2 sm:mt-3 py-3 sm:py-4 space-y-2 sm:space-y-3 text-left animate-fadeIn bg-[#040D06]">
+            <a href="/index.html" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
+                class="block px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Accueil</a>
+            <a href="/pages/shared/dashboard.html"
+                onclick="document.getElementById('mobile-menu').classList.add('hidden')"
+                class="block px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Tableau
+                de Bord</a>
+            <a href="#mission" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
+                class="block px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Mission</a>
+            <a href="#equipe" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
+                class="block px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Équipe</a>
+            <a href="#valeurs" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
+                class="block px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Valeurs</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative py-16 sm:py-24 px-4 overflow-hidden border-b border-emerald-950/20">
+        <div
+            class="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none">
+        </div>
+
+        <div class="max-w-4xl mx-auto text-center space-y-8 relative z-10 animate-slide-up">
+            <span
+                class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 pulse-ring"></span>
+                À Propos de KA-Farm
+            </span>
+
+            <h1
+                class="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.1] text-center">
+                Agriculture Durable <br class="hidden sm:inline">
+                <span
+                    class="text-emerald-400 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent">Innovante</span>
+                au Sénégal
+            </h1>
+
+            <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
+                KA-Farm est né de la passion de trois frères pour l'agriculture maraîchère sénégalaise.
+                Notre mission : démocratiser l'accès à des outils numériques modernes pour les exploitants agricoles.
+            </p>
+        </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section id="mission" class="py-16 px-4 bg-[#061208]/40 border-y border-emerald-950/20">
+        <div class="max-w-7xl mx-auto space-y-12">
+            <div class="text-center space-y-2">
+                <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Notre Mission</span>
+                <h2 class="text-3xl font-black text-white">Transformer l'Agriculture Sénégalaise</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6">
+                    <p class="text-slate-300 font-semibold text-xs sm:text-sm leading-relaxed">
+                        KA-Farm a été créé en 2024 avec une vision claire : rendre la technologie accessible à tous les
+                        exploitants agricoles du Sénégal, des petits maraîchers aux grandes exploitations.
                     </p>
-                    <div class="pt-2">
-                        <a href="https://ka-farm.vercel.app/#exploitation" target="_blank" rel="noopener noreferrer"
-                            class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl transition-colors">
-                            ACCÉDER À LA PLATEFORME
-                            <i data-lucide="external-link" class="h-4 w-4"></i>
-                        </a>
+                    <p class="text-slate-300 font-semibold text-xs sm:text-sm leading-relaxed">
+                        Notre plateforme combine <strong class="text-emerald-400">agroécologie</strong>, <strong
+                            class="text-emerald-400">innovation technologique</strong> et <strong
+                            class="text-emerald-400">connaissance du terrain</strong> pour offrir une solution complète
+                        de gestion agricole.
+                    </p>
+                    <p class="text-slate-300 font-semibold text-xs sm:text-sm leading-relaxed">
+                        Nous croyons en une agriculture <strong class="text-emerald-400">respectueuse de
+                            l'environnement</strong>, <strong class="text-emerald-400">économiquement viable</strong> et
+                        <strong class="text-emerald-400">socialement juste</strong>.
+                    </p>
+                </div>
+
+                <div
+                    class="p-8 bg-gradient-to-br from-[#0B2112] to-[#040D06] border border-emerald-950/50 rounded-3xl space-y-6 relative overflow-hidden">
+                    <div
+                        class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none">
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div
+                                class="h-8 w-8 bg-emerald-500/15 text-emerald-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="target" class="h-4 w-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-black text-white">Vision</h3>
+                                <p class="text-xs text-slate-300 leading-relaxed">Faire du Sénégal un leader de
+                                    l'agriculture numérique en Afrique de l'Ouest.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div
+                                class="h-8 w-8 bg-emerald-500/15 text-emerald-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="rocket" class="h-4 w-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-black text-white">Mission</h3>
+                                <p class="text-xs text-slate-300 leading-relaxed">Fournir des outils数字 puissants et
+                                    accessibles pour optimiser les exploitations agricoles.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div
+                                class="h-8 w-8 bg-emerald-500/15 text-emerald-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="heart" class="h-4 w-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-black text-white">Impact</h3>
+                                <p class="text-xs text-slate-300 leading-relaxed">Améliorer les revenus des agriculteurs
+                                    et promouvoir des pratiques durables.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Équipe Section -->
+    <section id="equipe" class="py-16 px-4">
+        <div class="max-w-7xl mx-auto space-y-12">
+            <div class="text-center space-y-2">
+                <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">L'Équipe
+                    Fondatrice</span>
+                <h2 class="text-3xl font-black text-white">Rencontrez les KA Brothers</h2>
+                <p class="text-xs text-slate-400 font-semibold max-w-md mx-auto">Trois frères passionnés par
+                    l'agriculture et la technologie, unis pour transformer le secteur agricole sénégalais.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Amadou KA -->
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-5 feature-card">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div
+                                class="h-16 w-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl">
+                                AK
+                            </div>
+                            <span
+                                class="text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/15">FONDATEUR</span>
+                        </div>
+                        <div class="space-y-1">
+                            <h3 class="text-base font-black text-white">Amadou KA</h3>
+                            <p class="text-[10px] text-emerald-400 font-bold">Directeur Général & Stratégie</p>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                            Visionnaire et entrepreneur, Amadou a créé KA-Farm pour résoudre les défis agricoles
+                            auxquels il a été confronté pendant des années.
+                        </p>
                     </div>
                 </div>
 
-            </div>
-        </main>
-    </div>
+                <!-- Moussa KA -->
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-5 feature-card">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div
+                                class="h-16 w-16 bg-emerald-700 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl">
+                                MK
+                            </div>
+                            <span
+                                class="text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">CHEF
+                                D'EXPLOITATION</span>
+                        </div>
+                        <div class="space-y-1">
+                            <h3 class="text-base font-black text-white">Moussa KA</h3>
+                            <p class="text-[10px] text-emerald-400 font-bold">Responsable Terrain & Innovations</p>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                            Expert en agroécologie, Moussa coordonne les opérations sur le terrain et teste les
+                            nouvelles méthodes culturales.
+                        </p>
+                    </div>
+                </div>
 
-    <!-- Shared App Entry Points -->
-    <script type="module" src="/js/router.js"></script>
-    <script type="module" src="/js/app.js"></script>
+                <!-- Aly KA -->
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-5 feature-card">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div
+                                class="h-16 w-16 bg-emerald-800 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl">
+                                YK
+                            </div>
+                            <span
+                                class="text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/15">RESPONSABLE
+                                RÉSEAUX</span>
+                        </div>
+                        <div class="space-y-1">
+                            <h3 class="text-base font-black text-white">Aly KA</h3>
+                            <p class="text-[10px] text-emerald-400 font-bold">Communication & Partenariats</p>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                            Aly gère les relations avec les partenaires, la communication et assure la diffusion de la
+                            vision KA-Farm.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Valeurs Section -->
+    <section id="valeurs" class="py-16 px-4 bg-[#061208]/40 border-y border-emerald-950/20">
+        <div class="max-w-7xl mx-auto space-y-12">
+            <div class="text-center space-y-2">
+                <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Nos Valeurs</span>
+                <h2 class="text-3xl font-black text-white">Ce Qui Nous Anime</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-4 feature-card">
+                    <div
+                        class="h-12 w-12 bg-emerald-500/15 text-emerald-400 rounded-xl flex items-center justify-center">
+                        <i data-lucide="leaf" class="h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white">Agroécologie</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                        Zéro pesticide chimique. Nous privilégions les biopesticides locaux (neem, piment) et les
+                        méthodes naturelles.
+                    </p>
+                </div>
+
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-4 feature-card">
+                    <div class="h-12 w-12 bg-amber-500/15 text-amber-400 rounded-xl flex items-center justify-center">
+                        <i data-lucide="recycle" class="h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white">Économie Circulaire</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                        Les résidus de culture nourrissent le bétail ; le fumier composté régénère les planches
+                        maraîchères.
+                    </p>
+                </div>
+
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-4 feature-card">
+                    <div class="h-12 w-12 bg-blue-500/15 text-sky-400 rounded-xl flex items-center justify-center">
+                        <i data-lucide="droplet" class="h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white">Eau Précieuse</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                        Irrigation goutte-à-goutte 100% solaire. optimisation de chaque goutte d'eau dans un pays
+                        sahélien.
+                    </p>
+                </div>
+
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-4 feature-card">
+                    <div class="h-12 w-12 bg-purple-500/15 text-purple-400 rounded-xl flex items-center justify-center">
+                        <i data-lucide="users" class="h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white">Communauté</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                        Partager le savoir agricole. Former et accompagner les exploitants vers l'excellence maraîchère.
+                    </p>
+                </div>
+
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-4 feature-card">
+                    <div class="h-12 w-12 bg-cyan-500/15 text-cyan-400 rounded-xl flex items-center justify-center">
+                        <i data-lucide="cpu" class="h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white">Innovation</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                        Technologie accessible adaptée aux réalités africaines. Pas de solutions hors-sol, mais des
+                        outils concrets.
+                    </p>
+                </div>
+
+                <div class="p-6 bg-[#0B2112] border border-emerald-950/40 rounded-3xl text-left space-y-4 feature-card">
+                    <div class="h-12 w-12 bg-rose-500/15 text-rose-400 rounded-xl flex items-center justify-center">
+                        <i data-lucide="shield-check" class="h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white">Transparence</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed font-semibold">
+                        Données sécurisées, multi-utilisateurs, chaque exploitation garde le contrôle de ses
+                        informations.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Histoire Section -->
+    <section class="py-16 px-4">
+        <div class="max-w-4xl mx-auto space-y-8">
+            <div class="text-center space-y-2">
+                <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Notre Histoire</span>
+                <h2 class="text-3xl font-black text-white">Le Parcours KA-Farm</h2>
+            </div>
+
+            <div
+                class="p-8 bg-gradient-to-br from-[#0B2112] to-[#040D06] border border-emerald-950/50 rounded-3xl space-y-6">
+                <div class="space-y-4">
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="h-10 w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black flex-shrink-0">
+                            1</div>
+                        <div>
+                            <h3 class="text-sm font-black text-white mb-1">2020 - Les Débuts</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Amadou, Moussa et Aly KA décident de moderniser l'exploitation familiale. Ils commencent
+                                par automatiser l'irrigation avec des pompes solaires.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="h-10 w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black flex-shrink-0">
+                            2</div>
+                        <div>
+                            <h3 class="text-sm font-black text-white mb-1">2022 - Passage au Bio</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Abandon total des pesticides chimiques. Adoption de méthodes agroécologiques :
+                                biopesticides, compost, associations de cultures.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="h-10 w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black flex-shrink-0">
+                            3</div>
+                        <div>
+                            <h3 class="text-sm font-black text-white mb-1">2024 - Lancement de KA-Farm</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Création de la plateforme digitale pour partager l'expertise acquise. KA-Farm devient
+                                une solution complète de gestion agricole.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="py-16 px-4 bg-[#061208]/40 border-t border-emerald-950/20">
+        <div class="max-w-4xl mx-auto space-y-8">
+            <div class="text-center space-y-2">
+                <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Contact</span>
+                <h2 class="text-3xl font-black text-white">Rejoignez l'Aventure</h2>
+                <p class="text-xs text-slate-400 font-semibold max-w-md mx-auto">
+                    Vous êtes agriculteur, partenaire ou simplement curieux ? Contactez-nous !
+                </p>
+            </div>
+
+            <div class="p-8 bg-[#0B2112] border border-emerald-950/40 rounded-3xl space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="h-10 w-10 bg-emerald-500/15 text-emerald-400 rounded-lg flex items-center justify-center">
+                                <i data-lucide="mail" class="h-5 w-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Email</p>
+                                <p class="text-xs font-bold text-white">contact@kafarm.sn</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="h-10 w-10 bg-emerald-500/15 text-emerald-400 rounded-lg flex items-center justify-center">
+                                <i data-lucide="phone" class="h-5 w-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Téléphone</p>
+                                <p class="text-xs font-bold text-white">+221 XX XXX XX XX</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="h-10 w-10 bg-emerald-500/15 text-emerald-400 rounded-lg flex items-center justify-center">
+                                <i data-lucide="map-pin" class="h-5 w-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Localisation
+                                </p>
+                                <p class="text-xs font-bold text-white">Sénégal</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="h-10 w-10 bg-emerald-500/15 text-emerald-400 rounded-lg flex items-center justify-center">
+                                <i data-lucide="globe" class="h-5 w-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Réseaux</p>
+                                <p class="text-xs font-bold text-white">@kafarm.sn</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-emerald-950/30">
+                    <a href="/pages/shared/dashboard.html"
+                        class="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all inline-flex items-center justify-center gap-2">
+                        <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+                        ACCÉDER À LA PLATEFORME
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#040C06] border-t border-emerald-950/40 py-12 px-4 sm:px-8 text-xs font-semibold text-slate-400">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-start text-left">
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="h-8 w-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-black">
+                        <i data-lucide="sprout" class="h-4 w-4"></i>
+                    </div>
+                    <span class="text-sm font-black text-white uppercase tracking-wider">KA-Farm</span>
+                </div>
+                <p class="text-slate-400 leading-relaxed">
+                    Solution de gestion agricole numérique pour les exploitants maraîchers du Sénégal.
+                </p>
+            </div>
+
+            <div class="space-y-3">
+                <p class="text-xs font-black text-white uppercase tracking-widest">Navigation</p>
+                <div class="space-y-1 flex flex-col">
+                    <a href="/index.html" class="hover:text-emerald-400 transition-colors">Accueil</a>
+                    <a href="#mission" class="hover:text-emerald-400 transition-colors">Mission</a>
+                    <a href="#equipe" class="hover:text-emerald-400 transition-colors">Équipe</a>
+                    <a href="#valeurs" class="hover:text-emerald-400 transition-colors">Valeurs</a>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <p class="text-xs font-black text-white uppercase tracking-widest">Support</p>
+                <p class="text-slate-300">📧 contact@kafarm.sn</p>
+                <p class="text-[10px] text-slate-500 font-bold mt-2">© 2026 KA-Farm. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        // Initialize Lucide icons
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
