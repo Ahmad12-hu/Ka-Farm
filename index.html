@@ -75,6 +75,73 @@
       color: #E2E8F0;
     }
 
+    /* Connection Indicator */
+    .connection-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .connection-indicator.online {
+      background-color: #10B981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+      animation: pulse-green 2s infinite;
+    }
+
+    .connection-indicator.offline {
+      background-color: #EF4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      animation: pulse-red 1.5s infinite;
+    }
+
+    @keyframes pulse-green {
+
+      0%,
+      100% {
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+      }
+
+      50% {
+        box-shadow: 0 0 16px rgba(16, 185, 129, 0.9);
+      }
+    }
+
+    @keyframes pulse-red {
+
+      0%,
+      100% {
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      }
+
+      50% {
+        box-shadow: 0 0 16px rgba(239, 68, 68, 0.9);
+      }
+    }
+
+    .sync-status {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+    }
+
+    .sync-status.online {
+      color: #10B981;
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .sync-status.offline {
+      color: #EF4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .sync-status.syncing {
+      color: #F59E0B;
+      background: rgba(245, 158, 11, 0.1);
+    }
+
     /* Animations */
     @keyframes smoothSlideUp {
       0% {
@@ -230,7 +297,8 @@
 <body class="font-sans antialiased bg-[#040D06] text-slate-100 selection:bg-emerald-500 selection:text-white">
 
   <!-- Header / Navigation Bar -->
-  <header class="sticky top-0 z-50 bg-[#040D06]/90 backdrop-blur-md border-b border-emerald-950/40 px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+  <header
+    class="sticky top-0 z-50 bg-[#040D06]/90 backdrop-blur-md border-b border-emerald-950/40 px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <!-- Logo & Title -->
       <a href="#" class="flex items-center gap-2 sm:gap-3">
@@ -243,6 +311,12 @@
           <span class="block text-[10px] font-bold text-emerald-400">SÉNÉGAL • AGROÉCOLOGIE</span>
         </div>
       </a>
+
+      <!-- Indicateur de connexion -->
+      <div class="flex items-center gap-2 ml-4">
+        <div id="connection-indicator" class="connection-indicator online" title="En ligne"></div>
+        <span id="sync-status" class="sync-status online text-[10px] font-bold hidden md:block">En ligne</span>
+      </div>
 
       <!-- Navigation Links (Desktop) -->
       <nav class="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-bold text-slate-300">
@@ -518,7 +592,8 @@
       <div class="text-center space-y-2">
         <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Fonctionnalités</span>
         <h2 class="text-3xl font-black text-white">Une Suite Complète pour Votre Exploitation</h2>
-        <p class="text-xs text-slate-400 font-semibold max-w-md mx-auto">Module par module, maîtrisez chaque dimension de
+        <p class="text-xs text-slate-400 font-semibold max-w-md mx-auto">Module par module, maîtrisez chaque dimension
+          de
           votre activité : cultures, parcelles, stocks, trésorerie, ressources humaines et bien plus.</p>
       </div>
 
@@ -605,7 +680,8 @@
               AI</div>
             <div class="bg-[#040D06]/70 border border-emerald-950/30 p-3.5 rounded-2xl max-w-[85%] space-y-2">
               <p class="font-semibold leading-relaxed">Na nga def ! Je suis KA-Advisor. Je peux vous assister sur la
-                préparation du sol, le traitement biologique du mildiou, la gestion des pépinières ou le choix des semences
+                préparation du sol, le traitement biologique du mildiou, la gestion des pépinières ou le choix des
+                semences
                 adaptées au contexte horticole sénégalais. Comment puis-je vous aider aujourd'hui ? 🌱</p>
             </div>
           </div>
@@ -672,7 +748,8 @@
               <h3 class="text-base font-black text-white">Amadou KA</h3>
               <p class="text-[10px] text-emerald-400 font-bold">Fondateur & Directeur Général</p>
             </div>
-            <p class="text-xs text-slate-300 leading-relaxed font-semibold">Accès intégral à l'ensemble des modules de la
+            <p class="text-xs text-slate-300 leading-relaxed font-semibold">Accès intégral à l'ensemble des modules de
+              la
               plateforme : cultures, trésorerie, ressources humaines, stocks et configuration.</p>
           </div>
           <button onclick="window.accessDashboard('amadou')"
@@ -722,7 +799,8 @@
               <h3 class="text-base font-black text-white">Aly KA</h3>
               <p class="text-[10px] text-emerald-400 font-bold">Responsable Équipe & Stocks</p>
             </div>
-            <p class="text-xs text-slate-300 leading-relaxed font-semibold">Accès aux tâches assignées, suivi des présences,
+            <p class="text-xs text-slate-300 leading-relaxed font-semibold">Accès aux tâches assignées, suivi des
+              présences,
               mise à jour de l'état des cultures et gestion des stocks d'intrants.</p>
           </div>
           <button onclick="window.accessDashboard('aly')"
@@ -737,7 +815,8 @@
       <div class="mt-8 p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-center">
         <p class="text-xs font-bold text-emerald-300 mb-2">💡 Mode Démonstration</p>
         <p class="text-[11px] text-slate-400 leading-relaxed">Ces comptes permettent de découvrir la plateforme. <br> En
-          environnement de production, chaque utilisateur crée son propre compte et rejoint ou crée son exploitation.</p>
+          environnement de production, chaque utilisateur crée son propre compte et rejoint ou crée son exploitation.
+        </p>
       </div>
     </div>
   </section>
@@ -800,7 +879,8 @@
           <a href="#exploitation" class="hover:text-emerald-400 transition-colors">Suivi des Parcelles</a>
           <a href="#meteo" class="hover:text-emerald-400 transition-colors">Météo en Temps Réel</a>
           <a href="#ai-advisor" class="hover:text-emerald-400 transition-colors">Conseiller IA</a>
-          <a href="javascript:window.tryAccessDefault()" class="text-emerald-400 hover:underline">Accès à la Plateforme</a>
+          <a href="javascript:window.tryAccessDefault()" class="text-emerald-400 hover:underline">Accès à la
+            Plateforme</a>
         </div>
       </div>
 

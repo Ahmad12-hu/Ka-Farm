@@ -271,6 +271,23 @@ export const App = {
     UserManager.requireAuth();
     currentUser = UserManager.getCurrentUser();
     
+    // Enregistrer le Service Worker pour le mode hors ligne
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => 
+        console.error('SW registration failed:', err)
+      );
+    }
+    
+    // Initialiser le stockage hors ligne
+    if (window.offlineStorage) {
+      window.offlineStorage.init();
+    }
+    
+    // Initialiser le gestionnaire de synchronisation
+    if (window.syncManager) {
+      window.syncManager.init();
+    }
+    
     // Ensure storage is initialized and cloud sync on-snapshots are active on all pages
     KAStorage.init();
 
