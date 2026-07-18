@@ -4,6 +4,7 @@ import { UserManager } from './user-manager.js';
 import { WolofAudio } from './wolof-audio.js';
 import { ErrorHandler } from './modules/error-handler.js';
 import { MarketPricesModule } from './modules/market-prices.js';
+import './analytics.js';
 
 // Global variables for other scripts to use
 window.KAStorage = KAStorage;
