@@ -56,6 +56,11 @@ export default defineConfig(() => {
     optimizeDeps: {
       exclude: ['server.js', 'api/index.js']
     },
+
+    // Define environment variables for HTML pages
+    define: {
+      'import.meta.env.VITE_ADMIN_EMAIL': JSON.stringify(process.env.VITE_ADMIN_EMAIL || 'admin@kafarm.sn')
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.

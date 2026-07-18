@@ -7,6 +7,8 @@ import fs from 'fs';
 import { logger } from '../js/modules/logger.js';
 import { z } from 'zod';
 import { Cache } from '../js/modules/cache.js';
+import helmet from 'helmet';
+import cors from 'cors';
 
 // Validation schemas for API inputs
 const CropSchema = z.object({
@@ -96,6 +98,37 @@ const MessageSchema = z.object({
   isPrivate: z.boolean().optional()
 });
 
+const TreatmentSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  product_name: z.string().min(1, 'Nom du produit requis'),
+  parcel_id: z.string().optional(),
+  crop_id: z.string().optional(),
+  crop_name: z.string().optional(),
+  parcel_name: z.string().optional(),
+  category: z.string().optional(),
+  date_applied: z.string().optional(),
+  dar_days: z.number().optional(),
+  target: z.string().optional(),
+  notes: z.string().optional(),
+  harvest_ready: z.boolean().optional()
+});
+
+const CropProfitSchema = z.object({
+  id: z.string().min(1, 'ID requis'),
+  crop_name: z.string().min(1, 'Nom de la culture requis'),
+  parcel_id: z.string().optional(),
+  parcel_name: z.string().optional(),
+  yield_kg: z.number().optional(),
+  price_per_kg: z.number().optional(),
+  revenue: z.number().optional(),
+  costs: z.number().optional(),
+  total_cost: z.number().optional(),
+  net_margin: z.number().optional(),
+  profitability_percent: z.number().optional(),
+  period: z.string().optional(),
+  notes: z.string().optional()
+});
+
 // Initialize Firebase
 const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
 let firebaseApp, db;
@@ -112,6 +145,24 @@ try {
 }
 
 const app = express();
+
+// Security headers
+app.use(helmet());
+
+// CORS configuration
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173').split(',');
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 204
+}));
+
 app.use(express.json());
 
 // Rate limiting middleware
@@ -182,6 +233,9 @@ let serverElevageProduction = [
 let serverElevageHealth = [
   { id: 'HEA-001', date: '2026-06-10', target: 'Moutons Ladoum', intervention: 'Vaccination Pastorose', practitioner: 'Dr. Diop', cost: 15000, notes: 'Rappel annuel effectué.' }
 ];
+
+let serverTreatments = [];
+let serverCropProfits = [];
 
 // Helper to sync with Firestore or return in-memory data
 async function syncWithFirestore(collection, fallbackData) {
@@ -522,6 +576,96 @@ app.delete('/api/elevage/health/:id', async (req, res) => {
   serverElevageHealth = serverElevageHealth.filter(l => l.id !== id);
   await saveToFirestore('elevage_health', serverElevageHealth);
   res.json({ success: true });
+});
+
+// ==================== TREATMENTS ====================
+app.get('/api/treatments', async (req, res) => {
+  const data = await syncWithFirestore('treatments', serverTreatments);
+  res.json(data);
+});
+
+app.post('/api/treatments', async (req, res) => {
+  try {
+    const treatment = req.body;
+    if (!treatment || !treatment.id || !treatment.product_name) {
+      return res.status(400).json({ error: 'ID et nom du produit requis' });
+    }
+
+    const existing = serverTreatments.find(t => t.id === treatment.id);
+    if (existing) {
+      const idx = serverTreatments.findIndex(t => t.id === treatment.id);
+      serverTreatments[idx] = { ...existing, ...treatment };
+    } else {
+      serverTreatments.push(treatment);
+    }
+
+    await saveToFirestore('treatments', serverTreatments);
+    res.json({ success: true, treatment });
+  } catch (error) {
+    logger.error('Error saving treatment', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
+  }
+});
+
+app.post('/api/treatments/sync', async (req, res) => {
+  try {
+    const { treatments } = req.body;
+    if (treatments && Array.isArray(treatments)) {
+      serverTreatments = treatments;
+      await saveToFirestore('treatments', serverTreatments);
+      res.json({ success: true, message: 'Traitements synchronisés en mémoire', treatments });
+    } else {
+      res.status(400).json({ error: 'Données de traitements invalides' });
+    }
+  } catch (error) {
+    logger.error('Error syncing treatments', { error: error.message });
+    res.status(500).json({ error: 'Erreur lors de la synchronisation' });
+  }
+});
+
+// ==================== CROP PROFITS ====================
+app.get('/api/crop-profits', async (req, res) => {
+  const data = await syncWithFirestore('crop_profits', serverCropProfits);
+  res.json(data);
+});
+
+app.post('/api/crop-profits', async (req, res) => {
+  try {
+    const profit = req.body;
+    if (!profit || !profit.id || !profit.crop_name) {
+      return res.status(400).json({ error: 'ID et nom de la culture requis' });
+    }
+
+    const existing = serverCropProfits.find(p => p.id === profit.id);
+    if (existing) {
+      const idx = serverCropProfits.findIndex(p => p.id === profit.id);
+      serverCropProfits[idx] = { ...existing, ...profit };
+    } else {
+      serverCropProfits.push(profit);
+    }
+
+    await saveToFirestore('crop_profits', serverCropProfits);
+    res.json({ success: true, profit });
+  } catch (error) {
+    logger.error('Error saving crop profit', { error: error.message });
+    res.status(400).json({ error: error.message || 'Erreur de validation' });
+  }
+});
+
+app.post('/api/crop-profits/sync', async (req, res) => {
+  try {
+    const { cropProfits } = req.body;
+    if (cropProfits && Array.isArray(cropProfits)) {
+      serverCropProfits = cropProfits;
+      await saveToFirestore('crop_profits', serverCropProfits);
+      res.json({ success: true, message: 'Analyses de rentabilité synchronisées en mémoire', cropProfits });
+    } else {
+      res.status(400).json({ error: 'Données de rentabilité invalides' });
+    }
+  } catch (error) {
+    logger.error('Error syncing crop profits', { error: error.message });
+    res.status(500).json({ error: 'Erreur lors de la synchronisation' });
+  }
 });
 
 // ==================== MESSAGES ====================

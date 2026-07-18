@@ -1,3 +1,7 @@
+/**
+ * DEV LOCAL SERVER ONLY - Do not deploy to production
+ * Vercel production uses api/index.js instead
+ */
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
@@ -99,18 +103,37 @@ async function startServer() {
   let serverEmployees = [];
   let serverCheptel = [];
   let serverElevageProduction = [];
-        );
-        logger.info('Message saved to PostgreSQL', { messageId: newMsg.id });
-        res.json({ success: true, message: newMsg });
-        return;
-      } catch (err) {
-        logger.error('Error saving message to PostgreSQL', { error: err.message });
-      }
-    }
+  let serverElevageHealth = [];
+  let serverTreatments = [];
+  let serverCropProfits = [];
 
-    serverMessages.push(newMsg);
-    logger.info('Message saved to memory', { messageId: newMsg.id });
-    res.json({ success: true, message: newMsg });
+  // ==================== MESSAGES ====================
+  app.get('/api/messages', async (req, res) => {
+    res.json(serverMessages);
+  });
+
+  app.post('/api/messages', async (req, res) => {
+    try {
+      const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
+      if (!text || !senderEmail) {
+        return res.status(400).json({ error: 'Email et texte requis' });
+      }
+
+      const newMsg = {
+        id: id || 'msg-' + Date.now(),
+        senderEmail,
+        senderName: senderName || senderEmail,
+        text,
+        timestamp: timestamp || new Date().toISOString(),
+        isPrivate: !!isPrivate
+      };
+
+      serverMessages.push(newMsg);
+      res.json({ success: true, message: newMsg });
+    } catch (err) {
+      logger.error('Error saving message', { error: err.message });
+      res.status(400).json({ error: err.message || 'Erreur de validation' });
+    }
   });
 
   // ==================== TRAITEMENTS PHYTOSANITAIRES ====================
@@ -672,171 +695,6 @@ async function startServer() {
     res.json({ success: true, log });
   });
 
-  // ==================== AUTHENTIFICATION ====================
-  
-  // Inscription
-  app.post('/api/auth/signup', async (req, res) => {
-    try {
-      const { email, password, name, farm_name } = req.body;
-
-      // Validation basique
-      if (!email || !password || !name) {
-        return res.status(400).json({ 
-          error: 'Email, mot de passe et nom requis' 
-        });
-      }
-
-      if (password.length < 6) {
-        return res.status(400).json({ 
-          error: 'Le mot de passe doit contenir au moins 6 caractères' 
-        });
-      }
-
-      // TODO: Intégrer Supabase Auth ici
-      // Pour l'instant, créer un utilisateur local simple
-      const userId = 'user_' + Date.now();
-      const enterpriseId = `farm_${email.split('@')[0].toLowerCase()}_${Date.now()}`;
-
-      // Créer l'utilisateur
-      if (usePostgres && pool) {
-        try {
-          await pool.query(
-            'INSERT INTO users (id, email, name, role, enterprise_id, enterprise_name) VALUES ($1, $2, $3, $4, $5, $6)',
-            [userId, email, name, 'user', enterpriseId, farm_name || `Ferme de ${name}`]
-          );
-        } catch (err) {
-          logger.error('Error creating user in PostgreSQL', { error: err.message });
-          // Fallback: continuer quand même
-        }
-      }
-
-      // Créer les données par défaut
-      createDefaultFarmData(userId);
-
-      logger.info('User signed up', { userId, email });
-
-      res.json({ 
-        success: true, 
-        user: { id: userId, email, name, role: 'user' },
-        message: 'Compte créé avec succès !'
-      });
-
-    } catch (error) {
-      logger.error('Signup error', { error: error.message });
-      res.status(500).json({ error: 'Erreur serveur lors de l\'inscription' });
-    }
-  });
-
-  // Connexion
-  app.post('/api/auth/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-
-      // Validation
-      if (!email || !password) {
-        return res.status(400).json({ 
-          error: 'Email et mot de passe requis' 
-        });
-      }
-
-      // TODO: Intégrer Supabase Auth ici
-      // Rechercher l'utilisateur dans la base
-      let user = null;
-      
-      if (usePostgres && pool) {
-        try {
-          const result = await pool.query(
-            'SELECT * FROM users WHERE email = $1',
-            [email]
-          );
-          user = result.rows[0];
-        } catch (err) {
-          logger.error('Error fetching user from PostgreSQL', { error: err.message });
-        }
-      }
-
-      // Fallback: vérifier dans le stockage local
-      if (!user) {
-        const users = KAStorage.getUsers ? KAStorage.getUsers() : [];
-        user = users.find(u => u.email === email);
-      }
-
-      if (!user) {
-        return res.status(401).json({ 
-          error: 'Email ou mot de passe incorrect' 
-        });
-      }
-
-      // Générer un token simple (à remplacer par JWT)
-      const token = 'token_' + user.id + '_' + Date.now();
-
-      logger.info('User logged in', { userId: user.id, email });
-
-      res.json({ 
-        success: true, 
-        user: user,
-        token: token,
-        message: 'Connexion réussie'
-      });
-
-    } catch (error) {
-      logger.error('Login error', { error: error.message });
-      res.status(500).json({ error: 'Erreur serveur lors de la connexion' });
-    }
-  });
-
-  // Déconnexion
-  app.post('/api/auth/logout', async (req, res) => {
-    try {
-      // TODO: Invalider le token
-      logger.info('User logged out');
-      res.json({ success: true, message: 'Déconnexion réussie' });
-    } catch (error) {
-      logger.error('Logout error', { error: error.message });
-      res.status(500).json({ error: 'Erreur serveur' });
-    }
-  });
-
-  // Récupérer l'utilisateur courant
-  app.get('/api/auth/me', async (req, res) => {
-    try {
-      const token = req.headers.authorization?.replace('Bearer ', '');
-      
-      if (!token) {
-        return res.status(401).json({ error: 'Non autorisé' });
-      }
-
-      // Extraire l'userId du token
-      const userId = token.split('_')[1];
-      
-      // Récupérer l'utilisateur
-      if (usePostgres && pool) {
-        try {
-          const result = await pool.query(
-            'SELECT * FROM users WHERE id = $1',
-            [userId]
-          );
-          const user = result.rows[0];
-          if (user) {
-            return res.json({ success: true, user });
-          }
-        } catch (err) {
-          logger.error('Error fetching user', { error: err.message });
-        }
-      }
-
-      res.status(404).json({ error: 'Utilisateur introuvable' });
-    } catch (error) {
-      logger.error('Get user error', { error: error.message });
-      res.status(500).json({ error: 'Erreur serveur' });
-    }
-  });
-
-  // Fonction pour créer les données par défaut d'une ferme
-  function createDefaultFarmData(userId) {
-    // Cette fonction sera implémentée avec Supabase Admin
-    console.log(`Creating default farm data for user ${userId}`);
-  }
 
   // ==================== GEMINI AI ====================
   app.post('/api/gemini', async (req, res) => {
