@@ -30,7 +30,6 @@ export const CompostModule = {
     this.setupListeners();
     this.render();
     this.loadInitialData();
-    console.log('CompostModule initialized');
   },
 
   cacheElements() {

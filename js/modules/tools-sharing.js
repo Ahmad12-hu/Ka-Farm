@@ -36,7 +36,6 @@ export const ToolsSharingModule = {
       this.setupListeners();
       this.render();
       this.loadInitialData();
-      console.log('ToolsSharingModule initialized');
     } catch (err) {
       ErrorHandler.log(err, 'ToolsSharingModule.init');
     }

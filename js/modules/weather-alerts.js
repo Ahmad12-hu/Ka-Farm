@@ -125,7 +125,6 @@ export const WeatherAlertsModule = {
         KAStorage.saveCurrentWeather(currentWeather);
       }
     } catch (err) {
-      console.warn('Weather API fetch failed, using cached/default data:', err);
     }
     
     if (tempEl) tempEl.textContent = `${currentWeather.temperature}°C`;

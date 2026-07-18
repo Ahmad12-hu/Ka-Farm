@@ -36,7 +36,6 @@ export const GroupOrdersModule = {
       this.setupListeners();
       this.render();
       this.loadInitialData();
-      console.log('GroupOrdersModule initialized');
     } catch (err) {
       ErrorHandler.log(err, 'GroupOrdersModule.init');
     }
@@ -554,7 +553,6 @@ export const GroupOrdersModule = {
     
     // Show items for this order
     const items = this.storage.getGroupOrderItemsByOrder(orderId);
-    console.log('Commande:', orderId, 'Articles:', items.length);
   },
 
   // ============================================================

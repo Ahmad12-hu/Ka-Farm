@@ -26,7 +26,6 @@ export const MarketPricesModule = {
     this.loadInitialData();
     this.renderSinglePriceChart();
     window.MarketPricesInitialized = true;
-    console.log('MarketPricesModule initialized');
   },
 
   waitForElements() {

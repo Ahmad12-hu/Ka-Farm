@@ -21,7 +21,6 @@ export const ErrorHandler = {
       if (logs.length > 50) logs.shift();
       localStorage.setItem('ka_farm_error_logs', JSON.stringify(logs));
     } catch (e) {
-      console.warn('Cannot save error log to localStorage:', e);
     }
   },
 

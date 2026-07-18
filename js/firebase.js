@@ -83,7 +83,6 @@ export const KAFirebaseSync = {
       const sanitized = JSON.parse(JSON.stringify(value));
       if (!Array.isArray(sanitized)) return;
 
-      console.log(`[Firebase Sync] Début de l'enregistrement de ${key} (${sanitized.length} éléments) dans la collection Firestore '${collectionName}'...`);
       
       const localIds = new Set();
       
@@ -98,12 +97,10 @@ export const KAFirebaseSync = {
       const querySnapshot = await getDocs(collection(db, collectionName));
       for (const docSnap of querySnapshot.docs) {
         if (!localIds.has(docSnap.id)) {
-          console.log(`[Firebase Sync] Suppression de l'élément obsolète ${docSnap.id} de la collection '${collectionName}'`);
           await deleteDoc(doc(db, collectionName, docSnap.id));
         }
       }
       
-      console.log(`[Firebase Sync] Synchronisation réussie de ${key} avec Firestore.`);
     } catch (error) {
       logger.error(`[Firebase Sync] Erreur lors de la synchronisation de ${key} sur Firestore`, { error: error.message });
     }
@@ -111,7 +108,6 @@ export const KAFirebaseSync = {
 
   // Initialize and pull/push data from/to cloud using true collection listeners
   async initSync(onUpdateCallback) {
-    console.log("[Firebase Sync] Initialisation de la synchronisation en temps réel (vrais documents)...");
     
     Object.keys(KEY_MAP).forEach((localKey) => {
       const collectionName = getCollectionName(localKey);
@@ -134,7 +130,6 @@ export const KAFirebaseSync = {
           const cloudDataStr = JSON.stringify(sortedItems);
           
           if (localDataStr !== cloudDataStr) {
-            console.log(`[Firebase Sync] Mise à jour en temps réel de ${scopedLocalKey} depuis la collection Firestore '${collectionName}'.`);
             localStorage.setItem(scopedLocalKey, cloudDataStr);
             if (onUpdateCallback) {
               onUpdateCallback(localKey, sortedItems);
@@ -148,7 +143,6 @@ export const KAFirebaseSync = {
             try {
               const parsed = JSON.parse(localData);
               if (Array.isArray(parsed) && parsed.length > 0) {
-                console.log(`[Firebase Sync] Collection '${collectionName}' vide sur Firestore. Remplissage initial avec ${parsed.length} éléments locaux...`);
                 for (const item of parsed) {
                   const itemId = getItemId(localKey, item);
                   await setDoc(doc(db, collectionName, itemId), item);

@@ -1056,13 +1056,26 @@ async function syncWithFirestore(collection, fallbackData) {
 ```json
 {
   "dependencies": {
-    "@supabase/supabase-js": "^2.110.2", // Présent mais non utilisé
     "firebase": "^12.15.0", // Utilisé pour sync
     "express": "^4.21.2", // Utilisé pour API
-    "pg": "^8.22.0" // PostgreSQL driver - non utilisé
+    "@google/genai": "^2.4.0", // IA Gemini
+    "zod": "^3.25.76", // Validation
+    "winston": "^3.19.0", // Logging
+    "helmet": "^8.2.0", // Sécurité
+    "cors": "^2.8.6", // CORS
+    "express-rate-limit": "^8.5.2", // Rate limiting
+    "motion": "^12.23.24", // Animations
+    "vite": "^6.2.3", // Build
+    "dotenv": "^17.2.3" // Variables env
   }
 }
 ```
+
+**Nettoyage effectué (2026-07-18)** :
+
+- ✅ Suppression de `@supabase/supabase-js` (non utilisé)
+- ✅ Suppression de `pg` (PostgreSQL driver, non utilisé)
+- ✅ Archivage de `db/schema.sql`, `db/policies.sql`, `db/migrate.js` vers `docs/future-db/`
 
 ---
 

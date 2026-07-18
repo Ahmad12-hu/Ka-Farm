@@ -29,7 +29,6 @@ class SyncManager {
       this.sync();
     }
 
-    console.log('[SyncManager] Initialisé');
   }
 
   updateOnlineStatus() {
@@ -38,7 +37,6 @@ class SyncManager {
   }
 
   handleOnline() {
-    console.log('[SyncManager] Connexion rétablie');
     this.isOnline = true;
     this.updateUI();
     
@@ -52,7 +50,6 @@ class SyncManager {
   }
 
   handleOffline() {
-    console.log('[SyncManager] Connexion perdue');
     this.isOnline = false;
     this.updateUI();
 
@@ -139,7 +136,6 @@ class SyncManager {
         return;
       }
 
-      console.log(`[SyncManager] Synchronisation de ${queue.length} éléments`);
 
       // Traiter chaque élément de la file
       for (const item of queue) {
@@ -201,7 +197,6 @@ class SyncManager {
         await this.deleteInFirebase(collection, data.id);
         break;
       default:
-        console.warn('[SyncManager] Type inconnu:', type);
     }
   }
 
@@ -242,7 +237,6 @@ class SyncManager {
   async refreshFromFirebase() {
     // Rafraîchir les données depuis Firebase
     // Cette méthode sera appelée après une synchronisation réussie
-    console.log('[SyncManager] Rafraîchissement des données Firebase');
 
     // Déclencher un événement pour que les modules se rafraîchissent
     window.dispatchEvent(new CustomEvent('ka_data_refresh'));

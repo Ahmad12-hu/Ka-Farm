@@ -34,7 +34,6 @@ export const MarginSimulatorModule = {
     this.setupListeners();
     this.render();
     this.loadInitialData();
-    console.log('MarginSimulatorModule initialized');
   },
 
   cacheElements() {
