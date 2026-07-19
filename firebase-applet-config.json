@@ -1,10 +1,9 @@
 {
-  "projectId": "lively-ethos-5k76w",
-  "appId": "1:632640931614:web:9d0c0741f7211f23b02b0f",
-  "apiKey": "AIzaSyBeS6QwXu6Q202BTuijVaPb0NUCZXY3J7c",
-  "authDomain": "lively-ethos-5k76w.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-kafarm-d1b23eed-0527-4681-a20b-77a046366ae2",
-  "storageBucket": "lively-ethos-5k76w.firebasestorage.app",
-  "messagingSenderId": "632640931614",
-  "measurementId": ""
+  "projectId": "ka-farm-prod",
+  "appId": "1:619468432860:web:557e910835d05c07afdb19",
+  "apiKey": "AIzaSyDtlSLpj9QeYoD2bV-HEVBR1F-zIeSJko8",
+  "authDomain": "ka-farm-prod.firebaseapp.com",
+  "storageBucket": "ka-farm-prod.firebasestorage.app",
+  "messagingSenderId": "619468432860",
+  "measurementId": "G-D2Y125C2N4"
 }
