@@ -41,10 +41,9 @@ describe('KAStorage', () => {
     const testKey = 'ka_farm_test_remove_key';
     KAStorage.set(testKey, 'test_value');
     expect(KAStorage.get(testKey)).toBe('test_value');
-    const scopedKey = KAStorage.getScopedKey(testKey);
-    localStorage.removeItem(scopedKey);
+    KAStorage.remove(testKey);
     const retrieved = KAStorage.get(testKey);
-    expect(retrieved).toBeNull();
+    expect(retrieved).toBeUndefined();
   });
 });
 

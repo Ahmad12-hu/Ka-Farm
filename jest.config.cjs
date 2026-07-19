@@ -1,7 +1,8 @@
-export default {
+/** @type {import('jest').Config} */
+module.exports = {
   testEnvironment: 'jsdom',
   transform: {
-    '^.+\\.js$': 'babel-jest'
+    '^.+\\.js$': ['babel-jest', { configFile: './babel.config.cjs' }]
   },
   moduleFileExtensions: ['js', 'json'],
   testMatch: ['**/__tests__/**/*.test.js'],
@@ -13,5 +14,8 @@ export default {
   ],
   coverageDirectory: 'coverage',
   verbose: true,
-  testTimeout: 10000
+  testTimeout: 10000,
+  transformIgnorePatterns: [
+    'node_modules/(?!(firebase-admin|@firebase|@google-cloud|gaxios|google-auth-library|google-gax)/)'
+  ]
 };

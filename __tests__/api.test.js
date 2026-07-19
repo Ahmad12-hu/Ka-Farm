@@ -26,6 +26,23 @@ jest.mock('firebase/firestore', () => ({
   setDoc: jest.fn()
 }));
 
+// Mock firebase-admin submodules
+jest.mock('firebase-admin/app', () => ({
+  initializeApp: jest.fn(() => ({ name: '[DEFAULT]' })),
+  cert: jest.fn(() => ({ projectId: 'ka-farm-test' }))
+}));
+
+jest.mock('firebase-admin/firestore', () => ({
+  getFirestore: jest.fn(() => ({
+    collection: jest.fn(() => ({
+      doc: jest.fn(() => ({
+        get: jest.fn(() => Promise.resolve({ exists: false })),
+        set: jest.fn(() => Promise.resolve())
+      }))
+    }))
+  }))
+}));
+
 // Mock fetch for weather API test
 global.fetch = jest.fn(() =>
   Promise.resolve({
@@ -41,6 +58,12 @@ global.fetch = jest.fn(() =>
     })
   })
 );
+
+process.env.FIREBASE_SERVICE_ACCOUNT_KEY = JSON.stringify({
+  project_id: 'ka-farm-test',
+  client_email: 'test@ka-farm-test.iam.gserviceaccount.com',
+  private_key: '-----BEGIN PRIVATE KEY-----\\nMOCK\\n-----END PRIVATE KEY-----\\n'
+});
 
 const request = require('supertest');
 const app = require('../api/index.js').default;

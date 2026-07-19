@@ -324,6 +324,15 @@ export const KAStorage = {
     }
   },
 
+  remove(key) {
+    try {
+      const scopedKey = this.getScopedKey(key);
+      localStorage.removeItem(scopedKey);
+    } catch (e) {
+      ErrorHandler.log(e, `Storage.remove: ${key}`);
+    }
+  },
+
   // Core collections
   getCrops() {
     return this.get('ka_farm_crops', DEFAULT_CROPS);

@@ -1,14 +1,13 @@
 import express from 'express';
 import { GoogleGenAI } from '@google/genai';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
-import path from 'path';
-import fs from 'fs';
+import { cert, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { logger } from '../js/modules/logger.js';
 import { z } from 'zod';
 import { Cache } from '../js/modules/cache.js';
 import helmet from 'helmet';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 
 // Validation schemas for API inputs
 const CropSchema = z.object({
@@ -129,19 +128,79 @@ const CropProfitSchema = z.object({
   notes: z.string().optional()
 });
 
-// Initialize Firebase
-const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
-let firebaseApp, db;
+// Helper to check if we're in production mode
+function isProduction() {
+  return process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+}
+
+// Initialize Firebase Admin SDK (for secure backend operations)
+let adminDb = null;
+let firebaseInitializationError = null;
+
 try {
-  if (fs.existsSync(configPath)) {
-    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    firebaseApp = initializeApp(firebaseConfig);
-    db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+  if (!serviceAccountKey) {
+    firebaseInitializationError = new Error(
+      isProduction()
+        ? 'Configuration Firebase Admin manquante ou invalide en production'
+        : 'Firebase Admin non configure. Definissez FIREBASE_SERVICE_ACCOUNT_KEY pour activer Firestore.'
+    );
   } else {
-    console.warn("firebase-applet-config.json not found in Vercel runtime. Using in-memory fallback.");
+    const parsedServiceAccount = JSON.parse(serviceAccountKey);
+    const serviceAccount = {
+      projectId: parsedServiceAccount.projectId || parsedServiceAccount.project_id,
+      clientEmail: parsedServiceAccount.clientEmail || parsedServiceAccount.client_email,
+      privateKey: (parsedServiceAccount.privateKey || parsedServiceAccount.private_key || '').replace(/\\n/g, '\n')
+    };
+
+    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY doit contenir project_id, client_email et private_key');
+    }
+
+    const adminApp = initializeApp({
+      credential: cert(serviceAccount),
+      projectId: serviceAccount.projectId
+    });
+
+    adminDb = getFirestore(adminApp);
+    logger.info('Firebase Admin SDK initialized successfully');
   }
 } catch (e) {
-  logger.error("Failed to initialize Firebase in Vercel function", { error: e.message });
+  adminDb = null;
+  firebaseInitializationError = new Error(
+    isProduction()
+      ? 'Configuration Firebase Admin manquante ou invalide en production'
+      : `Firebase Admin non configure ou invalide: ${e.message}`
+  );
+  logger.error('Failed to initialize Firebase Admin SDK', { error: e.message, stack: e.stack });
+}
+
+function getFirestoreUnavailableMessage() {
+  if (firebaseInitializationError) {
+    return firebaseInitializationError.message;
+  }
+
+  if (!adminDb) {
+    return isProduction()
+      ? 'Service Firestore indisponible en production'
+      : 'Firebase Admin non configure. Definissez FIREBASE_SERVICE_ACCOUNT_KEY pour activer Firestore.';
+  }
+
+  return null;
+}
+
+function requireFirestoreReady(req, res, next) {
+  const errorMessage = getFirestoreUnavailableMessage();
+  if (errorMessage) {
+    logger.error('Firestore unavailable for API route', {
+      route: `${req.method} ${req.originalUrl}`,
+      error: errorMessage
+    });
+    return res.status(503).json({ error: errorMessage });
+  }
+
+  next();
 }
 
 const app = express();
@@ -165,9 +224,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// Rate limiting middleware
-const rateLimit = require('express-rate-limit');
-
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
@@ -176,8 +232,31 @@ const apiLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Rate limiting for sensitive write routes (finances, employees)
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit each IP to 30 write requests per windowMs
+  message: { error: 'Trop de requêtes d\'écriture. Veuillez réessayer dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Apply rate limiting to all API routes
 app.use('/api', apiLimiter);
+app.use([
+  '/api/crops',
+  '/api/parcelles',
+  '/api/tasks',
+  '/api/finances',
+  '/api/employees',
+  '/api/cheptel',
+  '/api/elevage/production',
+  '/api/elevage/health',
+  '/api/treatments',
+  '/api/crop-profits',
+  '/api/messages',
+  '/api/stocks'
+], requireFirestoreReady);
 
 // In-memory fallback stores
 let serverMessages = [
@@ -237,36 +316,53 @@ let serverElevageHealth = [
 let serverTreatments = [];
 let serverCropProfits = [];
 
-// Helper to sync with Firestore or return in-memory data
+// Helper to read from Firestore using Admin SDK
 async function syncWithFirestore(collection, fallbackData) {
+  const errorMsg = getFirestoreUnavailableMessage();
+  if (errorMsg) {
+    logger.error(`Firestore read error for ${collection}`, { error: errorMsg });
+    throw new Error(errorMsg);
+  }
+
   try {
-    if (!db) throw new Error("Database not initialized");
-    const docSnap = await getDoc(doc(db, "app_data", collection));
-    if (docSnap.exists()) {
+    const docSnap = await adminDb.collection("app_data").doc(collection).get();
+    if (docSnap.exists) {
       return docSnap.data().data || fallbackData;
     }
     return fallbackData;
   } catch (err) {
     logger.error(`Firestore read error for ${collection}`, { error: err.message });
-    return fallbackData;
+    throw err;
   }
 }
 
 async function saveToFirestore(collection, data) {
+  const errorMsg = getFirestoreUnavailableMessage();
+  if (errorMsg) {
+    logger.error(`Firestore write error for ${collection}`, { error: errorMsg });
+    throw new Error(errorMsg);
+  }
+
   try {
-    if (!db) throw new Error("Database not initialized");
-    await setDoc(doc(db, "app_data", collection), { data, updatedAt: new Date().toISOString() });
+    await adminDb.collection("app_data").doc(collection).set({
+      data,
+      updatedAt: new Date().toISOString()
+    });
     return { success: true };
   } catch (err) {
     logger.error(`Firestore write error for ${collection}`, { error: err.message });
-    return { success: false, fallback: true };
+    throw err;
   }
 }
 
 // ==================== CROPS ====================
 app.get('/api/crops', async (req, res) => {
-  const data = await Cache.memo('crops_list', async () => await syncWithFirestore('crops', serverCrops), 30000);
-  res.json(data);
+  try {
+    const data = await Cache.memo('crops_list', async () => await syncWithFirestore('crops', serverCrops), 30000);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/crops', async (req, res) => {
@@ -284,6 +380,9 @@ app.post('/api/crops', async (req, res) => {
     res.json({ success: true, crop });
   } catch (error) {
     logger.error('Error saving crop', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
@@ -312,8 +411,12 @@ app.delete('/api/crops/:id', async (req, res) => {
 
 // ==================== PARCELLES ====================
 app.get('/api/parcelles', async (req, res) => {
-  const data = await Cache.memo('parcelles_list', async () => await syncWithFirestore('parcelles', serverParcelles), 30000);
-  res.json(data);
+  try {
+    const data = await Cache.memo('parcelles_list', async () => await syncWithFirestore('parcelles', serverParcelles), 30000);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/parcelles', async (req, res) => {
@@ -331,6 +434,9 @@ app.post('/api/parcelles', async (req, res) => {
     res.json({ success: true, parcelle });
   } catch (error) {
     logger.error('Error saving parcelle', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
@@ -359,8 +465,12 @@ app.delete('/api/parcelles/:id', async (req, res) => {
 
 // ==================== TASKS ====================
 app.get('/api/tasks', async (req, res) => {
-  const data = await Cache.memo('tasks_list', async () => await syncWithFirestore('tasks', serverTasks), 15000);
-  res.json(data);
+  try {
+    const data = await Cache.memo('tasks_list', async () => await syncWithFirestore('tasks', serverTasks), 15000);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/tasks', async (req, res) => {
@@ -377,6 +487,9 @@ app.post('/api/tasks', async (req, res) => {
     res.json({ success: true, task });
   } catch (error) {
     logger.error('Error saving task', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
@@ -405,9 +518,16 @@ app.delete('/api/tasks/:id', async (req, res) => {
 
 // ==================== FINANCES ====================
 app.get('/api/finances', async (req, res) => {
-  const data = await Cache.memo('finances_list', async () => await syncWithFirestore('finances', serverFinances), 30000);
-  res.json(data);
+  try {
+    const data = await Cache.memo('finances_list', async () => await syncWithFirestore('finances', serverFinances), 30000);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
+
+// Apply write rate limiting to finances routes
+app.use('/api/finances', writeLimiter);
 
 app.post('/api/finances', async (req, res) => {
   try {
@@ -423,22 +543,40 @@ app.post('/api/finances', async (req, res) => {
     res.json({ success: true, finance });
   } catch (error) {
     logger.error('Error saving finance', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
 
 app.delete('/api/finances/:id', async (req, res) => {
-  const { id } = req.params;
-  serverFinances = serverFinances.filter(f => f.id !== id);
-  await saveToFirestore('finances', serverFinances);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+    serverFinances = serverFinances.filter(f => f.id !== id);
+    await saveToFirestore('finances', serverFinances);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting finance', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Erreur lors de la suppression' });
+  }
 });
 
 // ==================== EMPLOYEES ====================
 app.get('/api/employees', async (req, res) => {
-  const data = await Cache.memo('employees_list', async () => await syncWithFirestore('employees', serverEmployees), 30000);
-  res.json(data);
+  try {
+    const data = await Cache.memo('employees_list', async () => await syncWithFirestore('employees', serverEmployees), 30000);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
+
+// Apply write rate limiting to employees routes
+app.use('/api/employees', writeLimiter);
 
 app.post('/api/employees', async (req, res) => {
   try {
@@ -454,6 +592,9 @@ app.post('/api/employees', async (req, res) => {
     res.json({ success: true, employee });
   } catch (error) {
     logger.error('Error saving employee', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
@@ -474,16 +615,28 @@ app.put('/api/employees/:id', async (req, res) => {
 });
 
 app.delete('/api/employees/:id', async (req, res) => {
-  const { id } = req.params;
-  serverEmployees = serverEmployees.filter(e => e.id !== id);
-  await saveToFirestore('employees', serverEmployees);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+    serverEmployees = serverEmployees.filter(e => e.id !== id);
+    await saveToFirestore('employees', serverEmployees);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting employee', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Erreur lors de la suppression' });
+  }
 });
 
 // ==================== ELEVAGE / CHEPTEL ====================
 app.get('/api/cheptel', async (req, res) => {
-  const data = await Cache.memo('cheptel_list', async () => await syncWithFirestore('cheptel', serverCheptel), 30000);
-  res.json(data);
+  try {
+    const data = await Cache.memo('cheptel_list', async () => await syncWithFirestore('cheptel', serverCheptel), 30000);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/cheptel', async (req, res) => {
@@ -500,6 +653,9 @@ app.post('/api/cheptel', async (req, res) => {
     res.json({ success: true, group });
   } catch (error) {
     logger.error('Error saving cheptel', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
@@ -528,9 +684,13 @@ app.delete('/api/cheptel/:id', async (req, res) => {
 
 // ==================== ELEVAGE PRODUCTION ====================
 app.get('/api/elevage/production', async (req, res) => {
-  const data = await syncWithFirestore('elevage_production', serverElevageProduction);
-  const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-  res.json(sorted);
+  try {
+    const data = await syncWithFirestore('elevage_production', serverElevageProduction);
+    const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json(sorted);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/elevage/production', async (req, res) => {
@@ -541,22 +701,37 @@ app.post('/api/elevage/production', async (req, res) => {
     res.json({ success: true, log });
   } catch (error) {
     logger.error('Error saving elevage production', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
 
 app.delete('/api/elevage/production/:id', async (req, res) => {
-  const { id } = req.params;
-  serverElevageProduction = serverElevageProduction.filter(l => l.id !== id);
-  await saveToFirestore('elevage_production', serverElevageProduction);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+    serverElevageProduction = serverElevageProduction.filter(l => l.id !== id);
+    await saveToFirestore('elevage_production', serverElevageProduction);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting elevage production', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Erreur lors de la suppression' });
+  }
 });
 
 // ==================== ELEVAGE HEALTH ====================
 app.get('/api/elevage/health', async (req, res) => {
-  const data = await syncWithFirestore('elevage_health', serverElevageHealth);
-  const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-  res.json(sorted);
+  try {
+    const data = await syncWithFirestore('elevage_health', serverElevageHealth);
+    const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json(sorted);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/elevage/health', async (req, res) => {
@@ -567,21 +742,36 @@ app.post('/api/elevage/health', async (req, res) => {
     res.json({ success: true, log });
   } catch (error) {
     logger.error('Error saving elevage health', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
 
 app.delete('/api/elevage/health/:id', async (req, res) => {
-  const { id } = req.params;
-  serverElevageHealth = serverElevageHealth.filter(l => l.id !== id);
-  await saveToFirestore('elevage_health', serverElevageHealth);
-  res.json({ success: true });
+  try {
+    const { id } = req.params;
+    serverElevageHealth = serverElevageHealth.filter(l => l.id !== id);
+    await saveToFirestore('elevage_health', serverElevageHealth);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting elevage health', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Erreur lors de la suppression' });
+  }
 });
 
 // ==================== TREATMENTS ====================
 app.get('/api/treatments', async (req, res) => {
-  const data = await syncWithFirestore('treatments', serverTreatments);
-  res.json(data);
+  try {
+    const data = await syncWithFirestore('treatments', serverTreatments);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/treatments', async (req, res) => {
@@ -603,6 +793,9 @@ app.post('/api/treatments', async (req, res) => {
     res.json({ success: true, treatment });
   } catch (error) {
     logger.error('Error saving treatment', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
@@ -619,14 +812,21 @@ app.post('/api/treatments/sync', async (req, res) => {
     }
   } catch (error) {
     logger.error('Error syncing treatments', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Erreur lors de la synchronisation' });
   }
 });
 
 // ==================== CROP PROFITS ====================
 app.get('/api/crop-profits', async (req, res) => {
-  const data = await syncWithFirestore('crop_profits', serverCropProfits);
-  res.json(data);
+  try {
+    const data = await syncWithFirestore('crop_profits', serverCropProfits);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/crop-profits', async (req, res) => {
@@ -648,6 +848,9 @@ app.post('/api/crop-profits', async (req, res) => {
     res.json({ success: true, profit });
   } catch (error) {
     logger.error('Error saving crop profit', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
@@ -664,14 +867,21 @@ app.post('/api/crop-profits/sync', async (req, res) => {
     }
   } catch (error) {
     logger.error('Error syncing crop profits', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Erreur lors de la synchronisation' });
   }
 });
 
 // ==================== MESSAGES ====================
 app.get('/api/messages', async (req, res) => {
-  const data = await syncWithFirestore('messages', serverMessages);
-  res.json(data);
+  try {
+    const data = await syncWithFirestore('messages', serverMessages);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/messages', async (req, res) => {
@@ -690,24 +900,39 @@ app.post('/api/messages', async (req, res) => {
     res.json({ success: true, message: newMsg });
   } catch (error) {
     logger.error('Error saving message', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message || 'Erreur de validation' });
   }
 });
 
 // ==================== STOCKS ====================
 app.get('/api/stocks', async (req, res) => {
-  const data = await syncWithFirestore('stocks', serverStocks);
-  res.json(data);
+  try {
+    const data = await syncWithFirestore('stocks', serverStocks);
+    res.json(data);
+  } catch (error) {
+    res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
+  }
 });
 
 app.post('/api/stocks', async (req, res) => {
-  const { stocks } = req.body;
-  if (stocks && Array.isArray(stocks)) {
-    serverStocks = stocks;
-    await saveToFirestore('stocks', serverStocks);
-    res.json({ success: true, message: 'Stocks synchronisés', stocks });
-  } else {
-    res.status(400).json({ error: 'Données de stock invalides' });
+  try {
+    const { stocks } = req.body;
+    if (stocks && Array.isArray(stocks)) {
+      serverStocks = stocks;
+      await saveToFirestore('stocks', serverStocks);
+      res.json({ success: true, message: 'Stocks synchronisés', stocks });
+    } else {
+      res.status(400).json({ error: 'Données de stock invalides' });
+    }
+  } catch (error) {
+    logger.error('Error saving stocks', { error: error.message });
+    if (error.message.includes('Firestore') || error.message.includes('Firebase Admin')) {
+      return res.status(503).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Erreur lors de la sauvegarde' });
   }
 });
 
