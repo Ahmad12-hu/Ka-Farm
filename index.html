@@ -195,6 +195,30 @@
     import { KAStorage } from '/js/storage.js';
     import { Theme } from '/js/components/theme-toggle.js';
 
+    // Active navigation state management
+    function updateActiveNavLink() {
+      const currentPath = window.location.pathname;
+      const hash = window.location.hash;
+
+      document.querySelectorAll('nav a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href !== '#' && href !== '/pages/shared/elevage.html' && href !== '/pages/shared/training.html') {
+          if (hash === href) {
+            link.classList.add('text-emerald-400');
+            link.classList.add('after:absolute', 'after:bottom-0', 'after:left-0', 'after:right-0', 'after:h-0.5', 'after:bg-emerald-500', 'after:rounded-full');
+          }
+        }
+      });
+
+      // Special handling for actual dashboard pages when on index
+      if (currentPath === '/' || currentPath === '/index.html') {
+        document.querySelectorAll('nav a[href^="/pages/"]').forEach(link => {
+          link.classList.remove('text-emerald-400');
+          link.classList.remove('after:absolute', 'after:bottom-0', 'after:left-0', 'after:right-0', 'after:h-0.5', 'after:bg-emerald-500', 'after:rounded-full');
+        });
+      }
+    }
+
     // Global action helpers
     window.accessDashboard = (roleType) => {
       KAStorage.init();
@@ -232,6 +256,12 @@
 
       // Initialize theme toggle
       Theme.initToggleInContainer('#theme-toggle-container');
+
+      // Update active nav link on scroll and load
+      updateActiveNavLink();
+
+      // Update on hash change
+      window.addEventListener('hashchange', updateActiveNavLink);
 
       // Check user session for custom button label
       const user = UserManager.getCurrentUser();
@@ -296,9 +326,18 @@
 
 <body class="font-sans antialiased bg-[#040D06] text-slate-100 selection:bg-emerald-500 selection:text-white">
 
+  <!-- Skip Navigation for Accessibility -->
+  <a href="#main-content"
+    class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-emerald-600 text-white px-4 py-2 rounded-lg z-[100] font-bold text-sm shadow-lg">
+    Aller au contenu principal
+  </a>
+
+  <!-- Main Content Anchor -->
+  <div id="main-content"></div>
+
   <!-- Header / Navigation Bar -->
   <header
-    class="sticky top-0 z-50 bg-[#040D06]/90 backdrop-blur-md border-b border-emerald-950/40 px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+    class="sticky top-0 z-50 bg-[#040D06]/95 backdrop-blur-md border-b border-emerald-950/40 px-3 sm:px-6 lg:px-8 py-2 sm:py-3 shadow-lg shadow-black/5">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <!-- Logo & Title -->
       <a href="#" class="flex items-center gap-2 sm:gap-3">
@@ -320,13 +359,14 @@
 
       <!-- Navigation Links (Desktop) -->
       <nav class="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-bold text-slate-300">
-        <a href="#vision" class="hover:text-emerald-400 transition-colors">Notre Vision</a>
-        <a href="#exploitation" class="hover:text-emerald-400 transition-colors">L'Exploitation</a>
-        <a href="#meteo" class="hover:text-emerald-400 transition-colors">Météo Sénégal</a>
-        <a href="#ai-advisor" class="hover:text-emerald-400 transition-colors">Conseiller IA</a>
-        <a href="/pages/shared/elevage.html" class="hover:text-emerald-400 transition-colors">Élevage</a>
-        <a href="/pages/shared/training.html" class="hover:text-emerald-400 transition-colors">Guide & Formation</a>
-        <a href="#membres" class="hover:text-emerald-400 transition-colors">Équipe & Accès</a>
+        <a href="#vision" class="hover:text-emerald-400 transition-colors relative py-1">Notre Vision</a>
+        <a href="#exploitation" class="hover:text-emerald-400 transition-colors relative py-1">L'Exploitation</a>
+        <a href="#meteo" class="hover:text-emerald-400 transition-colors relative py-1">Météo Sénégal</a>
+        <a href="#ai-advisor" class="hover:text-emerald-400 transition-colors relative py-1">Conseiller IA</a>
+        <a href="/pages/shared/elevage.html" class="hover:text-emerald-400 transition-colors relative py-1">Élevage</a>
+        <a href="/pages/shared/training.html" class="hover:text-emerald-400 transition-colors relative py-1">Guide &
+          Formation</a>
+        <a href="#membres" class="hover:text-emerald-400 transition-colors relative py-1">Équipe & Accès</a>
       </nav>
 
       <!-- Access Button -->
@@ -338,8 +378,9 @@
           <span id="login-btn-text">Espace de Gestion</span>
         </button>
         <!-- Mobile hamburger -->
-        <button onclick="const menu = document.getElementById('mobile-menu'); menu.classList.toggle('hidden');"
-          class="lg:hidden p-2 text-slate-300 hover:text-white rounded-lg">
+        <button id="mobile-menu-toggle" aria-label="Menu de navigation mobile" aria-expanded="false"
+          aria-controls="mobile-menu"
+          class="lg:hidden p-2.5 text-slate-300 hover:text-white rounded-lg hover:bg-emerald-500/10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-[#040D06] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center">
           <i data-lucide="menu" class="h-5 w-5"></i>
         </button>
       </div>
@@ -347,7 +388,7 @@
 
     <!-- Mobile Navigation Drawer -->
     <div id="mobile-menu"
-      class="hidden lg:hidden border-t border-emerald-950/40 mt-2 sm:mt-3 py-3 sm:py-4 space-y-2 sm:space-y-3 text-left animate-fadeIn bg-[#040D06]">
+      class="hidden lg:hidden border-t border-emerald-950/40 mt-2 sm:mt-3 py-3 sm:py-4 space-y-2 sm:space-y-3 text-left animate-fadeIn bg-[#040D06] shadow-xl shadow-black/20">
       <a href="#vision" onclick="document.getElementById('mobile-menu').classList.add('hidden')"
         class="block px-4 py-2.5 text-xs sm:text-xs font-bold text-slate-300 hover:bg-[#0B2112]/50 hover:text-white rounded-lg">Notre
         Vision</a>
@@ -400,7 +441,7 @@
       </h1>
 
       <!-- Description -->
-      <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
+      <p class="text-sm sm:text-base text-slate-200 max-w-2xl mx-auto font-medium leading-relaxed">
         KA-Farm est la solution de gestion agricole numérique de référence au Sénégal. Chaque exploitant bénéficie d'un
         environnement sécurisé pour piloter ses cultures, son élevage, sa trésorerie et ses ressources humaines.
         Multi-utilisateurs, multi-exploitations, une plateforme unifiée.
@@ -430,7 +471,7 @@
         <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Connectivité en Temps
           Réel</span>
         <h2 class="text-2xl font-black text-white">Station Météorologique Maraîchère</h2>
-        <p class="text-xs text-slate-400 font-semibold max-w-md mx-auto">Données climatologiques en direct des
+        <p class="text-xs text-slate-200 font-semibold max-w-md mx-auto">Données climatologiques en direct des
           principales zones horticoles du Sénégal via notre infrastructure de surveillance.</p>
       </div>
 
@@ -488,7 +529,7 @@
                   data-lucide="map-pin" class="h-4.5 w-4.5"></i></div>
               <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Terroir Exploité</p>
               <p class="text-2xl font-black text-white font-mono">Sénégal</p>
-              <p class="text-[9px] text-slate-500 font-bold">Terroirs horticoles diversifiés</p>
+              <p class="text-[9px] text-slate-300 font-bold">Terroirs horticoles diversifiés</p>
             </div>
 
             <div class="p-5 bg-[#0B2112]/30 border border-[#143E23]/20 rounded-2xl text-left space-y-2">
@@ -496,7 +537,7 @@
                   data-lucide="layers" class="h-4.5 w-4.5"></i></div>
               <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Parcelles Actives</p>
               <p class="text-2xl font-black text-white font-mono">12 Planches</p>
-              <p class="text-[9px] text-slate-500 font-bold">Rotation culturale rigoureuse</p>
+              <p class="text-[9px] text-slate-300 font-bold">Rotation culturale rigoureuse</p>
             </div>
 
             <div class="p-5 bg-[#0B2112]/30 border border-[#143E23]/20 rounded-2xl text-left space-y-2">
@@ -504,7 +545,7 @@
                   data-lucide="beef" class="h-4.5 w-4.5"></i></div>
               <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Élevage Circulaire</p>
               <p class="text-2xl font-black text-white font-mono">Bovins & Ovins</p>
-              <p class="text-[9px] text-slate-500 font-bold">Production laitière et amendements organiques</p>
+              <p class="text-[9px] text-slate-300 font-bold">Production laitière et amendements organiques</p>
             </div>
 
             <div class="p-5 bg-[#0B2112]/30 border border-[#143E23]/20 rounded-2xl text-left space-y-2">
@@ -512,7 +553,7 @@
                   data-lucide="sun" class="h-4.5 w-4.5"></i></div>
               <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Source d'Énergie</p>
               <p class="text-2xl font-black text-white font-mono">100% Solaire</p>
-              <p class="text-[9px] text-slate-500 font-bold">Système d'irrigation autonome 100 % solaire</p>
+              <p class="text-[9px] text-slate-300 font-bold">Système d'irrigation autonome 100 % solaire</p>
             </div>
           </div>
         </div>
@@ -672,7 +713,7 @@
 
         <!-- Chat Output Messages area -->
         <div id="ai-chat-messages"
-          class="flex-1 p-6 space-y-4 overflow-y-auto max-h-[340px] text-left text-xs text-slate-200">
+          class="flex-1 p-6 space-y-4 overflow-y-auto max-h-[340px] text-left text-xs text-slate-200 scroll-smooth">
           <!-- Welcome msg -->
           <div class="flex gap-3 items-start">
             <div
@@ -709,7 +750,7 @@
         <form id="ai-chat-form" class="p-4 bg-[#040D06] border-t border-emerald-950/40 flex gap-2">
           <input type="text" id="ai-chat-input"
             placeholder="Saisissez votre question (ex: rotation culturale, lutte biologique...)"
-            class="flex-1 bg-[#0B2112]/50 border border-emerald-950/60 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 outline-none focus:border-emerald-500/50 text-xs font-semibold"
+            class="flex-1 bg-[#0B2112]/50 border border-emerald-950/60 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 text-xs font-semibold transition-all"
             required>
           <button type="submit" id="ai-chat-submit"
             class="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer">
