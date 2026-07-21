@@ -19,8 +19,16 @@ export default defineConfig(() => {
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
+          // CSS entries for HTML pages
+          'css/styles': path.resolve(__dirname, 'css/styles.css'),
+          'css/auth': path.resolve(__dirname, 'css/auth.css'),
+          'css/dashboard': path.resolve(__dirname, 'css/dashboard.css'),
+          'css/personal': path.resolve(__dirname, 'css/personal.css'),
+          'css/responsive': path.resolve(__dirname, 'css/responsive.css'),
+          'css/index': path.resolve(__dirname, 'css/index.css'),
           // Pages auth
           'pages/auth/login': path.resolve(__dirname, 'pages/auth/login.html'),
+          'pages/auth/login-js': path.resolve(__dirname, 'pages/auth/login.js'),
           'pages/auth/signup': path.resolve(__dirname, 'pages/auth/signup.html'),
           // Pages shared
           'pages/shared/alerts': path.resolve(__dirname, 'pages/shared/alerts.html'),
@@ -70,3 +78,4 @@ export default defineConfig(() => {
     },
   };
 });
+

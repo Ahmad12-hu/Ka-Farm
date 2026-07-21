@@ -95,26 +95,7 @@
   <!-- Shared App & Module Entry Points -->
   <script type="module" src="/js/router.js"></script>
   <script type="module" src="/js/app.js"></script>
-
-  <!-- Demo Data & Chart Rendering (Fallback) -->
-  <script type="module">
-    import { MarketPricesModule } from '/js/modules/market-prices.js';
-
-    // Si le module n'est pas initialisé par app.js, on l'initialise ici
-    if (!window.MarketPricesInitialized) {
-      document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-          const container = document.getElementById('market-prices-module');
-          if (container && !container.dataset.moduleLoaded) {
-            container.dataset.moduleLoaded = 'true';
-            if (MarketPricesModule && typeof MarketPricesModule.init === 'function') {
-              MarketPricesModule.init();
-            }
-          }
-        }, 500);
-      });
-    }
-  </script>
+  <script type="module" src="/pages/shared/market-prices.js"></script>
 
 </body>
 

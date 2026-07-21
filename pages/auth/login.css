@@ -1,0 +1,77 @@
+/* Login page styles */
+
+.skip-nav {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #10B981;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  z-index: 1000;
+  font-weight: bold;
+  text-decoration: none;
+  transition: top 0.3s;
+}
+
+.skip-nav:focus {
+  top: 16px;
+}
+
+/* Focus visible global */
+*:focus-visible {
+  outline: 2px solid #10B981;
+  outline-offset: 2px;
+}
+
+/* Improve contrast for dark mode inputs */
+.dark .auth-input::placeholder {
+  color: #94a3b8;
+}
+
+.dark .auth-input:focus {
+  border-color: #10B981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Error message styling */
+.error-message {
+  color: #EF4444;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+  display: none;
+}
+
+.error-message.visible {
+  display: block;
+}
+
+/* Loading state for buttons */
+.btn-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-top: -8px;
+  margin-left: -8px;
+  border: 2px solid #ffffff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

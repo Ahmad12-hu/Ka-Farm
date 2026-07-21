@@ -86,48 +86,7 @@
         </p>
     </div>
 
-    <script type="module">
-        import { Auth } from '/js/auth.js';
-
-        const form = document.getElementById('login-form');
-        const errorDiv = document.getElementById('error-message');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            errorDiv.classList.add('hidden');
-
-            try {
-                // Utiliser localStorage Auth
-                const success = await Auth.login(email, password);
-
-                if (!success) {
-                    return; // Auth.login gère déjà l'alerte
-                }
-
-                // Vérifier que c'est bien l'admin
-                const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@kafarm.sn';
-
-                if (email !== ADMIN_EMAIL) {
-                    errorDiv.textContent = 'Accès refusé. Vous n\'êtes pas administrateur.';
-                    errorDiv.classList.remove('hidden');
-                    Auth.logout();
-                    return;
-                }
-
-                // Redirection vers le dashboard admin
-                window.location.href = '/pages/admin/dashboard.html';
-
-            } catch (error) {
-                errorDiv.textContent = 'Erreur de connexion. Veuillez réessayer.';
-                errorDiv.classList.remove('hidden');
-                console.error('Login error:', error);
-            }
-        });
-    </script>
+    <script type="module" src="/pages/admin/login.js"></script>
 </body>
 
 </html>

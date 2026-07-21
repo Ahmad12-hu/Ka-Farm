@@ -141,24 +141,7 @@
     </div>
   </div>
 
-  <script type="module">
-    import { Router } from '/js/router.js';
-    import { Auth } from '/js/auth.js';
-
-    document.getElementById('signup-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('signup-name').value;
-      const email = document.getElementById('signup-email').value;
-      const role = document.getElementById('signup-role').value;
-      const pass = document.getElementById('signup-password').value;
-
-      // Utiliser localStorage pour l'inscription (mode création par défaut)
-      await Auth.signup(name, email, role, pass, 'create');
-    });
-
-    // Auto load icons
-    lucide.createIcons();
-  </script>
+  <script type="module" src="/pages/auth/signup.js"></script>
 </body>
 
 </html>
