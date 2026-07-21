@@ -1,6 +1,58 @@
 import { KAStorage } from '/js/storage.js';
 import { Toast } from '/js/components/toast.js';
 
+window.tryAccessDefault = () => {
+  const user = KAStorage.getCurrentUser();
+  if (user) {
+    window.accessDashboard(user.role.toLowerCase());
+  } else {
+    window.accessDashboard('terrain');
+  }
+};
+
+window.accessDashboard = (role) => {
+  let user = null;
+  if (role === 'amadou') {
+    user = {
+      uid: 'demo-amadou',
+      name: 'Amadou KA',
+      email: 'amadou@ka-farm.sn',
+      role: 'admin',
+      enterpriseName: 'KA Farm',
+      enterpriseCode: 'KA-FARM'
+    };
+  } else if (role === 'terrain') {
+    user = {
+      uid: 'demo-moussa',
+      name: 'Moussa KA',
+      email: 'moussa@ka-farm.sn',
+      role: 'Terrain',
+      enterpriseName: 'KA Farm',
+      enterpriseCode: 'KA-FARM'
+    };
+  } else if (role === 'aly') {
+    user = {
+      uid: 'demo-aly',
+      name: 'Aly KA',
+      email: 'aly@ka-farm.sn',
+      role: 'Bureau',
+      enterpriseName: 'KA Farm',
+      enterpriseCode: 'KA-FARM'
+    };
+  } else {
+    user = {
+      uid: 'demo-user',
+      name: 'Utilisateur KA',
+      email: 'user@ka-farm.sn',
+      role: 'Terrain',
+      enterpriseName: 'KA Farm',
+      enterpriseCode: 'KA-FARM'
+    };
+  }
+  KAStorage.setCurrentUser(user);
+  window.location.href = '/pages/shared/dashboard.html';
+};
+
 window.sendPreloadedQuestion = async (text) => {
   const input = document.getElementById('ai-chat-input');
   if (input) {
