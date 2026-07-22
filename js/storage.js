@@ -1,7 +1,6 @@
 // KA Farm - Storage Engine
 // Manages LocalStorage and fallback defaults
 
-import { KAFirebaseSync } from './firebase.js';
 import { ErrorHandler } from './modules/error-handler.js';
 
 const DEFAULT_CROPS = [
@@ -295,11 +294,6 @@ export const KAStorage = {
     if (!scopedCheck('ka_farm_group_orders')) this.saveGroupOrders(DEFAULT_GROUP_ORDERS);
     if (!scopedCheck('ka_farm_group_order_items')) this.saveGroupOrderItems(DEFAULT_GROUP_ORDER_ITEMS);
 
-    // Kicks off the Firebase live cloud synchronization
-    KAFirebaseSync.initSync((key, data) => {
-      // Notify current page that database data changed
-      document.dispatchEvent(new CustomEvent('ka_data_updated', { detail: { key, data } }));
-    });
   },
 
   get(key, fallback) {
@@ -317,8 +311,6 @@ export const KAStorage = {
     try {
       const scopedKey = this.getScopedKey(key);
       localStorage.setItem(scopedKey, JSON.stringify(val));
-      // Save changes to cloud Firestore asynchronously
-      KAFirebaseSync.saveToCloud(key, val);
     } catch (e) {
       ErrorHandler.log(e, `Storage.write: ${key}`);
     }
