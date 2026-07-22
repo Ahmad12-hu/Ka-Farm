@@ -1,26 +1,84 @@
 import { KAStorage } from '../storage.js';
 import { logger } from './logger.js';
 import { ErrorHandler } from './error-handler.js';
+import { UserManager } from '../user-manager.js';
 
 const HarvestsModule = {
   async init() {
     try {
-      ErrorHandler.log(new Error("Init"), 'HarvestsModule.init', 'info');
+      this.applyRbac();
       await this.fetchAndRenderHarvests();
+      this.setupModal();
     } catch (err) {
       ErrorHandler.log(err, 'HarvestsModule.init');
     }
   },
 
+  applyRbac() {
+    const addBtn = document.getElementById('btn-add-harvest');
+    if (!addBtn) return;
+
+    const canAdd = UserManager.canManageHarvests();
+    addBtn.disabled = !canAdd;
+    addBtn.classList.toggle('opacity-50', !canAdd);
+    addBtn.classList.toggle('pointer-events-none', !canAdd);
+    addBtn.title = canAdd ? 'Ajouter une récolte' : 'Accès restreint : rôle non autorisé';
+  },
+
+  setupModal() {
+    const modal = document.getElementById('harvest-modal');
+    const closeBtn = document.getElementById('btn-close-harvest-modal');
+    const cancelBtn = document.getElementById('btn-cancel-harvest');
+    const form = document.getElementById('harvest-form');
+    if (!modal || !form) return;
+
+    const hideModal = () => modal.classList.add('hidden');
+
+    const openModal = () => {
+      this.populateCropOptions();
+      modal.classList.remove('hidden');
+    };
+
+    const addBtn = document.getElementById('btn-add-harvest');
+    if (addBtn) {
+      addBtn.replaceWith(addBtn.cloneNode(true));
+    }
+
+    const newAddBtn = document.getElementById('btn-add-harvest');
+    if (newAddBtn) {
+      newAddBtn.addEventListener('click', () => {
+        if (!UserManager.canManageHarvests()) {
+          ErrorHandler.showToast('Vous n’avez pas les droits pour ajouter une récolte.', 'error');
+          return;
+        }
+        openModal();
+      });
+    }
+
+    closeBtn.addEventListener('click', hideModal);
+    cancelBtn.addEventListener('click', hideModal);
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      this.saveHarvest();
+    });
+  },
+
+  populateCropOptions() {
+    const select = document.getElementById('harvest-crop');
+    if (!select) return;
+    const crops = KAStorage.getCrops();
+    const uniqueNames = Array.from(new Set(crops.map(c => c.name)));
+    select.innerHTML = '<option value="">Sélectionner une culture</option>' +
+      uniqueNames.map(name => `<option value="${name}">${name}</option>`).join('');
+  },
+
   async fetchAndRenderHarvests() {
     const tableBody = document.getElementById('harvests-table-body');
-    const loadingRow = document.getElementById('loading-row');
+    if (!tableBody) return;
 
     try {
-      // 1. Récupérer les données depuis localStorage
       const harvests = KAStorage.getHarvests();
-
-      // 2. Vider le tableau (sauf la ligne de chargement)
       tableBody.innerHTML = '';
 
       if (harvests.length === 0) {
@@ -28,10 +86,8 @@ const HarvestsModule = {
         return;
       }
 
-      // 3. Trier par date (plus récent en premier)
       const sortedHarvests = [...harvests].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      // 4. Créer et insérer les lignes pour chaque récolte
       sortedHarvests.forEach(harvest => {
         const row = document.createElement('tr');
         row.className = "hover:bg-slate-50 dark:hover:bg-[#0E2F19]/50 transition-colors";
@@ -53,17 +109,51 @@ const HarvestsModule = {
         tableBody.appendChild(row);
       });
 
-      // Recréer les icônes Lucide
       if (window.lucide) {
         lucide.createIcons();
       }
 
     } catch (err) {
       ErrorHandler.log(err, 'HarvestsModule.fetchAndRenderHarvests', 'error');
-      loadingRow.innerHTML = `<td colspan="6" class="p-8 text-center text-rose-400 font-semibold">Erreur: Impossible de charger les données.</td>`;
+      tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-400 font-semibold">Erreur: Impossible de charger les données.</td></tr>`;
     }
+  },
+
+  saveHarvest() {
+    const cropName = document.getElementById('harvest-crop').value;
+    const date = document.getElementById('harvest-date').value;
+    const quantity = parseFloat(document.getElementById('harvest-quantity').value) || 0;
+    const quality = document.getElementById('harvest-quality').value;
+    const notes = document.getElementById('harvest-notes').value;
+
+    if (!cropName || !date || quantity <= 0) {
+      ErrorHandler.showToast('Veuillez remplir la culture, la date et la quantité.', 'error');
+      return;
+    }
+
+    const crops = KAStorage.getCrops();
+    const crop = crops.find(c => c.name === cropName);
+    const parcelName = crop ? crop.field : 'N/A';
+
+    const harvest = {
+      id: `HARVEST-${Date.now()}`,
+      crop_name: cropName,
+      parcel_name: parcelName,
+      quantity_kg: quantity,
+      date,
+      quality,
+      notes
+    };
+
+    const harvests = KAStorage.getHarvests();
+    harvests.unshift(harvest);
+    KAStorage.saveHarvests(harvests);
+
+    ErrorHandler.showToast('Récolte enregistrée', 'success');
+    document.getElementById('harvest-modal').classList.add('hidden');
+    document.getElementById('harvest-form').reset();
+    this.fetchAndRenderHarvests();
   }
 };
 
-// Initialiser le module quand la page est chargée
 document.addEventListener('DOMContentLoaded', () => HarvestsModule.init());

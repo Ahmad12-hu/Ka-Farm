@@ -85,6 +85,14 @@ export const UserManager = {
     return user && (user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
   },
 
+  canManageHarvests() {
+    // Terrain records harvests in the field
+    // Bureau can also manage harvests for planning/analysis
+    // Admin and super_admin have full access
+    const user = this.getCurrentUser();
+    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+  },
+
   // Require login helper. Redirect to login if not authenticated
   requireAuth() {
     if (!this.isLoggedIn()) {
