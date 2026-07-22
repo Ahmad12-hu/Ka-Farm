@@ -2,6 +2,7 @@
 import { KAStorage } from '../storage.js';
 import { logger } from './logger.js';
 import { ErrorHandler } from './error-handler.js';
+import { UserManager } from '../user-manager.js';
 
 let liveStream = null;
 let currentSanitaryBase64 = '';
@@ -669,6 +670,10 @@ export const CropsModule = {
       this.deleteSanitaryRecord(cropId, recordId);
     };
 
+    window.analyzeSanitaryImage = () => {
+      this.analyzeSanitaryImage();
+    };
+
     // TREATMENT & DAR BINDINGS
     window.openTreatmentModal = () => {
       const modal = document.getElementById('treatment-modal');
@@ -1035,6 +1040,59 @@ export const CropsModule = {
     KAStorage.saveCrops(crops);
     this.renderCrops();
     this.renderSanitaryHistory(crops[cropIdx]);
+  },
+
+  async analyzeSanitaryImage() {
+    if (!currentSanitaryBase64) {
+      ErrorHandler.showToast("Veuillez d'abord capturer ou importer une photo.", "error");
+      return;
+    }
+
+    if (!UserManager.canEditCrops()) {
+      ErrorHandler.showToast("Accès refusé. Droits insuffisants pour le diagnostic IA.", "error");
+      return;
+    }
+
+    const resultDiv = document.getElementById('sanitary-ai-result');
+    const loadingDiv = document.getElementById('sanitary-ai-loading');
+    const contentDiv = document.getElementById('sanitary-ai-content');
+    const analyzeBtn = document.getElementById('sanitary-ai-analyze-btn');
+
+    if (!resultDiv || !loadingDiv || !contentDiv || !analyzeBtn) return;
+
+    try {
+      analyzeBtn.disabled = true;
+      resultDiv.classList.remove('hidden');
+      loadingDiv.classList.remove('hidden');
+      contentDiv.textContent = '';
+
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: "Diagnostique cette image de culture.",
+          image: currentSanitaryBase64
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Erreur HTTP ${response.status}`);
+      }
+
+      if (data.text) {
+        contentDiv.textContent = data.text;
+      } else {
+        contentDiv.textContent = "Aucun diagnostic retourné par l'IA.";
+      }
+    } catch (err) {
+      logger.error('Error analyzing sanitary image', { error: err.message });
+      contentDiv.textContent = `Erreur lors de l'analyse : ${err.message}`;
+    } finally {
+      loadingDiv.classList.add('hidden');
+      analyzeBtn.disabled = false;
+    }
   },
 
   getTreatments() {

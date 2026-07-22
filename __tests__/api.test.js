@@ -59,6 +59,7 @@ global.fetch = jest.fn(() =>
   })
 );
 
+process.env.GEMINI_API_KEY = 'test-api-key-for-mocking';
 process.env.FIREBASE_SERVICE_ACCOUNT_KEY = JSON.stringify({
   project_id: 'ka-farm-test',
   client_email: 'test@ka-farm-test.iam.gserviceaccount.com',
@@ -320,6 +321,42 @@ describe('API Endpoints', function() {
         .query({ lat: 14.7930 }); // Missing lon
 
       expect(response.status).toBe(400);
+    });
+  });
+
+  describe('POST /api/gemini', function() {
+    test('returns text response for text-only prompt', async function() {
+      const response = await request(app)
+        .post('/api/gemini')
+        .send({ prompt: 'Comment traiter le mildiou?' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.text).toBeDefined();
+      expect(response.body.text).toContain('Mocked AI response');
+    });
+
+    test('returns text response for image analysis', async function() {
+      const mockImage = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQABAF';
+      const response = await request(app)
+        .post('/api/gemini')
+        .send({ 
+          prompt: 'Diagnostique cette image.',
+          image: mockImage
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.text).toBeDefined();
+      expect(response.body.text).toContain('Mocked AI response');
+    });
+
+    test('rejects request without prompt', async function() {
+      const mockImage = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQABAF';
+      const response = await request(app)
+        .post('/api/gemini')
+        .send({ image: mockImage });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('Prompt requis');
     });
   });
 
