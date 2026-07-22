@@ -200,3 +200,31 @@ export function validateDate(dateString) {
 export function validateMultiple(schema, dataArray) {
   return dataArray.map(data => validateData(schema, data));
 }
+
+// ==================== SCHÉMAS D'AUTH ====================
+
+export const LoginSchema = z.object({
+  email: z.string().trim().min(1, 'Email requis').email('Email invalide'),
+  password: z.string().min(1, 'Mot de passe requis'),
+  remember: z.boolean().optional(),
+});
+
+export const SignupSchema = z.object({
+  name: z.string().trim().min(2, 'Nom complet requis (au moins 2 caractères)').max(255),
+  email: z.string().trim().min(1, 'Email requis').email('Email invalide'),
+  role: z.enum(['Terrain', 'Bureau'], { message: 'Rôle invalide' }),
+  enterpriseName: z.string().trim().min(1, "Nom de l'exploitation requis"),
+  password: z.string().min(6, 'Mot de passe trop court (minimum 6 caractères)'),
+  confirmPassword: z.string().min(1, 'Confirmation du mot de passe requise'),
+}).refine(data => data.password === data.confirmPassword, {
+  message: 'Les mots de passe ne correspondent pas',
+  path: ['confirmPassword'],
+});
+
+export function validateLogin(data) {
+  return validateData(LoginSchema, data);
+}
+
+export function validateSignup(data) {
+  return validateData(SignupSchema, data);
+}

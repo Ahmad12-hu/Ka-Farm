@@ -1,18 +1,15 @@
 // KA Farm - Router & Page Protection Logic
 import { UserManager } from './user-manager.js';
-import { KAStorage } from './storage.js';
-
-// Fonction locale pour vérifier si l'utilisateur est admin
-function isAdmin() {
-  const user = KAStorage.getCurrentUser();
-  return user && (user.role === 'admin' || user.role === 'super_admin');
-}
 
 export const Router = {
   // Routes config for active states in the sidebar
   routes: {
     '/': 'accueil',
     '/index.html': 'accueil',
+    '/pages/auth/login.html': 'login',
+    '/pages/auth/signup.html': 'signup',
+    '/pages/admin/login.html': 'admin-login',
+    '/pages/admin/dashboard.html': 'admin',
     '/pages/shared/dashboard.html': 'dashboard',
     '/pages/shared/crops.html': 'crops',
     '/pages/shared/alerts.html': 'alerts',
@@ -33,8 +30,45 @@ export const Router = {
     '/pages/personal/my-tasks.html': 'tasks',
     '/pages/personal/my-sales.html': 'sales',
     '/pages/personal/settings.html': 'settings',
-    '/pages/admin/dashboard.html': 'admin',
   },
+
+  publicRoutes: new Set([
+    '/',
+    '/index.html',
+    '/pages/auth/login.html',
+    '/pages/auth/signup.html',
+  ]),
+
+  protectedRoutes: new Set([
+    '/pages/shared/dashboard.html',
+    '/pages/shared/crops.html',
+    '/pages/shared/alerts.html',
+    '/pages/shared/irrigation.html',
+    '/pages/shared/harvest.html',
+    '/pages/shared/parcelles.html',
+    '/pages/shared/employees.html',
+    '/pages/shared/treatments.html',
+    '/pages/shared/finances.html',
+    '/pages/shared/stocks.html',
+    '/pages/shared/elevage.html',
+    '/pages/shared/training.html',
+    '/pages/shared/calendar.html',
+    '/pages/shared/profitability.html',
+    '/pages/shared/market-prices.html',
+    '/pages/shared/tools-sharing.html',
+    '/pages/personal/profile.html',
+    '/pages/personal/my-tasks.html',
+    '/pages/personal/my-sales.html',
+    '/pages/personal/settings.html',
+  ]),
+
+  adminPublicRoutes: new Set([
+    '/pages/admin/login.html',
+  ]),
+
+  adminRoutes: new Set([
+    '/pages/admin/dashboard.html',
+  ]),
 
   init() {
     this.protectRoutes();
@@ -43,17 +77,53 @@ export const Router = {
 
   protectRoutes() {
     const path = window.location.pathname;
-    
-    // Auth pages
-    const isAuthPage = path.includes('/pages/auth/login.html') || path.includes('/pages/auth/signup.html');
-    const isHomePage = path === '/' || path.endsWith('/index.html');
-    
-    if (isAuthPage) {
-      UserManager.redirectIfAuth();
-    } else if (!isHomePage) {
-      // Any other subpage under pages/ requires auth
-      UserManager.requireAuth();
+
+    if (this.adminRoutes.has(path)) {
+      if (!UserManager.isLoggedIn() || !UserManager.isAdmin()) {
+        window.location.href = '/pages/shared/dashboard.html';
+      }
+      return;
     }
+
+    if (this.adminPublicRoutes.has(path)) {
+      if (UserManager.isLoggedIn()) {
+        window.location.href = '/pages/shared/dashboard.html';
+      }
+      return;
+    }
+
+    if (this.publicRoutes.has(path)) {
+      if (UserManager.isLoggedIn()) {
+        window.location.href = '/pages/shared/dashboard.html';
+      }
+      return;
+    }
+
+    if (this.protectedRoutes.has(path)) {
+      if (!UserManager.requireAuth()) {
+        return;
+      }
+
+      // Role-based access control for sensitive routes
+      if (path === '/pages/shared/finances.html' && !UserManager.canEditFinances()) {
+        window.location.href = '/pages/shared/dashboard.html';
+        return;
+      }
+
+      if (path === '/pages/shared/employees.html' && !UserManager.canManageEmployees()) {
+        window.location.href = '/pages/shared/dashboard.html';
+        return;
+      }
+
+      if (path === '/pages/shared/stocks.html' && !UserManager.canManageStocks()) {
+        window.location.href = '/pages/shared/dashboard.html';
+        return;
+      }
+
+      return;
+    }
+
+    UserManager.requireAuth();
   },
 
   highlightActiveSidebarLink() {

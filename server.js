@@ -8,7 +8,6 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import { Pool } from 'pg';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -35,30 +34,7 @@ const apiLimiter = rateLimit({
   message: { error: 'Trop de modifications, veuillez réessayer dans 5 minutes.' }
 });
 
-// PostgreSQL connection pool
-let pool;
-let usePostgres = false;
-
-try {
-  pool = new Pool({
-    host: process.env.PG_HOST || 'localhost',
-    port: parseInt(process.env.PG_PORT || '5432'),
-    user: process.env.PG_USER || 'postgres',
-    password: process.env.PG_PASSWORD || '',
-    database: process.env.PG_DATABASE || 'kafarm',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
-  });
-  
-  // Test connection
-  await pool.query('SELECT 1');
-  usePostgres = true;
-  console.log('[DB] Connexion PostgreSQL établie avec succès');
-} catch (error) {
-  console.warn('[DB] PostgreSQL non disponible, utilisation du mode fallback mémoire:', error.message);
-  pool = null;
-}
+// Note: code PostgreSQL/Supabase nettoyé du serveur de dev selon le cahier des charges.
 
 async function startServer() {
   const app = express();
@@ -138,15 +114,6 @@ async function startServer() {
 
   // ==================== TRAITEMENTS PHYTOSANITAIRES ====================
   app.get('/api/treatments', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM traitements_phytosanitaires WHERE enterprise_id = $1 ORDER BY date_applied DESC', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching treatments from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverTreatments);
   });
 
@@ -164,19 +131,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et nom du produit requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO traitements_phytosanitaires (id, enterprise_id, parcel_id, crop_id, crop_name, parcel_name, product_name, category, date_applied, dar_days, target, notes, harvest_ready) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
-          [treatment.id, treatment.enterprise_id || 'ka_farm', treatment.parcel_id, treatment.crop_id, treatment.crop_name, treatment.parcel_name, treatment.product_name, treatment.category, treatment.date_applied, treatment.dar_days, treatment.target, treatment.notes, treatment.harvest_ready]
-        );
-        logger.info('Treatment saved to PostgreSQL', { treatmentId: treatment.id, product: treatment.product_name });
-        res.json({ success: true, treatment });
-        return;
-      } catch (err) {
-        logger.error('Error saving treatment to PostgreSQL', { error: err.message });
-      }
-    }
 
     const existing = serverTreatments.find(t => t.id === treatment.id);
     if (existing) {
@@ -192,21 +146,6 @@ async function startServer() {
   app.post('/api/treatments/sync', async (req, res) => {
     const { treatments } = req.body;
     if (treatments && Array.isArray(treatments)) {
-      if (usePostgres && pool) {
-        try {
-          await pool.query('DELETE FROM traitements_phytosanitaires WHERE enterprise_id = $1', ['ka_farm']);
-          for (const treatment of treatments) {
-            await pool.query(
-              'INSERT INTO traitements_phytosanitaires (id, enterprise_id, parcel_id, crop_id, crop_name, parcel_name, product_name, category, date_applied, dar_days, target, notes, harvest_ready) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
-              [treatment.id, treatment.enterprise_id || 'ka_farm', treatment.parcel_id, treatment.crop_id, treatment.crop_name, treatment.parcel_name, treatment.product_name, treatment.category, treatment.date_applied, treatment.dar_days, treatment.target, treatment.notes, treatment.harvest_ready]
-            );
-          }
-          res.json({ success: true, message: 'Traitements synchronisés avec PostgreSQL', treatments });
-          return;
-        } catch (err) {
-          logger.error('Error syncing treatments to PostgreSQL', { error: err.message });
-        }
-      }
       serverTreatments = treatments;
       res.json({ success: true, message: 'Traitements synchronisés en mémoire', treatments });
     } else {
@@ -216,15 +155,6 @@ async function startServer() {
 
   // ==================== CROP PROFITABILITY ====================
   app.get('/api/crop-profits', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM crop_profitability WHERE enterprise_id = $1 ORDER BY net_margin DESC', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching crop profits from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverCropProfits);
   });
 
@@ -234,33 +164,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et nom de la culture requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO crop_profitability (id, enterprise_id, crop_name, parcel_id, parcel_name, yield_kg, price_per_kg, revenue, costs, total_cost, net_margin, profitability_percent, period, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)',
-          [
-            profit.id,
-            profit.enterprise_id || 'ka_farm',
-            profit.crop_name,
-            profit.parcel_id,
-            profit.parcel_name,
-            profit.yield_kg,
-            profit.price_per_kg,
-            profit.revenue,
-            profit.costs,
-            profit.total_cost,
-            profit.net_margin,
-            profit.profitability_percent,
-            profit.period,
-            profit.notes
-          ]
-        );
-        res.json({ success: true, profit });
-        return;
-      } catch (err) {
-        logger.error('Error saving crop profit to PostgreSQL', { error: err.message });
-      }
-    }
     
     const existing = serverCropProfits.find(p => p.id === profit.id);
     if (existing) {
@@ -275,36 +178,6 @@ async function startServer() {
   app.post('/api/crop-profits/sync', async (req, res) => {
     const { cropProfits } = req.body;
     if (cropProfits && Array.isArray(cropProfits)) {
-      if (usePostgres && pool) {
-        try {
-          await pool.query('DELETE FROM crop_profitability WHERE enterprise_id = $1', ['ka_farm']);
-          for (const profit of cropProfits) {
-            await pool.query(
-              'INSERT INTO crop_profitability (id, enterprise_id, crop_name, parcel_id, parcel_name, yield_kg, price_per_kg, revenue, costs, total_cost, net_margin, profitability_percent, period, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)',
-              [
-                profit.id,
-                profit.enterprise_id || 'ka_farm',
-                profit.crop_name,
-                profit.parcel_id,
-                profit.parcel_name,
-                profit.yield_kg,
-                profit.price_per_kg,
-                profit.revenue,
-                profit.costs,
-                profit.total_cost,
-                profit.net_margin,
-                profit.profitability_percent,
-                profit.period,
-                profit.notes
-              ]
-            );
-          }
-          res.json({ success: true, message: 'Analyses de rentabilité synchronisées avec PostgreSQL', cropProfits });
-          return;
-        } catch (err) {
-          logger.error('Error syncing crop profits to PostgreSQL', { error: err.message });
-        }
-      }
       serverCropProfits = cropProfits;
       res.json({ success: true, message: 'Analyses de rentabilité synchronisées en mémoire', cropProfits });
     } else {
@@ -314,36 +187,12 @@ async function startServer() {
 
   // ==================== STOCKS ====================
   app.get('/api/stocks', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM stocks WHERE enterprise_id = $1 ORDER BY name', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching stocks from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverStocks);
   });
 
   app.post('/api/stocks', async (req, res) => {
     const { stocks } = req.body;
     if (stocks && Array.isArray(stocks)) {
-      if (usePostgres && pool) {
-        try {
-          await pool.query('DELETE FROM stocks WHERE enterprise_id = $1', ['ka_farm']);
-          for (const stock of stocks) {
-            await pool.query(
-              'INSERT INTO stocks (id, enterprise_id, name, category, quantity, max_quantity, unit) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-              [stock.id, 'ka_farm', stock.name, stock.category, stock.quantity, stock.maxQuantity, stock.unit]
-            );
-          }
-          res.json({ success: true, message: 'Stocks synchronisés avec PostgreSQL', stocks });
-          return;
-        } catch (err) {
-          logger.error('Error syncing stocks to PostgreSQL', { error: err.message });
-        }
-      }
       serverStocks = stocks;
       res.json({ success: true, message: 'Stocks synchronisés en mémoire', stocks });
     } else {
@@ -353,15 +202,6 @@ async function startServer() {
 
   // ==================== CROPS ====================
   app.get('/api/crops', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM crops WHERE enterprise_id = $1 ORDER BY sowing_date DESC', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching crops from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverCrops);
   });
 
@@ -371,18 +211,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et nom requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO crops (id, enterprise_id, name, field, sowing_date, harvest_date, status, water_status, fertilizer_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-          [crop.id, 'ka_farm', crop.name, crop.field, crop.sowingDate, crop.harvestDate, crop.status, crop.waterStatus, crop.fertilizerStatus]
-        );
-        res.json({ success: true, crop });
-        return;
-      } catch (err) {
-        logger.error('Error saving crop to PostgreSQL', { error: err.message });
-      }
-    }
     
     const existing = serverCrops.find(c => c.id === crop.id);
     if (existing) {
@@ -396,15 +224,6 @@ async function startServer() {
 
   // ==================== PARCELLES ====================
   app.get('/api/parcelles', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM parcelles WHERE enterprise_id = $1 ORDER BY name', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching parcelles from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverParcelles);
   });
 
@@ -422,19 +241,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et nom requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO parcelles (id, enterprise_id, name, surface, lat, lng, status, type_sol, history, current_crop, water_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
-          [parcelle.id, 'ka_farm', parcelle.name, parcelle.surface, parcelle.lat, parcelle.lng, parcelle.status, parcelle.type_sol || 'sableux', parcelle.history, parcelle.currentCrop, parcelle.waterStatus]
-        );
-        logger.info('Parcelle saved to PostgreSQL', { parcelleId: parcelle.id, name: parcelle.name });
-        res.json({ success: true, parcelle });
-        return;
-      } catch (err) {
-        logger.error('Error saving parcelle to PostgreSQL', { error: err.message });
-      }
-    }
 
     const existing = serverParcelles.find(p => p.id === parcelle.id);
     if (existing) {
@@ -449,15 +255,6 @@ async function startServer() {
 
   // ==================== TASKS ====================
   app.get('/api/tasks', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM tasks WHERE enterprise_id = $1 ORDER BY due_date ASC', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching tasks from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverTasks);
   });
 
@@ -467,18 +264,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et titre requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO tasks (id, enterprise_id, title, category, due_date, assignee, priority, completed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [task.id, 'ka_farm', task.title, task.category, task.dueDate, task.assignee, task.priority, task.completed]
-        );
-        res.json({ success: true, task });
-        return;
-      } catch (err) {
-        logger.error('Error saving task to PostgreSQL', { error: err.message });
-      }
-    }
     
     const existing = serverTasks.find(t => t.id === task.id);
     if (existing) {
@@ -492,15 +277,6 @@ async function startServer() {
 
   // ==================== FINANCES ====================
   app.get('/api/finances', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM finances WHERE enterprise_id = $1 ORDER BY date DESC', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching finances from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverFinances);
   });
 
@@ -510,18 +286,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et description requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO finances (id, enterprise_id, description, category, type, amount, date) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [finance.id, 'ka_farm', finance.description, finance.category, finance.type, finance.amount, finance.date]
-        );
-        res.json({ success: true, finance });
-        return;
-      } catch (err) {
-        logger.error('Error saving finance to PostgreSQL', { error: err.message });
-      }
-    }
     
     const existing = serverFinances.find(f => f.id === finance.id);
     if (existing) {
@@ -535,15 +299,6 @@ async function startServer() {
 
   // ==================== EMPLOYEES ====================
   app.get('/api/employees', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM employees WHERE enterprise_id = $1 ORDER BY name', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching employees from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverEmployees);
   });
 
@@ -553,18 +308,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et nom requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO employees (id, enterprise_id, name, phone, role, daily_rate, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [employee.id, 'ka_farm', employee.name, employee.phone, employee.role, employee.dailyRate, employee.status]
-        );
-        res.json({ success: true, employee });
-        return;
-      } catch (err) {
-        logger.error('Error saving employee to PostgreSQL', { error: err.message });
-      }
-    }
     
     const existing = serverEmployees.find(e => e.id === employee.id);
     if (existing) {
@@ -578,15 +321,6 @@ async function startServer() {
 
   // ==================== ELEVAGE / CHEPTEL ====================
   app.get('/api/cheptel', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM cheptel WHERE enterprise_id = $1 ORDER BY name', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching cheptel from PostgreSQL', { error: err.message });
-      }
-    }
     res.json(serverCheptel);
   });
 
@@ -596,18 +330,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et nom requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO cheptel (id, enterprise_id, name, type, breed, quantity, unit, status, purpose) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-          [group.id, 'ka_farm', group.name, group.type, group.breed, group.quantity, group.unit, group.status, group.purpose]
-        );
-        res.json({ success: true, group });
-        return;
-      } catch (err) {
-        logger.error('Error saving cheptel to PostgreSQL', { error: err.message });
-      }
-    }
     
     const existing = serverCheptel.find(c => c.id === group.id);
     if (existing) {
@@ -621,15 +343,6 @@ async function startServer() {
 
   // ==================== ELEVAGE PRODUCTION ====================
   app.get('/api/elevage/production', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM elevage_production WHERE enterprise_id = $1 ORDER BY date DESC', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching elevage production from PostgreSQL', { error: err.message });
-      }
-    }
     const sorted = serverElevageProduction.sort((a, b) => new Date(b.date) - new Date(a.date));
     res.json(sorted);
   });
@@ -640,18 +353,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et type requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO elevage_production (id, enterprise_id, date, type, quantity, unit, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [log.id, 'ka_farm', log.date, log.type, log.quantity, log.unit, log.notes]
-        );
-        res.json({ success: true, log });
-        return;
-      } catch (err) {
-        logger.error('Error saving elevage production to PostgreSQL', { error: err.message });
-      }
-    }
     
     serverElevageProduction.push(log);
     res.json({ success: true, log });
@@ -659,15 +360,6 @@ async function startServer() {
 
   // ==================== ELEVAGE HEALTH ====================
   app.get('/api/elevage/health', async (req, res) => {
-    if (usePostgres && pool) {
-      try {
-        const result = await pool.query('SELECT * FROM elevage_health WHERE enterprise_id = $1 ORDER BY date DESC', ['ka_farm']);
-        res.json(result.rows);
-        return;
-      } catch (err) {
-        logger.error('Error fetching elevage health from PostgreSQL', { error: err.message });
-      }
-    }
     const sorted = serverElevageHealth.sort((a, b) => new Date(b.date) - new Date(a.date));
     res.json(sorted);
   });
@@ -678,18 +370,6 @@ async function startServer() {
       return res.status(400).json({ error: 'ID et intervention requis' });
     }
     
-    if (usePostgres && pool) {
-      try {
-        await pool.query(
-          'INSERT INTO elevage_health (id, enterprise_id, date, target, intervention, practitioner, cost, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-          [log.id, 'ka_farm', log.date, log.target, log.intervention, log.practitioner, log.cost, log.notes]
-        );
-        res.json({ success: true, log });
-        return;
-      } catch (err) {
-        logger.error('Error saving elevage health to PostgreSQL', { error: err.message });
-      }
-    }
     
     serverElevageHealth.push(log);
     res.json({ success: true, log });
@@ -827,7 +507,7 @@ async function startServer() {
   const port = process.env.PORT || 3000;
   app.listen(port, '0.0.0.0', () => {
     console.log(`Server running at http://0.0.0.0:${port}`);
-    console.log(`Mode: ${usePostgres ? 'PostgreSQL' : 'Fallback mémoire (localStorage)'}`);
+  console.log(`Mode: localStorage + Firebase sync`);
     console.log(`Security: Rate limiting + Helmet + CORS enabled`);
   });
 }
