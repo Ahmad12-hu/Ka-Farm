@@ -674,8 +674,8 @@ export const CropsModule = {
       this.analyzeSanitaryImage();
     };
 
-    // TREATMENT & DAR BINDINGS
-    window.openTreatmentModal = () => {
+  // TREATMENT & DAR BINDINGS
+  window.openTreatmentModal = () => {
       const modal = document.getElementById('treatment-modal');
       const cropSelect = document.getElementById('form-treat-crop');
       const dateInput = document.getElementById('form-treat-date');
@@ -1095,6 +1095,24 @@ export const CropsModule = {
     }
   },
 
+  updateCropsDarAlert() {
+    const alertDiv = document.getElementById('crops-dar-alert');
+    if (!alertDiv) return;
+
+    const treatments = this.getTreatments();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const hasActiveDar = treatments.some(t => {
+      const applied = new Date(t.dateApplied);
+      applied.setHours(0, 0, 0, 0);
+      const diffDays = Math.floor((today.getTime() - applied.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays < t.dar;
+    });
+
+    alertDiv.classList.toggle('hidden', !hasActiveDar);
+  },
+
   getTreatments() {
     const defaultTreatments = [
       {
@@ -1142,6 +1160,9 @@ export const CropsModule = {
     if (!container) return;
 
     const treatments = this.getTreatments();
+    
+    // Update DAR alert visibility
+    this.updateCropsDarAlert && this.updateCropsDarAlert();
 
     if (treatments.length === 0) {
       container.innerHTML = `

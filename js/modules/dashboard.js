@@ -95,6 +95,22 @@ export const DashboardModule = {
       elWaterAlert.classList.toggle('hidden', !hasDryCrop);
     }
 
+    // 3b. DAR alert banner
+    const treatments = KAStorage.getTreatments ? KAStorage.getTreatments() : [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const activeDarTreatments = treatments.filter(t => {
+      if (t.harvestReady) return false;
+      const applied = new Date(t.dateApplied);
+      applied.setHours(0, 0, 0, 0);
+      const diffDays = Math.floor((today.getTime() - applied.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays < t.dar;
+    });
+    const elDarAlert = document.getElementById('dashboard-dar-alert');
+    if (elDarAlert) {
+      elDarAlert.classList.toggle('hidden', activeDarTreatments.length === 0);
+    }
+
     // 4. Quick Harvest summary list
     const harvestListContainer = document.getElementById('dash-harvest-list');
     if (harvestListContainer) {

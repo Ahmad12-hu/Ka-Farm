@@ -130,6 +130,17 @@
 
           <!-- Traitements & Délai Avant Récolte (DAR) Section -->
           <div class="space-y-4 pt-6 border-t border-slate-150 dark:border-[#143E23]/20">
+            <!-- DAR Alert Banner for Crops -->
+            <div id="crops-dar-alert"
+              class="hidden p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-2">
+              <i data-lucide="shield-alert" class="h-4 w-4 text-rose-500"></i>
+              <div>
+                <h4 class="text-[10px] font-black text-rose-600 dark:text-rose-400">⚠️ Alerte DAR Active</h4>
+                <p class="text-[9px] text-slate-400 font-semibold">Récolte interdite sur certaines cultures. Respectez
+                  le délai avant récolte.</p>
+              </div>
+            </div>
+
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
               <div class="space-y-1">
                 <h3

@@ -120,15 +120,23 @@
                 <!-- Water Alert Banner -->
                 <div id="dashboard-water-alert"
                     class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-3 hidden text-left animate-fadeIn">
-                    <div
-                        class="h-8 w-8 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="droplet" class="h-4 w-4"></i>
-                    </div>
+                    <i data-lucide="droplet-off" class="h-5 w-5 text-amber-500"></i>
                     <div>
-                        <p class="text-xs font-black text-amber-400">💧 Alerte d'irrigation requise</p>
-                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Certaines de nos parcelles ont un
-                            statut "Besoin
-                            d'eau". Veuillez coordonner l'arrosage.</p>
+                        <h4 class="text-xs font-black text-amber-600 dark:text-amber-400">Alerte Irrigation</h4>
+                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Certaines parcelles ont besoin d'eau.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- DAR Alert Banner -->
+                <div id="dashboard-dar-alert"
+                    class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 hidden text-left animate-fadeIn">
+                    <i data-lucide="shield-alert" class="h-5 w-5 text-rose-500"></i>
+                    <div>
+                        <h4 class="text-xs font-black text-rose-600 dark:text-rose-400">⚠️ Alerte DAR - Récolte
+                            Interdite</h4>
+                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Des cultures ont un traitement actif.
+                            Respectez le délai avant récolte.</p>
                     </div>
                 </div>
 
@@ -146,7 +154,8 @@
                         </div>
                         <p id="stat-crops-count"
                             class="text-3xl font-black text-slate-800 dark:text-white mt-2 font-mono">0</p>
-                        <p class="text-[9px] text-slate-500 dark:text-slate-300 mt-1">Planches en cours de croissance
+                        <p class="text-[9px] text-slate-500 dark:text-slate-300 mt-1">Planches en cours de
+                            croissance
                         </p>
                     </div>
 
@@ -162,7 +171,8 @@
                         </div>
                         <p id="stat-tasks-count"
                             class="text-3xl font-black text-slate-800 dark:text-white mt-2 font-mono">0</p>
-                        <p class="text-[9px] text-slate-500 dark:text-slate-300 mt-1">Travaux d'entretien à réaliser</p>
+                        <p class="text-[9px] text-slate-500 dark:text-slate-300 mt-1">Travaux d'entretien à réaliser
+                        </p>
                     </div>
 
                     <div class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left stat-card cursor-pointer hover:border-[#a855f7]/30 transition-all stagger-card delay-3"
@@ -218,7 +228,8 @@
                             & Carburant</span>
                     </div>
                     <div class="border-t sm:border-t-0 sm:border-l border-[#143E23] pt-4 sm:pt-0 sm:pl-6">
-                        <p class="text-[10px] font-black text-[#A4C4AF] uppercase tracking-wider">Trésorerie / Bénéfice
+                        <p class="text-[10px] font-black text-[#A4C4AF] uppercase tracking-wider">Trésorerie /
+                            Bénéfice
                             Net</p>
                         <p id="stat-solde" class="text-xl md:text-2xl font-black text-white font-mono mt-1">0 F</p>
                         <span class="text-[9px] text-[#A4C4AF] font-bold">Solde disponible en caisse</span>
@@ -235,7 +246,8 @@
                             class="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/10">
                             <h3
                                 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                                <i data-lucide="cloud-lightning" class="h-4 w-4 text-emerald-500"></i> Bulletin Météo &
+                                <i data-lucide="cloud-lightning" class="h-4 w-4 text-emerald-500"></i> Bulletin
+                                Météo &
                                 Recommandation
                                 <span
                                     class="inline-flex items-center gap-1 text-[8px] bg-red-500/15 text-red-500 font-extrabold px-1.5 py-0.5 rounded-md animate-pulse">
@@ -249,7 +261,8 @@
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             <div
                                 class="bg-slate-50 dark:bg-[#061109]/40 p-3 rounded-2xl border border-slate-100 dark:border-emerald-950/20">
-                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Température</p>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Température
+                                </p>
                                 <p id="weather-temp" class="text-base font-black text-slate-800 dark:text-white mt-0.5">
                                     26°C</p>
                             </div>
@@ -261,7 +274,8 @@
                             </div>
                             <div
                                 class="bg-slate-50 dark:bg-[#061109]/40 p-3 rounded-2xl border border-slate-100 dark:border-emerald-950/20">
-                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Pluviométrie</p>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Pluviométrie
+                                </p>
                                 <p id="weather-precipitation"
                                     class="text-base font-black text-slate-800 dark:text-white mt-0.5">0.0 mm
                                 </p>
