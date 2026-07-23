@@ -63,6 +63,7 @@ export const ParcellesModule = {
     this.renderMap();
     this.renderTable();
     this.renderDetails();
+    this.renderLeafletMap();
   },
 
   renderStats() {
@@ -653,6 +654,18 @@ export const ParcellesModule = {
   selectParcel(id) {
     selectedParcelId = id;
     this.render();
+    
+    // If map view is active, pan to the selected parcel's marker
+    const parcel = parcelles.find(p => p.id === id);
+    if (parcel && parcel.lat && parcel.lng && window.leafletMap) {
+      window.leafletMap.setView([parcel.lat, parcel.lng], 14);
+      
+      // Open popup for the selected parcel
+      const marker = window.parcelMarkers?.find(m => m.parcelId === id);
+      if (marker && marker.leafletMarker) {
+        marker.leafletMarker.openPopup();
+      }
+    }
   },
 
   filterParcelles(query) {
@@ -885,6 +898,210 @@ export const ParcellesModule = {
       window.closeBreakEvenConfigModal();
       this.render();
     }
+  },
+
+  // ==================== LIST/MAP VIEW TOGGLE ====================
+  switchParcelView(view) {
+    const listView = document.getElementById('parcel-list-view');
+    const mapView = document.getElementById('parcel-map-view');
+    const btnList = document.getElementById('btn-view-list');
+    const btnMap = document.getElementById('btn-view-map');
+
+    if (!listView || !mapView) return;
+
+    // Check RBAC: Only Bureau and Admin can view the map
+    if (view === 'map' && !this.canViewMap()) {
+      ErrorHandler.showToast('Accès refusé. Seuls les utilisateurs Bureau et Admin peuvent consulter la carte.', 'error');
+      return;
+    }
+
+    if (view === 'list') {
+      listView.classList.remove('hidden');
+      mapView.classList.add('hidden');
+      
+      // Update button styles
+      if (btnList) {
+        btnList.className = 'px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg';
+      }
+      if (btnMap) {
+        btnMap.className = 'px-3 py-1.5 bg-slate-100 dark:bg-[#0B2112] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#143E23]/40 text-[10px] font-black uppercase tracking-wider rounded-lg';
+      }
+    } else if (view === 'map') {
+      listView.classList.add('hidden');
+      mapView.classList.remove('hidden');
+      
+      // Update button styles
+      if (btnMap) {
+        btnMap.className = 'px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg';
+      }
+      if (btnList) {
+        btnList.className = 'px-3 py-1.5 bg-slate-100 dark:bg-[#0B2112] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#143E23]/40 text-[10px] font-black uppercase tracking-wider rounded-lg';
+      }
+      
+      // Initialize or refresh Leaflet map
+      this.renderLeafletMap();
+    }
+  },
+
+  canViewMap() {
+    const user = UserManager.getCurrentUser();
+    // All roles can view map (read-only), but editing remains restricted by other RBAC rules
+    return user && (user.role === 'Bureau' || user.role === 'Terrain' || user.role === 'admin' || user.role === 'super_admin');
+  },
+
+  // ==================== LEAFLET MAP ====================
+  renderLeafletMap() {
+    const mapContainer = document.getElementById('leaflet-map');
+    if (!mapContainer) return;
+
+    // If map is hidden, don't initialize
+    if (mapContainer.classList.contains('hidden')) {
+      return;
+    }
+
+    // Clear existing map if re-initializing
+    if (window.leafletMap) {
+      mapContainer.innerHTML = '';
+    }
+
+    // Initialize Leaflet map centered on Senegal
+    window.leafletMap = L.map('leaflet-map').setView([14.5, -14.5], 7);
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(window.leafletMap);
+
+    // Clear existing markers
+    window.parcelMarkers = [];
+
+    // Filter parcels with valid GPS coordinates
+    const parcelsWithCoords = parcelles.filter(p => {
+      const lat = parseFloat(p.lat);
+      const lng = parseFloat(p.lng);
+      return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+    });
+
+    // Show message for parcels without coordinates
+    const parcelsWithoutCoords = parcelles.filter(p => {
+      const lat = parseFloat(p.lat);
+      const lng = parseFloat(p.lng);
+      return isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0;
+    });
+
+    if (parcelsWithoutCoords.length > 0 && parcelsWithCoords.length === 0) {
+      mapContainer.innerHTML = `
+        <div class="flex items-center justify-center h-full bg-slate-50 dark:bg-[#061109] rounded-2xl">
+          <div class="text-center p-6 space-y-3">
+            <div class="text-4xl">📍</div>
+            <p class="text-sm font-black text-slate-700 dark:text-slate-200">Aucune coordonnée GPS disponible</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Veuillez ajouter des coordonnées GPS à vos parcelles pour les afficher sur la carte.</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold">${parcelsWithoutCoords.length} parcelle(s) sans coordonnées</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Get marker color based on status
+    const getMarkerColor = (status) => {
+      switch (status) {
+        case 'Cultivée':
+          return '#10B981'; // emerald-500
+        case 'En préparation':
+          return '#F59E0B'; // amber-500
+        default:
+          return '#64748B'; // slate-500
+      }
+    };
+
+    // Add markers for each parcel with valid coordinates
+    parcelsWithCoords.forEach(parcel => {
+      const lat = parseFloat(parcel.lat);
+      const lng = parseFloat(parcel.lng);
+      const color = getMarkerColor(parcel.status);
+
+      // Create custom marker icon with colored circle
+      const customIcon = L.divIcon({
+        className: 'custom-parcel-marker',
+        html: `
+          <div style="
+            width: 24px;
+            height: 24px;
+            background-color: ${color};
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+          " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></div>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      // Create popup content
+      const popupContent = `
+        <div style="font-family: ui-sans-serif, system-ui, sans-serif; min-width: 220px;">
+          <div style="font-weight: 900; font-size: 14px; color: #0F172A; margin-bottom: 8px;">
+            ${parcel.name}
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #64748B; font-weight: 700;">Surface:</span>
+              <span style="color: #0F172A; font-weight: 900;">${parcel.surface} m²</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #64748B; font-weight: 700;">Culture:</span>
+              <span style="color: #0F172A; font-weight: 900;">${parcel.currentCrop || 'Libre (Jachère)'}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #64748B; font-weight: 700;">Statut:</span>
+              <span style="
+                color: ${color};
+                font-weight: 900;
+                text-transform: uppercase;
+                font-size: 10px;
+                padding: 2px 6px;
+                background: ${color}15;
+                border-radius: 4px;
+                border: 1px solid ${color}40;
+              ">${parcel.status}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px; padding-top: 4px; border-top: 1px solid #E5E7EB;">
+              <span style="color: #64748B; font-weight: 700;">GPS:</span>
+              <span style="color: #0F172A; font-weight: 700; font-family: monospace; font-size: 10px;">
+                ${lat.toFixed(4)}, ${lng.toFixed(4)}
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add marker to map
+      const marker = L.marker([lat, lng], { customIcon })
+        .addTo(window.leafletMap)
+        .bindPopup(popupContent);
+
+      // Store marker reference
+      window.parcelMarkers.push({
+        parcelId: parcel.id,
+        leafletMarker: marker
+      });
+
+      // Highlight selected parcel
+      if (parcel.id === selectedParcelId) {
+        marker.openPopup();
+        window.leafletMap.setView([lat, lng], 14);
+      }
+    });
+
+    // If we have parcels with coords, fit bounds to show all markers
+    if (parcelsWithCoords.length > 0) {
+      const group = new L.featureGroup(window.parcelMarkers.map(m => m.leafletMarker));
+      window.leafletMap.fitBounds(group.getBounds().pad(0.1));
+    }
   }
 };
 
@@ -1003,80 +1220,115 @@ window.deleteParcel = (id) => {
   }
 };
 
-window.copyCurrentCoordinates = () => {
-  const parcel = parcelles.find(p => p.id === selectedParcelId);
-  if (!parcel) return;
-
-  const coordText = `${parcel.lat}, ${parcel.lng}`;
-  navigator.clipboard.writeText(coordText).then(() => {
-    const toast = document.getElementById('copy-toast');
-    if (toast) {
-      toast.classList.remove('hidden');
-      setTimeout(() => {
-        toast.classList.add('hidden');
-      }, 2000);
-    }
-  }).catch(err => {
-    logger.error('Failed to copy text', { error: err.message });
-  });
+// ==================== GLOBAL VIEW SWITCH ====================
+window.switchParcelView = (view) => {
+  if (window.ParcellesModule && typeof window.ParcellesModule.switchParcelView === 'function') {
+    window.ParcellesModule.switchParcelView(view);
+  }
 };
 
+// ==================== GPS FUNCTIONS ====================
 window.getCurrentPositionGPS = () => {
-  if (navigator.geolocation) {
-    const toast = document.getElementById('copy-toast');
-    if (toast) {
-      toast.innerHTML = '<i data-lucide="loader" class="h-3 w-3 animate-spin"></i> Localisation satellite...';
-      toast.classList.remove('hidden');
-      if (window.lucide) window.lucide.createIcons();
-    }
+  if (!navigator.geolocation) {
+    ErrorHandler.showToast('La géolocalisation n\'est pas supportée par votre navigateur.', 'error');
+    return;
+  }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        // Recal selected parcel to real current location
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+  ErrorHandler.showToast('Récupération de votre position GPS...', 'info');
 
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      
+      ErrorHandler.showToast(`Position GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
+      
+      // If a parcel is selected, update its coordinates
+      if (selectedParcelId) {
         const idx = parcelles.findIndex(p => p.id === selectedParcelId);
         if (idx !== -1) {
           parcelles[idx].lat = lat;
           parcelles[idx].lng = lng;
           KAStorage.saveParcelles(parcelles);
-          
-          if (toast) {
-            toast.innerHTML = '<i data-lucide="check" class="h-3 w-3"></i> Position recalée avec succès !';
-            setTimeout(() => {
-              toast.classList.add('hidden');
-              toast.innerHTML = '<i data-lucide="check" class="h-3 w-3"></i> Coordonnées copiées !';
-            }, 3000);
-          }
           ParcellesModule.render();
+          ErrorHandler.showToast(`Coordonnées GPS mises à jour pour ${parcelles[idx].name}`, 'success');
         }
-      },
-      (error) => {
-        logger.warn('Geolocation failed or permission denied, using simulated GPS refresh.', { error: error.message });
-        // Simulate GPS recalibration with small offset
+      }
+    },
+    (error) => {
+      ErrorHandler.showToast('Impossible de récupérer votre position. Vérifiez les autorisations GPS.', 'error');
+      logger.error('Geolocation error:', error);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+};
+
+// ==================== COPY GPS COORDINATES ====================
+window.copyCurrentCoordinates = () => {
+  const parcel = parcelles.find(p => p.id === selectedParcelId);
+  if (!parcel) return;
+
+  const lat = Number(parcel.lat).toFixed(6);
+  const lng = Number(parcel.lng).toFixed(6);
+  const coordsText = `${lat}, ${lng}`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(coordsText).then(() => {
+      const toast = document.getElementById('copy-toast');
+      if (toast) {
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+          toast.classList.add('hidden');
+        }, 2000);
+      }
+    }).catch(err => {
+      logger.error('Failed to copy text', { error: err.message });
+    });
+  }
+};
+
+// ==================== GPS GEOLOCATION ====================
+window.getCurrentPositionGPS = () => {
+  if (!navigator.geolocation) {
+    ErrorHandler.showToast('La géolocalisation n\'est pas supportée par votre navigateur.', 'error');
+    return;
+  }
+
+  ErrorHandler.showToast('Récupération de votre position GPS...', 'info');
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      
+      ErrorHandler.showToast(`Position GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
+      
+      // If a parcel is selected, update its coordinates
+      if (selectedParcelId) {
         const idx = parcelles.findIndex(p => p.id === selectedParcelId);
         if (idx !== -1) {
-          const latOffset = (Math.random() - 0.5) * 0.0001;
-          const lngOffset = (Math.random() - 0.5) * 0.0001;
-          parcelles[idx].lat = Number(parcelles[idx].lat) + latOffset;
-          parcelles[idx].lng = Number(parcelles[idx].lng) + lngOffset;
+          parcelles[idx].lat = lat;
+          parcelles[idx].lng = lng;
           KAStorage.saveParcelles(parcelles);
-          
-          if (toast) {
-            toast.innerHTML = '<i data-lucide="check" class="h-3 w-3"></i> Signal rafraîchi par satellite !';
-            setTimeout(() => {
-              toast.classList.add('hidden');
-              toast.innerHTML = '<i data-lucide="check" class="h-3 w-3"></i> Coordonnées copiées !';
-              if (window.lucide) window.lucide.createIcons();
-            }, 3000);
-          }
           ParcellesModule.render();
+          ErrorHandler.showToast(`Coordonnées GPS mises à jour pour ${parcelles[idx].name}`, 'success');
         }
-      },
-      { enableHighAccuracy: true, timeout: 5000 }
-    );
-  }
+      }
+    },
+    (error) => {
+      ErrorHandler.showToast('Impossible de récupérer votre position. Vérifiez les autorisations GPS.', 'error');
+      logger.error('Geolocation error:', error);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
 };
 
 // Register globally for external listeners (e.g., theme toggle)
