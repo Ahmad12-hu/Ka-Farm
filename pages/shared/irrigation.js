@@ -330,3 +330,22 @@ window.onCityChange = (cityKey) => {
 renderDaysHeader();
 renderWateringTasks();
 window.onCityChange('thies');
+
+// ==================== INTEGRATION CALCULATEUR D'IRRIGATION ====================
+window.updateCalcDisplay = () => {
+  if (window.IrrigationModule && typeof window.IrrigationModule.calculateAndDisplay === 'function') {
+    window.IrrigationModule.calculateAndDisplay();
+  }
+};
+
+// Afficher/masquer les résultats
+const calcBtn = document.getElementById('btn-calculate-irrigation');
+if (calcBtn) {
+  calcBtn.addEventListener('click', () => {
+    const results = document.getElementById('calc-results');
+    if (results) {
+      results.classList.remove('hidden');
+    }
+    window.updateCalcDisplay();
+  });
+}

@@ -212,6 +212,109 @@
             </div>
           </div>
 
+          <!-- Calculateur d'Irrigation par Parcelle -->
+          <div id="irrigation-calculator-section" class="space-y-4">
+            <h3
+              class="text-xs font-black text-slate-850 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="calculator" class="h-4 w-4 text-emerald-500"></i> Calculateur d'Irrigation par Parcelle
+            </h3>
+
+            <div class="space-y-3">
+              <!-- Parcel Selector -->
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parcelle
+                  existante</label>
+                <select id="calc-parcel-select"
+                  class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none">
+                  <option value="">-- Sélectionner une parcelle --</option>
+                </select>
+              </div>
+
+              <!-- Surface Input -->
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] font-extrabold text-slate-400 uppercase">
+                  <span>Surface (m²)</span>
+                  <span id="calc-surface-display" class="text-emerald-500">100 m²</span>
+                </div>
+                <input type="number" id="calc-surface" min="1" value="100"
+                  class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none"
+                  oninput="window.updateCalcDisplay()">
+              </div>
+
+              <!-- Soil Type -->
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type de Sol</label>
+                <select id="calc-sol"
+                  class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none"
+                  onchange="window.updateCalcDisplay()">
+                  <option value="sableux">Sableux (Drainage rapide)</option>
+                  <option value="argileux">Argileux (Rétention forte)</option>
+                  <option value="limoneux">Argilo-limoneux (Équilibré)</option>
+                </select>
+              </div>
+
+              <!-- Crop Selector -->
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Culture</label>
+                <select id="calc-crop"
+                  class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none"
+                  onchange="window.updateCalcDisplay()">
+                  <option value="tomate">Tomate</option>
+                  <option value="oignon">Oignon</option>
+                  <option value="chou">Chou Cabus</option>
+                  <option value="carotte">Carotte</option>
+                  <option value="poivron">Poivron / Piment</option>
+                  <option value="gombo">Gombo</option>
+                  <option value="menthe">Menthe</option>
+                  <option value="papaye">Papaye</option>
+                  <option value="arachide">Arachide</option>
+                </select>
+              </div>
+
+              <!-- Calculate Button -->
+              <button id="btn-calculate-irrigation"
+                class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs flex items-center justify-center gap-2">
+                <i data-lucide="calculator" class="h-4 w-4"></i>
+                Calculer le volume d'irrigation
+              </button>
+
+              <!-- Results Display -->
+              <div id="calc-results" class="hidden space-y-2 pt-2 border-t border-slate-200 dark:border-[#143E23]/30">
+                <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                  <p class="text-[10px] font-black uppercase text-slate-400 mb-1">Volume recommandé</p>
+                  <p id="calc-volume" class="text-lg font-black text-emerald-600 dark:text-emerald-400">--</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl">
+                    <p class="text-[9px] font-black uppercase text-slate-400">Fréquence</p>
+                    <p id="calc-frequency" class="text-xs font-black text-slate-800 dark:text-white">--</p>
+                  </div>
+                  <div class="p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl">
+                    <p class="text-[9px] font-black uppercase text-slate-400">Durée</p>
+                    <p id="calc-duration" class="text-xs font-black text-slate-800 dark:text-white">--</p>
+                  </div>
+                </div>
+
+                <div class="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                  <p class="text-[9px] font-black uppercase text-slate-400 mb-1">Conditions météo</p>
+                  <p id="calc-weather-note" class="text-[11px] text-slate-700 dark:text-slate-300 font-semibold">--</p>
+                </div>
+
+                <div class="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl">
+                  <p class="text-[9px] font-black uppercase text-slate-400 mb-1">Estimation carburant</p>
+                  <p id="calc-fuel-estimate" class="text-xs font-black text-rose-600 dark:text-rose-400">--</p>
+                </div>
+
+                <div
+                  class="p-3 bg-slate-50 dark:bg-[#061109]/40 rounded-xl border border-slate-100 dark:border-[#143E23]/10">
+                  <p id="calc-explanation"
+                    class="text-[10px] text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">--</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Conseils et Recommandations d'arrosage -->
           <div
             class="space-y-4 p-4.5 bg-[#0D2615]/20 dark:bg-[#0D2615]/30 rounded-2xl border border-[#143E23]/30 flex flex-col justify-between">
