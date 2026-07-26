@@ -3,6 +3,40 @@
 
 import { ErrorHandler } from '../modules/error-handler.js';
 
+// Default Users Data
+const DEFAULT_USERS = [
+  {
+    id: 'USR-001',
+    email: 'amadou@ka-farm.sn',
+    password: 'admin123',
+    name: 'Amadou KA',
+    role: 'admin',
+    enterpriseId: 'ka_farm',
+    enterpriseName: 'KA Farm',
+    enterpriseCode: 'KA-FARM'
+  },
+  {
+    id: 'USR-002',
+    email: 'moussa@ka-farm.sn',
+    password: 'terrain123',
+    name: 'Moussa KA',
+    role: 'Terrain',
+    enterpriseId: 'ka_farm',
+    enterpriseName: 'KA Farm',
+    enterpriseCode: 'KA-FARM'
+  },
+  {
+    id: 'USR-003',
+    email: 'aly@ka-farm.sn',
+    password: 'bureau123',
+    name: 'Aly KA',
+    role: 'Bureau',
+    enterpriseId: 'ka_farm',
+    enterpriseName: 'KA Farm',
+    enterpriseCode: 'KA-FARM'
+  }
+];
+
 let isInitialized = false;
 
 // Default Tasks Data
@@ -11,6 +45,34 @@ const DEFAULT_TASKS = [
   { id: 'T-402', title: 'Sarclage & Désherbage planche choux', category: 'Entretien', dueDate: '2026-06-28', assignee: 'Fatou', priority: 'Moyenne', completed: false },
   { id: 'T-403', title: 'Vérifier la levée de la pépinière tomates', category: 'Pépinière', dueDate: '2026-06-25', assignee: 'Moussa', priority: 'Haute', completed: true },
   { id: 'T-404', title: 'Achat de 5 sacs de fumier de volaille', category: 'Entretien', dueDate: '2026-06-30', assignee: 'Aly', priority: 'Basse', completed: false }
+];
+
+// Default Crops Data
+const DEFAULT_CROPS = [
+  { id: 'C-001', name: 'Tomate Mongal F1', field: 'Planche A1', plantingDate: '2026-06-01', expectedHarvest: '2026-08-15', status: 'En croissance', variety: 'Mongal F1', cycleDays: 80 },
+  { id: 'C-002', name: 'Oignon de Galmi', field: 'Planche B2', plantingDate: '2026-06-10', expectedHarvest: '2026-09-20', status: 'En croissance', variety: 'Galmi', cycleDays: 90 },
+  { id: 'C-003', name: 'Piment Kounouchi', field: 'Planche C1', plantingDate: '2026-06-15', expectedHarvest: '2026-09-10', status: 'En croissance', variety: 'Kounouchi', cycleDays: 75 }
+];
+
+// Default Parcelles Data
+const DEFAULT_PARCELLES = [
+  { id: 'P-001', name: 'Planche A1 - Tomates', area: 0.5, crop: 'Tomate', status: 'Actif', soilType: 'Sableux', irrigationType: 'Goutte-à-goutte' },
+  { id: 'P-002', name: 'Planche B2 - Oignons', area: 0.3, crop: 'Oignon', status: 'Actif', soilType: 'Sableux', irrigationType: 'Goutte-à-goutte' },
+  { id: 'P-003', name: 'Planche C1 - Piments', area: 0.2, crop: 'Piment', status: 'Actif', soilType: 'Sableux', irrigationType: 'Goutte-à-goutte' }
+];
+
+// Default Finances Data
+const DEFAULT_FINANCES = [
+  { id: 'F-001', type: 'Dépense', category: 'Intrants', amount: 50000, description: 'Achat semences tomates', date: '2026-06-01' },
+  { id: 'F-002', type: 'Dépense', category: 'Main-d\'œuvre', amount: 30000, description: 'Salaires juin', date: '2026-06-30' },
+  { id: 'F-003', type: 'Revenu', category: 'Ventes', amount: 120000, description: 'Vente récolte juin', date: '2026-06-28' }
+];
+
+// Default Employees Data
+const DEFAULT_EMPLOYEES = [
+  { id: 'E-001', name: 'Moussa KA', role: 'Chef d\'Exploitation', phone: '+221 77 123 45 67', status: 'Actif', hireDate: '2025-01-15' },
+  { id: 'E-002', name: 'Fatou DIALLO', role: 'Ouvrière', phone: '+221 76 987 65 43', status: 'Actif', hireDate: '2025-03-01' },
+  { id: 'E-003', name: 'Aly BA', role: 'Responsable Stocks', phone: '+221 78 456 78 90', status: 'Actif', hireDate: '2025-02-01' }
 ];
 
 // Calculate days between two dates
@@ -229,5 +291,46 @@ export const KAStorage = {
       localStorage.removeItem('ka_user_facebook');
       localStorage.removeItem('ka_user_remember');
     }
+  },
+
+  // Backward-compatible domain methods (delegate to domain modules)
+  getCrops() {
+    return this.get('ka_farm_crops', DEFAULT_CROPS);
+  },
+  saveCrops(crops) {
+    this.set('ka_farm_crops', crops);
+  },
+  getParcelles() {
+    return this.get('ka_farm_parcelles', DEFAULT_PARCELLES);
+  },
+  saveParcelles(parcelles) {
+    this.set('ka_farm_parcelles', parcelles);
+  },
+  getFinances() {
+    return this.get('ka_farm_finances', DEFAULT_FINANCES);
+  },
+  saveFinances(finances) {
+    this.set('ka_farm_finances', finances);
+  },
+  getFinanceStats() {
+    const finances = this.getFinances();
+    const totalRevenu = finances.filter(f => f.type === 'Revenu').reduce((sum, f) => sum + (f.amount || 0), 0);
+    const totalDepense = finances.filter(f => f.type === 'Dépense').reduce((sum, f) => sum + (f.amount || 0), 0);
+    return { totalRevenu, totalDepense, solde: totalRevenu - totalDepense };
+  },
+  getEmployees() {
+    return this.get('ka_farm_employees', DEFAULT_EMPLOYEES);
+  },
+  saveEmployees(employees) {
+    this.set('ka_farm_employees', employees);
+  },
+  getTasks() {
+    return this.get('ka_farm_tasks', DEFAULT_TASKS);
+  },
+  saveTasks(tasks) {
+    this.set('ka_farm_tasks', tasks);
+  },
+  getUsers() {
+    return this.get('ka_farm_users', DEFAULT_USERS);
   }
 };
