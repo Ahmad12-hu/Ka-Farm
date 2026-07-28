@@ -6,6 +6,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { logger } from '../js/modules/logger.js';
 import { z } from 'zod';
 import { Cache } from '../js/modules/cache.js';
+import { verifyPassword } from '../js/modules/crypto.js';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -269,7 +270,8 @@ function requireAuth(req, res, next) {
 // Public routes (no auth required)
 app.use([
   '/api/gemini',
-  '/api/weather'
+  '/api/weather',
+  '/api/auth/login'
 ], requireFirestoreReady);
 
 // Protected routes (auth + Firestore required)
