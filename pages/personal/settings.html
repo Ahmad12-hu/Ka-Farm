@@ -232,9 +232,24 @@
           <div
             class="pt-2 border-t border-slate-100 dark:border-[#143E23]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
+              <p class="text-xs font-black text-slate-800 dark:text-white">Données de Démonstration</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">Chargez un exemple réaliste d'exploitation maraîchère
+                sénégalaise
+                pour découvrir l'application.</p>
+            </div>
+            <button onclick="window.loadDemoData()"
+              class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl cursor-pointer shadow-md transition-all">
+              Charger les données de démo
+            </button>
+          </div>
+
+          <div
+            class="pt-4 border-t border-slate-100 dark:border-[#143E23]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
               <p class="text-xs font-black text-slate-800 dark:text-white">Réinitialiser l'Exploitation</p>
-              <p class="text-[10px] text-slate-400 mt-0.5">Restaure la base de données KA Farm avec les cultures de
-                démonstration initiales.</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">Supprime toutes vos données actuelles et remplace par le jeu
+                de
+                démonstration.</p>
             </div>
             <button onclick="window.resetDatabase()"
               class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs rounded-xl cursor-pointer shadow-md transition-all">

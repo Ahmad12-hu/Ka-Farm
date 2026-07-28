@@ -3,6 +3,10 @@ window.ErrorHandler = ErrorHandler;
 
 import { KAStorage } from '/js/storage.js';
 
+window.runStorageMigration = () => {
+  KAStorage.init();
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const usersList = document.getElementById('settings-users-list');
   if (usersList) {
@@ -52,11 +56,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.resetDatabase = () => {
     if (confirm("Voulez-vous vraiment réinitialiser toutes les données ? Votre historique de cultures, tâches, arrosages et ventes sera perdu et remplacé par les données de démonstration de la famille KA.")) {
-      localStorage.removeItem('ka_farm_crops');
-      localStorage.removeItem('ka_farm_nurseries');
-      localStorage.removeItem('ka_farm_stocks');
-      localStorage.removeItem('ka_farm_tasks');
-      localStorage.removeItem('ka_farm_finances');
+      const keys = [
+        'ka_farm_crops',
+        'ka_farm_nurseries',
+        'ka_farm_stocks',
+        'ka_farm_tasks',
+        'ka_farm_finances',
+        'ka_farm_parcelles',
+        'ka_farm_employees',
+        'ka_farm_seeds',
+        'ka_farm_products',
+        'ka_farm_cheptel'
+      ];
+      keys.forEach(k => localStorage.removeItem(KAStorage.getScopedKey(k)));
       if (window.ErrorHandler) {
         window.ErrorHandler.showToast('Base de données réinitialisée avec succès ! L\'application va redémarrer.', 'success');
       }
@@ -64,17 +76,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  window.loadDemoData = () => {
+    if (confirm("Voulez-vous charger le jeu de données de démonstration ? Cela remplacera vos données actuelles par des exemples réalistes.")) {
+      try {
+        const demoModule = await import('/js/modules/demo-data.js');
+        demoModule.loadDemoData(KAStorage);
+        if (window.ErrorHandler) {
+          window.ErrorHandler.showToast('Données de démo chargées avec succès !', 'success');
+        }
+        window.location.reload();
+      } catch (e) {
+        console.error('Failed to load demo data:', e);
+        if (window.ErrorHandler) {
+          window.ErrorHandler.showToast('Erreur lors du chargement des données de démo.', 'error');
+        }
+      }
+    }
+  };
+
   window.exportBackupData = () => {
     const backup = {
-      crops: localStorage.getItem('ka_farm_crops'),
-      nurseries: localStorage.getItem('ka_farm_nurseries'),
-      stocks: localStorage.getItem('ka_farm_stocks'),
-      tasks: localStorage.getItem('ka_farm_tasks'),
-      finances: localStorage.getItem('ka_farm_finances'),
-      parcelles: localStorage.getItem('ka_farm_parcelles'),
-      employees: localStorage.getItem('ka_farm_employees'),
-      attendance: localStorage.getItem('ka_farm_attendance'),
-      employee_payments: localStorage.getItem('ka_farm_employee_payments'),
+      crops: localStorage.getItem(KAStorage.getScopedKey('ka_farm_crops')),
+      nurseries: localStorage.getItem(KAStorage.getScopedKey('ka_farm_nurseries')),
+      stocks: localStorage.getItem(KAStorage.getScopedKey('ka_farm_stocks')),
+      tasks: localStorage.getItem(KAStorage.getScopedKey('ka_farm_tasks')),
+      finances: localStorage.getItem(KAStorage.getScopedKey('ka_farm_finances')),
+      parcelles: localStorage.getItem(KAStorage.getScopedKey('ka_farm_parcelles')),
+      employees: localStorage.getItem(KAStorage.getScopedKey('ka_farm_employees')),
+      attendance: localStorage.getItem(KAStorage.getScopedKey('ka_farm_attendance')),
+      employee_payments: localStorage.getItem(KAStorage.getScopedKey('ka_farm_employee_payments')),
       version: '1.0',
       exportedAt: new Date().toISOString()
     };
@@ -107,15 +137,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (confirm("Attention ! L'importation de cette sauvegarde va écraser toutes vos données actuelles. Voulez-vous continuer ?")) {
-          if (backup.crops) localStorage.setItem('ka_farm_crops', backup.crops);
-          if (backup.nurseries) localStorage.setItem('ka_farm_nurseries', backup.nurseries);
-          if (backup.stocks) localStorage.setItem('ka_farm_stocks', backup.stocks);
-          if (backup.tasks) localStorage.setItem('ka_farm_tasks', backup.tasks);
-          if (backup.finances) localStorage.setItem('ka_farm_finances', backup.finances);
-          if (backup.parcelles) localStorage.setItem('ka_farm_parcelles', backup.parcelles);
-          if (backup.employees) localStorage.setItem('ka_farm_employees', backup.employees);
-          if (backup.attendance) localStorage.setItem('ka_farm_attendance', backup.attendance);
-          if (backup.employee_payments) localStorage.setItem('ka_farm_employee_payments', backup.employee_payments);
+          if (backup.crops) localStorage.setItem(KAStorage.getScopedKey('ka_farm_crops'), backup.crops);
+          if (backup.nurseries) localStorage.setItem(KAStorage.getScopedKey('ka_farm_nurseries'), backup.nurseries);
+          if (backup.stocks) localStorage.setItem(KAStorage.getScopedKey('ka_farm_stocks'), backup.stocks);
+          if (backup.tasks) localStorage.setItem(KAStorage.getScopedKey('ka_farm_tasks'), backup.tasks);
+          if (backup.finances) localStorage.setItem(KAStorage.getScopedKey('ka_farm_finances'), backup.finances);
+          if (backup.parcelles) localStorage.setItem(KAStorage.getScopedKey('ka_farm_parcelles'), backup.parcelles);
+          if (backup.employees) localStorage.setItem(KAStorage.getScopedKey('ka_farm_employees'), backup.employees);
+          if (backup.attendance) localStorage.setItem(KAStorage.getScopedKey('ka_farm_attendance'), backup.attendance);
+          if (backup.employee_payments) localStorage.setItem(KAStorage.getScopedKey('ka_farm_employee_payments'), backup.employee_payments);
 
           if (window.ErrorHandler) {
             window.ErrorHandler.showToast("Importation réussie ! Vos données d'exploitation ont été restaurées. L'application va s'actualiser.", 'success');

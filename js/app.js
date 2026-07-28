@@ -4,6 +4,7 @@ import { UserManager } from './user-manager.js';
 import { WolofAudio } from './wolof-audio.js';
 import { ErrorHandler } from './modules/error-handler.js';
 import { MarketPricesModule } from './modules/market-prices.js';
+import { FeedbackModule } from './modules/feedback.js';
 
 // Global variables for other scripts to use
 window.KAStorage = KAStorage;
@@ -267,6 +268,7 @@ window.animateValue = function(element, start, end, duration = 800) {
 
 export const App = {
   init() {
+    console.info('[App] init started');
     // FORCER l'authentification D'ABORD pour éviter le race condition avec router.js
     UserManager.requireAuth();
     currentUser = UserManager.getCurrentUser();
@@ -290,6 +292,16 @@ export const App = {
     
     // Ensure storage is initialized and cloud sync on-snapshots are active on all pages
     KAStorage.init();
+
+    // Auto-load demo data on first launch if no data exists
+    const hasAnyData = () => {
+      const keys = ['ka_farm_crops','ka_farm_parcelles','ka_farm_tasks','ka_farm_finances','ka_farm_employees','ka_farm_cheptel','ka_farm_seeds','ka_farm_products'];
+      return keys.some(key => localStorage.getItem(KAStorage.getScopedKey(key)));
+    };
+
+    if (!hasAnyData()) {
+      import('/js/modules/demo-data.js').then(m => m.loadDemoData(KAStorage)).catch(e => console.error('Demo data load failed', e));
+    }
 
     // Detect system theme preference (matchMedia)
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -324,6 +336,38 @@ export const App = {
     if (window.location.pathname.includes('market-prices.html')) {
       MarketPricesModule.init();
     }
+    
+    // Initialize FeedbackModule if on shared pages (not auth/admin)
+    const pathname = window.location.pathname;
+    console.log('Current pathname:', pathname);
+
+    if (!pathname.includes('/pages/auth/') && !pathname.includes('/pages/admin/')) {
+      console.log('Initializing FeedbackModule on shared page...');
+
+      // Initialize feedback with Supabase credentials from Vite env if available
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || null;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || null;
+
+      if (supabaseUrl && supabaseKey) {
+        FeedbackModule.init(supabaseUrl, supabaseKey);
+      } else {
+        // Still inject the button but it will store locally
+        FeedbackModule.init(null, null);
+      }
+
+      // Force inject the button directly if not present after 3 seconds
+      setTimeout(() => {
+        console.log('Checking for feedback button...');
+        if (!document.getElementById('feedback-fab')) {
+          console.log('Feedback button NOT found, forcing injection...');
+          FeedbackModule.injectFloatingButton();
+        } else {
+          console.log('Feedback button already exists');
+        }
+      }, 3000);
+    } else {
+      console.log('Skipping FeedbackModule on auth/admin page');
+    }
   },
 
   applyTheme(dark) {
@@ -341,11 +385,11 @@ export const App = {
       if (dark) {
         toggle.classList.add('bg-emerald-600');
         toggle.classList.remove('bg-slate-300');
-        circle.classList.add('translate-x-4.5');
+        circle.classList.add('translate-x-5');
       } else {
         toggle.classList.add('bg-slate-300');
         toggle.classList.remove('bg-emerald-600');
-        circle.classList.remove('translate-x-4.5');
+        circle.classList.remove('translate-x-5');
       }
     }
 
@@ -372,6 +416,31 @@ export const App = {
     
     // Activer la transition fluide temporaire pour le changement de thème
     document.documentElement.classList.add('theme-transition');
+    
+    // Animate theme toggle icons (desktop + mobile)
+    const btnDesktop = document.getElementById('btn-theme-desktop');
+    const btnMobile = document.getElementById('btn-theme-mobile');
+    
+    if (btnDesktop) {
+      const iconDesktop = btnDesktop.querySelector('[data-lucide]');
+      if (iconDesktop) {
+        iconDesktop.classList.remove('theme-icon-animate');
+        void iconDesktop.offsetWidth;
+        iconDesktop.classList.add('theme-icon-animate');
+        setTimeout(() => iconDesktop.classList.remove('theme-icon-animate'), 450);
+      }
+    }
+    
+    if (btnMobile) {
+      const iconMobile = btnMobile.querySelector('[data-lucide]');
+      if (iconMobile) {
+        iconMobile.classList.remove('theme-icon-animate');
+        void iconMobile.offsetWidth;
+        iconMobile.classList.add('theme-icon-animate');
+        setTimeout(() => iconMobile.classList.remove('theme-icon-animate'), 450);
+      }
+    }
+    
     this.applyTheme(isDarkMode);
     
     // Nettoyer après l'animation pour ne pas perturber les hover normaux
@@ -585,8 +654,8 @@ export const App = {
           
           <div class="flex items-center justify-between text-[11px] font-bold text-[#819888] px-1 pt-1 border-t border-[#143E23]/40">
             <span class="flex items-center gap-1"><i data-lucide="moon" class="h-3.5 w-3.5 text-emerald-500"></i> Sombre</span>
-            <button onclick="window.toggleAppTheme()" id="dark-toggle-btn" class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isDarkMode ? 'bg-emerald-600' : 'bg-slate-300'}">
-              <span id="dark-toggle-circle" class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-4.5' : ''}"></span>
+            <button onclick="window.toggleAppTheme()" id="dark-toggle-btn" class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ease-in-out ${isDarkMode ? 'bg-emerald-600' : 'bg-slate-300'}">
+              <span id="dark-toggle-circle" class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${isDarkMode ? 'translate-x-5' : ''}"></span>
             </button>
           </div>
         </div>

@@ -18,6 +18,55 @@ const DEFAULT_NURSERIES = [
 
 const DEFAULT_HARVESTS = [];
 
+// Crop Library Data for DAR (Diagnostic Advisory Rec)
+const CROP_LIBRARY_DATA = [
+  {
+    id: 'CL-001',
+    cropName: 'Tomate Mongal F1',
+    family: 'Solanacées',
+    commonDiseases: ['Mildiou', 'Tuta Absoluta', 'Fusarium', 'Septoriose'],
+    symptoms: {
+      'Mildiou': 'Taches jaunes sur le dessus des feuilles, moisissure blanche en dessous',
+      'Tuta Absoluta': 'Tunnels dans les feuilles, excréments noirs, fruits perforés'
+    },
+    treatments: {
+      'Mildiou': 'Purin de neem préventif, bicarbonate de potassium, huile de neem',
+      'Tuta Absoluta': 'Pièges à phéromones, Bacillus thuringiensis, rotation culturale'
+    },
+    prevention: ['Rotation de 3 ans', 'Variétés résistantes', 'Espacement suffisant', 'Arrosage au goutte-à-goutte']
+  },
+  {
+    id: 'CL-002',
+    cropName: 'Oignon Rouge de Galmi',
+    family: 'Amaryllidacées',
+    commonDiseases: ['Mildiou', 'Pourriture blanche', 'Rouille'],
+    symptoms: {
+      'Mildiou': 'Taches brunes sur les feuilles avec halo jaune',
+      'Pourriture blanche': 'Pourriture molle à la base des bulbes'
+    },
+    treatments: {
+      'Mildiou': 'Extrait de neem, fongicide biologique à base de cuivre',
+      'Pourriture blanche': 'Améliorer le drainage, rotation, traitements préventifs'
+    },
+    prevention: ['Bon drainage', 'Rotation de 2 ans', 'Éviter l\'excès d\'humidité', 'Stockage en zone sèche']
+  },
+  {
+    id: 'CL-003',
+    cropName: 'Chou Cabus',
+    family: 'Brassicacées',
+    commonDiseases: ['Hernie des crucifères', 'Mildiou', 'Alternariose'],
+    symptoms: {
+      'Hernie': 'Gonflement des racines, jaunissement des feuilles',
+      'Mildiou': 'Taches jaunes sur les feuilles avec moisissure grise'
+    },
+    treatments: {
+      'Hernie': 'Aucun traitement curatif, brûler les plantes atteintes',
+      'Mildiou': 'Fongicide biologique, pursin de neem'
+    },
+    prevention: ['Rotation de 3 ans minimum', 'Variétés résistantes', 'pH du sol 6.5-7.5', 'Éviter l\'excès d\'azote']
+  }
+];
+
 // Plant Families (Rotation des cultures)
 const DEFAULT_PLANT_FAMILIES = [
   {
@@ -631,5 +680,18 @@ export const CropsStorage = {
     }
     
     return warnings;
+  },
+
+  // Crop Library for DAR
+  getCropLibrary() {
+    return KAStorage.get('ka_farm_crop_library', CROP_LIBRARY_DATA);
+  },
+  saveCropLibrary(library) {
+    KAStorage.set('ka_farm_crop_library', library);
+  },
+  getCropLibraryEntry(cropName) {
+    return this.getCropLibrary().find(entry => 
+      entry.cropName.toLowerCase() === cropName.toLowerCase()
+    );
   }
 };

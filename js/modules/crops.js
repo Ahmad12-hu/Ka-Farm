@@ -1,5 +1,5 @@
 // KA Farm - Crops & Nurseries Module (With Sanitary Diagnostics)
-import { KAStorage } from '../storage.js';
+import { KAStorage, CropsStorage } from '../storage.js';
 import { logger } from './logger.js';
 import { ErrorHandler } from './error-handler.js';
 import { UserManager } from '../user-manager.js';
@@ -7,7 +7,7 @@ import { UserManager } from '../user-manager.js';
 let liveStream = null;
 let currentSanitaryBase64 = '';
 
-const CROP_LIBRARY_DATA = KAStorage.getCropLibrary();
+const CROP_LIBRARY_DATA = CropsStorage.getCropLibrary();
 
 export const CropsModule = {
   init() {

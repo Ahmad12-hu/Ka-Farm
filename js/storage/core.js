@@ -89,7 +89,9 @@ export const KAStorage = {
     if (isGlobal) return key;
     const user = this.getCurrentUser();
     const enterpriseId = user ? (user.enterpriseId || 'ka_farm') : 'ka_farm';
-    return `${enterpriseId}_${key}`;
+    const prefix = `${enterpriseId}_`;
+    if (key.startsWith(prefix)) return key;
+    return `${prefix}${key}`;
   },
 
   init() {
@@ -105,6 +107,37 @@ export const KAStorage = {
         enterpriseCode: 'KA-FARM'
       }));
       this.saveUsers(seededUsers);
+    }
+
+    // Migrate accidentally double-prefixed keys to simple prefixed keys once
+    const migrationKeys = [
+      'ka_farm_crops',
+      'ka_farm_parcelles',
+      'ka_farm_tasks',
+      'ka_farm_finances',
+      'ka_farm_employees',
+      'ka_farm_cheptel',
+      'ka_farm_nurseries',
+      'ka_farm_seeds',
+      'ka_farm_products',
+      'ka_farm_employee_payments',
+      'ka_farm_elevage_health'
+    ];
+    let migrated = false;
+    migrationKeys.forEach(key => {
+      const scopedKey = this.getScopedKey(key);
+      const rawDouble = `ka_farm_${key}`;
+      const candidateDouble = this.getScopedKey(rawDouble);
+      const exists = localStorage.getItem(candidateDouble);
+      if (candidateDouble !== scopedKey && exists !== null) {
+        const value = localStorage.getItem(candidateDouble);
+        localStorage.setItem(scopedKey, value);
+        localStorage.removeItem(candidateDouble);
+        migrated = true;
+      }
+    });
+    if (migrated) {
+      try { console.info('[KAStorage] Migration: double-prefixed storage keys normalized.'); } catch {}
     }
   },
 
