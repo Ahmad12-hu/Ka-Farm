@@ -2,7 +2,7 @@ import { ErrorHandler } from '/js/modules/error-handler.js';
 window.ErrorHandler = ErrorHandler;
 
 import { KAStorage } from '/js/storage.js';
-import { loadDemoData as loadDemoDataFromModule } from '/js/modules/demo-data.js';
+import { loadDemoData as loadDemoDataFromModule } from '../../js/modules/demo-data.js';
 
 window.runStorageMigration = () => {
   KAStorage.init();
