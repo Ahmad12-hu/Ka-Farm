@@ -1,4 +1,5 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { GoogleGenAI } from '@google/genai';
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -243,6 +244,35 @@ const writeLimiter = rateLimit({
 
 // Apply rate limiting to all API routes
 app.use('/api', apiLimiter);
+
+// Auth middleware: require valid JWT token
+const JWT_SECRET = process.env.JWT_SECRET || 'ka-farm-super-secret-key-change-in-production';
+
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    logger.warn('Missing auth token', { url: req.originalUrl });
+    return res.status(401).json({ error: 'Token d\'authentification requis' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    logger.warn('Invalid auth token', { error: err.message, url: req.originalUrl });
+    return res.status(401).json({ error: 'Token invalide ou expiré' });
+  }
+}
+
+// Public routes (no auth required)
+app.use([
+  '/api/gemini',
+  '/api/weather'
+], requireFirestoreReady);
+
+// Protected routes (auth + Firestore required)
 app.use([
   '/api/crops',
   '/api/parcelles',
@@ -256,7 +286,41 @@ app.use([
   '/api/crop-profits',
   '/api/messages',
   '/api/stocks'
-], requireFirestoreReady);
+], requireAuth, requireFirestoreReady);
+
+// ==================== AUTH ====================
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email et mot de passe requis' });
+    }
+
+    // Read users from Firestore
+    const users = await syncWithFirestore('ka_farm_users', []);
+    const user = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+    if (!user) {
+      return res.status(401).json({ error: 'Identifiants incorrects' });
+    }
+
+    // Verify password
+    const isValid = await verifyPassword(password, user.password, user.password_salt);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Identifiants incorrects' });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role, enterpriseId: user.enterpriseId },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, enterpriseId: user.enterpriseId } });
+  } catch (error) {
+    logger.error('Auth error', { error: error.message });
+    return res.status(500).json({ error: 'Erreur lors de l\'authentification' });
+  }
+});
 
 // In-memory fallback stores
 let serverMessages = [
