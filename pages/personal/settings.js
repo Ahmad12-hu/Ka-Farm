@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.loadDemoData = async () => {
     if (confirm("Voulez-vous charger le jeu de données de démonstration ? Cela remplacera vos données actuelles par des exemples réalistes.")) {
       try {
-        const demoModule = await import('/js/modules/demo-data.js');
+        const demoModule = await import('../../js/modules/demo-data.js');
         demoModule.loadDemoData(KAStorage);
         if (window.ErrorHandler) {
           window.ErrorHandler.showToast('Données de démo chargées avec succès !', 'success');
