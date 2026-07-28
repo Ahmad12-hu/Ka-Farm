@@ -12,29 +12,29 @@ window.tryAccessDefault = () => {
 
 window.accessDashboard = (role) => {
   let user = null;
-  if (role === 'amadou') {
+  if (role === 'admin') {
     user = {
-      uid: 'demo-amadou',
-      name: 'Amadou KA',
-      email: 'amadou@ka-farm.sn',
+      uid: 'demo-admin',
+      name: 'Administrateur',
+      email: 'admin@ka-farm.sn',
       role: 'admin',
       enterpriseName: 'KA Farm',
       enterpriseCode: 'KA-FARM'
     };
   } else if (role === 'terrain') {
     user = {
-      uid: 'demo-moussa',
-      name: 'Moussa KA',
-      email: 'moussa@ka-farm.sn',
+      uid: 'demo-terrain',
+      name: 'Responsable terrain',
+      email: 'terrain@ka-farm.sn',
       role: 'Terrain',
       enterpriseName: 'KA Farm',
       enterpriseCode: 'KA-FARM'
     };
-  } else if (role === 'aly') {
+  } else if (role === 'employe') {
     user = {
-      uid: 'demo-aly',
-      name: 'Aly KA',
-      email: 'aly@ka-farm.sn',
+      uid: 'demo-employe',
+      name: 'Employé',
+      email: 'employe@ka-farm.sn',
       role: 'Bureau',
       enterpriseName: 'KA Farm',
       enterpriseCode: 'KA-FARM'

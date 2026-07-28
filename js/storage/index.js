@@ -37,5 +37,3 @@ export { WeatherAlertsStorage };
 import { CompostStorage } from './compost.js';
 export { CompostStorage };
 
-// Note: Individual domain modules no longer export DEFAULT_* constants.
-// Use the KAStorage get*() methods instead for runtime defaults.

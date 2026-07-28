@@ -46,29 +46,29 @@ export const FinancesModule = {
     const finances = KAStorage.getFinances();
 
     // Cumulative stats - Centralized
-    const { totalRevenu: totalRevenre, totalDepense: totalExpense, solde: totalSolde } = KAStorage.getFinanceStats();
+    const { totalRevenu: totalRevenue, totalDepense: totalExpenses, solde: totalBalance } = KAStorage.getFinanceStats();
 
     const elRev = document.getElementById('finances-total-revenu');
     const elExp = document.getElementById('finances-total-depense');
     const elSol = document.getElementById('finances-total-solde');
 
     if (elRev) {
-      if (window.animateValue) window.animateValue(elRev, 0, totalRevenre, 900);
-      else elRev.textContent = totalRevenre.toLocaleString('fr-FR') + ' F';
+      if (window.animateValue) window.animateValue(elRev, 0, totalRevenue, 900);
+      else elRev.textContent = totalRevenue.toLocaleString('fr-FR') + ' F';
     }
     if (elExp) {
-      if (window.animateValue) window.animateValue(elExp, 0, totalExpense, 900);
-      else elExp.textContent = totalExpense.toLocaleString('fr-FR') + ' F';
+      if (window.animateValue) window.animateValue(elExp, 0, totalExpenses, 900);
+      else elExp.textContent = totalExpenses.toLocaleString('fr-FR') + ' F';
     }
-    if (elSol) {
-      if (window.animateValue) window.animateValue(elSol, 0, totalSolde, 1100);
-      else elSol.textContent = totalSolde.toLocaleString('fr-FR') + ' F';
-      if (totalSolde >= 0) {
-        elSol.className = 'text-xl md:text-2xl font-black text-emerald-500 font-mono';
-      } else {
-        elSol.className = 'text-xl md:text-2xl font-black text-rose-500 font-mono';
+      if (elSol) {
+        if (window.animateValue) window.animateValue(elSol, 0, totalBalance, 1100);
+        else elSol.textContent = totalBalance.toLocaleString('fr-FR') + ' F';
+        if (totalBalance >= 0) {
+          elSol.className = 'text-xl md:text-2xl font-black text-emerald-500 font-mono';
+        } else {
+          elSol.className = 'text-xl md:text-2xl font-black text-rose-500 font-mono';
+        }
       }
-    }
 
     if (finances.length === 0) {
       tbody.innerHTML = `

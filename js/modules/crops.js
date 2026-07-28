@@ -9,7 +9,16 @@ let currentSanitaryBase64 = '';
 
 const CROP_LIBRARY_DATA = CropsStorage.getCropLibrary();
 
+/**
+ * Initialize the CropsModule, rendering all components and setting up event listeners.
+ * @async
+ * @function
+ */
 export const CropsModule = {
+  /**
+   * Initialize module: populate selects, render crops/nurseries/treatments/library, setup listeners.
+   * @async
+   */
   init() {
     try {
       this.populateParcelOptions();
@@ -37,6 +46,10 @@ export const CropsModule = {
     }
   },
 
+  /**
+   * Populate parcel dropdowns used in crop filters and forms with available parcel names.
+   * @function
+   */
   populateParcelOptions() {
     const filterFieldSelect = document.getElementById('crops-filter-field');
     const formFieldSelect = document.getElementById('form-crop-field-select');
@@ -250,6 +263,11 @@ export const CropsModule = {
     }
   },
 
+  /**
+   * Render the list of crops into the crops container, optionally filtering with provided array.
+   * @param {Array} [filteredCrops=null] - Optional prefiltered crop list to render.
+   * @function
+   */
   renderCrops(filteredCrops = null) {
     const container = document.getElementById('crops-container');
     if (!container) return;
@@ -369,6 +387,10 @@ export const CropsModule = {
     }
   },
 
+  /**
+   * Render nurseries list into the nurseries container.
+   * @function
+   */
   renderNurseries() {
     const container = document.getElementById('nurseries-container');
     if (!container) return;

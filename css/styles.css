@@ -273,12 +273,38 @@ html.theme-transition,
 html.theme-transition *,
 html.theme-transition *:before,
 html.theme-transition *:after {
-  transition: background-color 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              color 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              stroke 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              fill 0.45s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: background-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              stroke 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              fill 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Theme icon rotation animation */
+@keyframes themeIconRotate {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(0.8);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.theme-icon-animate {
+  animation: themeIconRotate 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Theme toggle switch smooth transition */
+#dark-toggle-btn {
+  transition: background-color 0.3s ease-in-out;
+}
+
+#dark-toggle-circle {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ==========================================================================
@@ -332,6 +358,50 @@ html.theme-transition *:after {
   border-radius: 50%;
   margin-top: 2px;
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Feedback浮动按钮 */
+#feedback-fab {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: feedbackPulse 2s ease-in-out infinite;
+}
+
+#feedback-fab:hover {
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+  animation: none;
+}
+
+@keyframes feedbackPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Feedback modal animations */
+#feedback-modal {
+  animation: feedbackFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes feedbackFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Rating buttons hover effect */
+.rating-btn:hover {
+  transform: scale(1.25);
+}
+
+.rating-btn.selected {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
 }
 
 

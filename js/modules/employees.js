@@ -8,42 +8,59 @@ let payments = [];
 let tasks = [];
 let selectedEmployeeId = null;
 
+/**
+ * Module de gestion des employés, pointages et paiements
+ * @module EmployeesModule
+ * @description Gère le registre des employés, les pointages journaliers, l'assignation de tâches et les paiements
+ */
 export const EmployeesModule = {
+  /**
+   * Initialise le module des employés
+   * Charge les données depuis le storage, configure les dates par défaut et attache les écouteurs
+   */
   init() {
-    employees = KAStorage.getEmployees();
-    attendance = KAStorage.getAttendance();
-    payments = KAStorage.getEmployeePayments();
-    tasks = KAStorage.getTasks();
+    try {
+      employees = KAStorage.getEmployees();
+      attendance = KAStorage.getAttendance();
+      payments = KAStorage.getEmployeePayments();
+      tasks = KAStorage.getTasks();
 
-    if (employees.length > 0) {
-      selectedEmployeeId = employees[0].id;
-    }
+      if (employees.length > 0) {
+        selectedEmployeeId = employees[0].id;
+      }
 
-    // Set default date for attendance pointage to today (2026-06-26)
-    const attDateEl = document.getElementById('attendance-date');
-    if (attDateEl) {
-      attDateEl.value = '2026-06-26'; // Default farm operations date
-    }
+      // Set default date for attendance pointage to today (2026-06-26)
+      const attDateEl = document.getElementById('attendance-date');
+      if (attDateEl) {
+        attDateEl.value = '2026-06-26'; // Default farm operations date
+      }
 
-    // Set default dates for calculator
-    const calcStart = document.getElementById('calc-start-date');
-    const calcEnd = document.getElementById('calc-end-date');
-    if (calcStart) calcStart.value = '2026-06-01';
-    if (calcEnd) calcEnd.value = '2026-06-26';
+      // Set default dates for calculator
+      const calcStart = document.getElementById('calc-start-date');
+      const calcEnd = document.getElementById('calc-end-date');
+      if (calcStart) calcStart.value = '2026-06-01';
+      if (calcEnd) calcEnd.value = '2026-06-26';
 
-    this.render();
-    this.setupListeners();
-    this.loadEmployeeSelects();
+      this.render();
+      this.setupListeners();
+      this.loadEmployeeSelects();
 
-    // Search filter for registry
-    const searchInput = document.getElementById('search-employees');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        this.filterEmployees(e.target.value);
-      });
+      // Search filter for registry
+      const searchInput = document.getElementById('search-employees');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          this.filterEmployees(e.target.value);
+        });
+      }
+    } catch (err) {
+      ErrorHandler.log(err, 'EmployeesModule.init');
     }
   },
 
+  /**
+   * Re-render toutes les sections du module
+   * Recharge les données depuis le storage avant chaque rendu
+   */
   render() {
     employees = KAStorage.getEmployees();
     attendance = KAStorage.getAttendance();
@@ -58,6 +75,10 @@ export const EmployeesModule = {
     this.renderPaymentsHistory();
   },
 
+  /**
+   * Affiche les statistiques des employés
+   * Nombre total, actifs, présence du jour, masse salariale journalière, total des paiements effectués
+   */
   renderStats() {
     if (!employees.length) return;
 
@@ -99,6 +120,9 @@ export const EmployeesModule = {
     if (totalPaidEl) totalPaidEl.textContent = totalPaid.toLocaleString('fr-FR');
   },
 
+  /**
+   * Render employees registry table.
+   */
   renderRegistryTable() {
     const tableBody = document.getElementById('employees-table-body');
     if (!tableBody) return;
@@ -394,6 +418,10 @@ export const EmployeesModule = {
     this.render();
   },
 
+  /**
+   * Filtre les employés dans le registre selon une requête
+   * @param {string} query - Requête de recherche (nom, ID, rôle, téléphone)
+   */
   filterEmployees(query) {
     const q = query.toLowerCase().trim();
     if (!q) {
@@ -495,6 +523,11 @@ export const EmployeesModule = {
     }
   },
 
+  /**
+   * Ajoute un nouvel employé
+   * Génère automatiquement un ID unique (E-XXX)
+   * @returns {void}
+   */
   submitAddEmployee() {
     const name = document.getElementById('form-emp-name').value.trim();
     const phone = document.getElementById('form-emp-phone').value.trim();
@@ -523,6 +556,10 @@ export const EmployeesModule = {
     }
   },
 
+  /**
+   * Modifie un employé existant
+   * Met à jour les champs modifiables sans changer l'ID
+   */
   submitEditEmployee() {
     const id = document.getElementById('form-edit-emp-id').value;
     const name = document.getElementById('form-edit-emp-name').value.trim();
@@ -582,6 +619,10 @@ export const EmployeesModule = {
     }
   },
 
+  /**
+   * Enregistre le pointage journalier des employés actifs
+   * Met à jour ou ajoute les enregistrements de présence pour la date sélectionnée
+   */
   submitAttendancePointage() {
     const selectedDate = document.getElementById('attendance-date')?.value || '2026-06-26';
     const activeEmployees = employees.filter(e => e.status === 'Actif');
