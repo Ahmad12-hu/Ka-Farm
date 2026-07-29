@@ -43,6 +43,12 @@ jest.mock('firebase-admin/firestore', () => ({
   }))
 }));
 
+// Mock jsonwebtoken to bypass auth in tests using the remaining admin account
+jest.mock('jsonwebtoken', () => ({
+  ...jest.requireActual('jsonwebtoken'),
+  verify: jest.fn(() => ({ userId: 'USR-001', email: 'amadou@ka-farm.sn', role: 'admin', enterpriseId: 'ka_farm' }))
+}));
+
 // Mock fetch for weather API test
 global.fetch = jest.fn(() =>
   Promise.resolve({
@@ -69,10 +75,12 @@ process.env.FIREBASE_SERVICE_ACCOUNT_KEY = JSON.stringify({
 const request = require('supertest');
 const app = require('../api/index.js').default;
 
+const authHeaders = { Authorization: 'Bearer test-token' };
+
 describe('API Endpoints', function() {
   describe('GET /api/crops', function() {
     test('returns crops data', async function() {
-      const response = await request(app).get('/api/crops');
+      const response = await request(app).get('/api/crops').set(authHeaders);
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
     });
@@ -89,6 +97,7 @@ describe('API Endpoints', function() {
 
       const response = await request(app)
         .post('/api/crops')
+        .set(authHeaders)
         .send(newCrop);
 
       expect(response.status).toBe(200);
@@ -99,11 +108,11 @@ describe('API Endpoints', function() {
     test('rejects crop with missing required fields', async function() {
       const invalidCrop = {
         name: 'Tomate Sans ID'
-        // Missing id field
       };
 
       const response = await request(app)
         .post('/api/crops')
+        .set(authHeaders)
         .send(invalidCrop);
 
       expect(response.status).toBe(400);
@@ -113,11 +122,12 @@ describe('API Endpoints', function() {
     test('rejects crop with empty name', async function() {
       const invalidCrop = {
         id: 'TEST-002',
-        name: '' // Empty name
+        name: ''
       };
 
       const response = await request(app)
         .post('/api/crops')
+        .set(authHeaders)
         .send(invalidCrop);
 
       expect(response.status).toBe(400);
@@ -133,6 +143,7 @@ describe('API Endpoints', function() {
 
       const response = await request(app)
         .put('/api/crops/C-101')
+        .set(authHeaders)
         .send(updateData);
 
       expect(response.status).toBe(200);
@@ -143,6 +154,7 @@ describe('API Endpoints', function() {
     test('returns 404 for non-existent crop', async function() {
       const response = await request(app)
         .put('/api/crops/NON-EXISTENT')
+        .set(authHeaders)
         .send({ name: 'Test' });
 
       expect(response.status).toBe(404);
@@ -151,20 +163,20 @@ describe('API Endpoints', function() {
 
   describe('DELETE /api/crops/:id', function() {
     test('deletes an existing crop', async function() {
-      const response = await request(app).delete('/api/crops/TEST-001');
+      const response = await request(app).delete('/api/crops/TEST-001').set(authHeaders);
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
     });
 
     test('returns 200 even for non-existent crop', async function() {
-      const response = await request(app).delete('/api/crops/NON-EXISTENT');
+      const response = await request(app).delete('/api/crops/NON-EXISTENT').set(authHeaders);
       expect(response.status).toBe(200);
     });
   });
 
   describe('GET /api/parcelles', function() {
     test('returns parcelles data', async function() {
-      const response = await request(app).get('/api/parcelles');
+      const response = await request(app).get('/api/parcelles').set(authHeaders);
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
     });
@@ -182,6 +194,7 @@ describe('API Endpoints', function() {
 
       const response = await request(app)
         .post('/api/parcelles')
+        .set(authHeaders)
         .send(newParcelle);
 
       expect(response.status).toBe(200);
@@ -192,11 +205,11 @@ describe('API Endpoints', function() {
     test('rejects parcelle with missing required fields', async function() {
       const invalidParcelle = {
         id: 'P-TEST-002'
-        // Missing name
       };
 
       const response = await request(app)
         .post('/api/parcelles')
+        .set(authHeaders)
         .send(invalidParcelle);
 
       expect(response.status).toBe(400);
@@ -205,7 +218,7 @@ describe('API Endpoints', function() {
 
   describe('GET /api/employees', function() {
     test('returns employees data', async function() {
-      const response = await request(app).get('/api/employees');
+      const response = await request(app).get('/api/employees').set(authHeaders);
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
     });
@@ -224,6 +237,7 @@ describe('API Endpoints', function() {
 
       const response = await request(app)
         .post('/api/employees')
+        .set(authHeaders)
         .send(newEmployee);
 
       expect(response.status).toBe(200);
@@ -234,11 +248,11 @@ describe('API Endpoints', function() {
     test('rejects employee with missing required fields', async function() {
       const invalidEmployee = {
         id: 'E-TEST-002'
-        // Missing name
       };
 
       const response = await request(app)
         .post('/api/employees')
+        .set(authHeaders)
         .send(invalidEmployee);
 
       expect(response.status).toBe(400);
@@ -247,7 +261,7 @@ describe('API Endpoints', function() {
 
   describe('GET /api/finances', function() {
     test('returns finances data', async function() {
-      const response = await request(app).get('/api/finances');
+      const response = await request(app).get('/api/finances').set(authHeaders);
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
     });
@@ -266,6 +280,7 @@ describe('API Endpoints', function() {
 
       const response = await request(app)
         .post('/api/finances')
+        .set(authHeaders)
         .send(newFinance);
 
       expect(response.status).toBe(200);
@@ -278,11 +293,12 @@ describe('API Endpoints', function() {
         id: 'F-TEST-002',
         description: 'Test',
         type: 'Revenu',
-        amount: -1000 // Invalid negative amount
+        amount: -1000
       };
 
       const response = await request(app)
         .post('/api/finances')
+        .set(authHeaders)
         .send(invalidFinance);
 
       expect(response.status).toBe(400);
@@ -292,12 +308,13 @@ describe('API Endpoints', function() {
       const invalidFinance = {
         id: 'F-TEST-003',
         description: 'Test',
-        type: 'InvalidType', // Not Revenu or Dépense
+        type: 'InvalidType',
         amount: 1000
       };
 
       const response = await request(app)
         .post('/api/finances')
+        .set(authHeaders)
         .send(invalidFinance);
 
       expect(response.status).toBe(400);
@@ -308,6 +325,7 @@ describe('API Endpoints', function() {
     test('returns weather data for valid coordinates', async function() {
       const response = await request(app)
         .get('/api/weather')
+        .set(authHeaders)
         .query({ lat: 14.7930, lon: -17.2650 });
 
       expect(response.status).toBe(200);
@@ -318,7 +336,8 @@ describe('API Endpoints', function() {
     test('returns 400 for missing coordinates', async function() {
       const response = await request(app)
         .get('/api/weather')
-        .query({ lat: 14.7930 }); // Missing lon
+        .set(authHeaders)
+        .query({ lat: 14.7930 });
 
       expect(response.status).toBe(400);
     });
@@ -328,6 +347,7 @@ describe('API Endpoints', function() {
     test('returns text response for text-only prompt', async function() {
       const response = await request(app)
         .post('/api/gemini')
+        .set(authHeaders)
         .send({ prompt: 'Comment traiter le mildiou?' });
 
       expect(response.status).toBe(200);
@@ -339,7 +359,8 @@ describe('API Endpoints', function() {
       const mockImage = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQABAF';
       const response = await request(app)
         .post('/api/gemini')
-        .send({ 
+        .set(authHeaders)
+        .send({
           prompt: 'Diagnostique cette image.',
           image: mockImage
         });
@@ -353,6 +374,7 @@ describe('API Endpoints', function() {
       const mockImage = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQABAF';
       const response = await request(app)
         .post('/api/gemini')
+        .set(authHeaders)
         .send({ image: mockImage });
 
       expect(response.status).toBe(400);
@@ -362,7 +384,7 @@ describe('API Endpoints', function() {
 
   describe('Rate Limiting', function() {
     test('allows requests within limit', async function() {
-      const response = await request(app).get('/api/crops');
+      const response = await request(app).get('/api/crops').set(authHeaders);
       expect(response.status).toBe(200);
     });
   });
