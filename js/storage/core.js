@@ -14,26 +14,6 @@ const DEFAULT_USERS = [
     enterpriseId: 'ka_farm',
     enterpriseName: 'KA Farm',
     enterpriseCode: 'KA-FARM'
-  },
-  {
-    id: 'USR-002',
-    email: 'moussa@ka-farm.sn',
-    password: 'terrain123',
-    name: 'Moussa KA',
-    role: 'Terrain',
-    enterpriseId: 'ka_farm',
-    enterpriseName: 'KA Farm',
-    enterpriseCode: 'KA-FARM'
-  },
-  {
-    id: 'USR-003',
-    email: 'aly@ka-farm.sn',
-    password: 'bureau123',
-    name: 'Aly KA',
-    role: 'Bureau',
-    enterpriseId: 'ka_farm',
-    enterpriseName: 'KA Farm',
-    enterpriseCode: 'KA-FARM'
   }
 ];
 
@@ -41,10 +21,10 @@ let isInitialized = false;
 
 // Default Tasks Data
 const DEFAULT_TASKS = [
-  { id: 'T-401', title: 'Irrigation matin de l\'oignon Galmi', category: 'Irrigation', dueDate: '2026-06-26', assignee: 'Moussa', priority: 'Haute', completed: false },
+  { id: 'T-401', title: 'Irrigation matin de l\'oignon Galmi', category: 'Irrigation', dueDate: '2026-06-26', assignee: 'Responsable terrain', priority: 'Haute', completed: false },
   { id: 'T-402', title: 'Sarclage & Désherbage planche choux', category: 'Entretien', dueDate: '2026-06-28', assignee: 'Fatou', priority: 'Moyenne', completed: false },
-  { id: 'T-403', title: 'Vérifier la levée de la pépinière tomates', category: 'Pépinière', dueDate: '2026-06-25', assignee: 'Moussa', priority: 'Haute', completed: true },
-  { id: 'T-404', title: 'Achat de 5 sacs de fumier de volaille', category: 'Entretien', dueDate: '2026-06-30', assignee: 'Aly', priority: 'Basse', completed: false }
+  { id: 'T-403', title: 'Vérifier la levée de la pépinière tomates', category: 'Pépinière', dueDate: '2026-06-25', assignee: 'Responsable terrain', priority: 'Haute', completed: true },
+  { id: 'T-404', title: 'Achat de 5 sacs de fumier de volaille', category: 'Entretien', dueDate: '2026-06-30', assignee: 'Employé', priority: 'Basse', completed: false }
 ];
 
 // Default Crops Data
@@ -70,9 +50,9 @@ const DEFAULT_FINANCES = [
 
 // Default Employees Data
 const DEFAULT_EMPLOYEES = [
-  { id: 'E-001', name: 'Moussa KA', role: 'Chef d\'Exploitation', phone: '+221 77 123 45 67', status: 'Actif', hireDate: '2025-01-15' },
+  { id: 'E-001', name: 'Responsable terrain', role: 'Chef d\'Exploitation', phone: '+221 77 123 45 67', status: 'Actif', hireDate: '2025-01-15' },
   { id: 'E-002', name: 'Fatou DIALLO', role: 'Ouvrière', phone: '+221 76 987 65 43', status: 'Actif', hireDate: '2025-03-01' },
-  { id: 'E-003', name: 'Aly BA', role: 'Responsable Stocks', phone: '+221 78 456 78 90', status: 'Actif', hireDate: '2025-02-01' }
+  { id: 'E-003', name: 'Employé', role: 'Responsable Stocks', phone: '+221 78 456 78 90', status: 'Actif', hireDate: '2025-02-01' }
 ];
 
 // Calculate days between two dates

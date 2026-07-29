@@ -21,24 +21,6 @@ window.accessDashboard = (role) => {
       enterpriseName: 'KA Farm',
       enterpriseCode: 'KA-FARM'
     };
-  } else if (role === 'terrain') {
-    user = {
-      uid: 'demo-terrain',
-      name: 'Responsable terrain',
-      email: 'terrain@ka-farm.sn',
-      role: 'Terrain',
-      enterpriseName: 'KA Farm',
-      enterpriseCode: 'KA-FARM'
-    };
-  } else if (role === 'employe') {
-    user = {
-      uid: 'demo-employe',
-      name: 'Employé',
-      email: 'employe@ka-farm.sn',
-      role: 'Bureau',
-      enterpriseName: 'KA Farm',
-      enterpriseCode: 'KA-FARM'
-    };
   } else {
     user = {
       uid: 'demo-user',
