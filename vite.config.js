@@ -47,7 +47,6 @@ export default defineConfig(() => {
           'pages/shared/market-prices': path.resolve(__dirname, 'pages/shared/market-prices.html'),
           'pages/shared/tools-sharing': path.resolve(__dirname, 'pages/shared/tools-sharing.html'),
           'pages/shared/calendar': path.resolve(__dirname, 'pages/shared/calendar.html'),
-          'pages/shared/about': path.resolve(__dirname, 'pages/shared/about.html'),
           // Pages admin
           'pages/admin/login': path.resolve(__dirname, 'pages/admin/login.html'),
           'pages/admin/dashboard': path.resolve(__dirname, 'pages/admin/dashboard.html'),
