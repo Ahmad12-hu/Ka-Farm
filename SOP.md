@@ -102,8 +102,8 @@ Mode: PostgreSQL
 
 1. Ouvrez votre navigateur : **http://localhost:3000**
 2. Connectez-vous avec un compte :
-   - Email : `moussa@kafarm.sn`
-   - Mot de passe : `moussa-village`
+   - Email : `terrain@ka-farm.sn`
+   - Mot de passe : `terrain123`
 3. Testez les fonctionnalités :
    - Page d'élevage : http://localhost:3000/pages/shared/elevage.html
    - Guide de formation : http://localhost:3000/pages/shared/training.html

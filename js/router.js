@@ -104,13 +104,13 @@ export const Router = {
         return;
       }
 
-      // Role-based access control for sensitive routes
-      if (path === '/pages/shared/finances.html' && !UserManager.canEditFinances()) {
+      // Role-based access control for sensitive routes - view permissions for navigation
+      if (path === '/pages/shared/finances.html' && !UserManager.canViewFinances()) {
         window.location.href = '/pages/shared/dashboard.html';
         return;
       }
 
-      if (path === '/pages/shared/employees.html' && !UserManager.canManageEmployees()) {
+      if (path === '/pages/shared/employees.html' && !UserManager.canViewEmployees()) {
         window.location.href = '/pages/shared/dashboard.html';
         return;
       }

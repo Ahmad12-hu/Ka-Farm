@@ -96,7 +96,7 @@ Vous devriez recevoir du JSON avec les données du cheptel.
 ### Test 2 : Tester l'application
 
 1. Ouvrez http://localhost:3000
-2. Connectez-vous avec : `moussa@kafarm.sn` / `moussa-village`
+2. Connectez-vous avec : `terrain@ka-farm.sn` / `terrain123`
 3. Ajoutez un groupe d'élevage
 4. Vérifiez dans Supabase > Table Editor > cheptel que la donnée est bien sauvegardée
 
@@ -155,8 +155,8 @@ Votre base de données Supabase contient maintenant 14 tables :
 
 ## 🎓 Comptes de test
 
-- **Moussa** (Terrain) : `moussa@kafarm.sn` / `moussa-village`
-- **Aly** (Bureau) : `aly@kafarm.sn` / `aly-dakar`
+- **Responsable terrain** : `terrain@ka-farm.sn` / `terrain123`
+- **Employé** : `employe@ka-farm.sn` / `bureau123`
 - **Amadou** (Bureau) : `contact@kafarm.sn` / `password`
 
 ## 📚 Documentation

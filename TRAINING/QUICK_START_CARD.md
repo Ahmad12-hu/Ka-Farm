@@ -166,8 +166,8 @@ Quantité ≤ 20% du Maximum
 | Rôle                    | Nom       | Téléphone    | Email            |
 | ----------------------- | --------- | ------------ | ---------------- |
 | **Admin**               | Amadou KA | 77 123 45 67 | admin@kafarm.sn  |
-| **Responsable Terrain** | Moussa KA | 76 987 65 43 | moussa@kafarm.sn |
-| **Responsable Bureau**  | Aly KA    | 70 112 23 34 | aly@kafarm.sn    |
+| **Responsable Terrain** | Responsable terrain | 76 987 65 43 | terrain@ka-farm.sn |
+| **Responsable Bureau**  | Employé | 70 112 23 34 | employe@ka-farm.sn    |
 
 ---
 

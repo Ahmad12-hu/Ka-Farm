@@ -107,7 +107,7 @@ describe('KAStorage Module', function() {
 
   test('saveTasks and getTasks work correctly', function() {
     const testTasks = [
-      { id: 'T-001', title: 'Irrigation', assignee: 'Moussa' }
+      { id: 'T-001', title: 'Irrigation', assignee: 'Responsable terrain' }
     ];
     
     KAStorage.saveTasks(testTasks);

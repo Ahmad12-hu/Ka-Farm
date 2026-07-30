@@ -357,7 +357,7 @@ Quantité actuelle ≤ 20% de Quantité Maximale
 | Champ               | Description       | Exemple            |
 | ------------------- | ----------------- | ------------------ |
 | **ID**              | Code unique       | `E-006`            |
-| **Nom complet**     | Nom de l'employé  | `Moussa Diop`      |
+| **Nom complet**     | Nom de l'employé  | `Employé terrain`  |
 | **Téléphone**       | Numéro de contact | `77 123 45 67`     |
 | **Rôle**            | Fonction          | `Ouvrier agricole` |
 | **Taux journalier** | Salaire par jour  | `4000`             |

@@ -116,15 +116,14 @@ export const FinancesModule = {
     if (window.lucide) {
       window.lucide.createIcons();
     }
-    this.renderMargins();
+    this.renderCharts();
   },
 
-  renderMargins() {
+  renderCharts() {
+    const finances = KAStorage.getFinances();
     const parcelBody = document.getElementById('parcel-margins-table-body');
     const cropBody = document.getElementById('crop-margins-table-body');
     if (!parcelBody && !cropBody) return;
-
-    const finances = KAStorage.getFinances();
 
     // 1. Parcels Margins calculation
     const parcels = [
@@ -233,6 +232,198 @@ export const FinancesModule = {
         `;
       }).join('');
     }
+
+    // Update charts
+    this.updateCharts(parcelStats, cropStats, finances);
+  },
+
+  updateCharts(parcelStats, cropStats, finances) {
+    // Helper to get chart colors for dark/light mode
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? '#334155' : '#e2e8f0';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+
+    // 1. Parcel Margins Bar Chart
+    const parcelCanvas = document.getElementById('parcel-margins-chart');
+    if (parcelCanvas) {
+      const ctx = parcelCanvas.getContext('2d');
+      if (window.parcelMarginsChart) window.parcelMarginsChart.destroy();
+      window.parcelMarginsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: parcelStats.map(p => p.name),
+          datasets: [
+            {
+              label: 'Revenus',
+              data: parcelStats.map(p => p.rev),
+              backgroundColor: '#10b981',
+              borderRadius: 6
+            },
+            {
+              label: 'Dépenses',
+              data: parcelStats.map(p => p.exp),
+              backgroundColor: '#ef4444',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: textColor, font: { size: 11 } } }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: textColor, callback: v => v.toLocaleString('fr-FR') + ' F' },
+              grid: { color: gridColor }
+            },
+            x: {
+              ticks: { color: textColor, font: { size: 10 } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Expense Categories Pie Chart
+    const expenseCanvas = document.getElementById('expense-categories-chart');
+    if (expenseCanvas) {
+      const categories = {};
+      finances.forEach(f => {
+        if (f.type === 'Dépense') {
+          categories[f.category] = (categories[f.category] || 0) + f.amount;
+        }
+      });
+      const ctx = expenseCanvas.getContext('2d');
+      if (window.expenseCategoriesChart) window.expenseCategoriesChart.destroy();
+      window.expenseCategoriesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(categories),
+          datasets: [{
+            data: Object.values(categories),
+            backgroundColor: [
+              '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
+              '#ec4899', '#14b8a6', '#f97316'
+            ],
+            borderWidth: 2,
+            borderColor: isDark ? '#0B2112' : '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: textColor, font: { size: 10 }, padding: 12 }
+            }
+          }
+        }
+      });
+    }
+
+    // 3. Monthly Cashflow Line Chart
+    const monthlyCanvas = document.getElementById('monthly-cashflow-chart');
+    if (monthlyCanvas) {
+      const monthly = {};
+      finances.forEach(f => {
+        const month = f.date.substring(0, 7);
+        if (!monthly[month]) monthly[month] = { rev: 0, exp: 0 };
+        if (f.type === 'Revenu') monthly[month].rev += f.amount;
+        else monthly[month].exp += f.amount;
+      });
+      const sortedMonths = Object.keys(monthly).sort();
+      const ctx = monthlyCanvas.getContext('2d');
+      if (window.monthlyCashflowChart) window.monthlyCashflowChart.destroy();
+      window.monthlyCashflowChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sortedMonths.map(m => {
+            const [y, mo] = m.split('-');
+            const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+            return `${months[parseInt(mo) - 1]} ${y}`;
+          }),
+          datasets: [
+            {
+              label: 'Revenus',
+              data: sortedMonths.map(m => monthly[m].rev),
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Dépenses',
+              data: sortedMonths.map(m => monthly[m].exp),
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              fill: true,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: textColor, font: { size: 11 } } }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: textColor, callback: v => v.toLocaleString('fr-FR') + ' F' },
+              grid: { color: gridColor }
+            },
+            x: {
+              ticks: { color: textColor, font: { size: 10 } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // 4. Crop Performance Bar Chart
+    const cropCanvas = document.getElementById('crop-performance-chart');
+    if (cropCanvas) {
+      const ctx = cropCanvas.getContext('2d');
+      if (window.cropPerformanceChart) window.cropPerformanceChart.destroy();
+      window.cropPerformanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: cropStats.map(c => c.name),
+          datasets: [{
+            label: 'Marge Nette',
+            data: cropStats.map(c => c.net),
+            backgroundColor: cropStats.map(c => c.net >= 0 ? '#10b981' : '#ef4444'),
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: { color: textColor, callback: v => v.toLocaleString('fr-FR') + ' F' },
+              grid: { color: gridColor }
+            },
+            y: {
+              ticks: { color: textColor, font: { size: 10 } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
   },
 
   calculateCompost() {
@@ -288,6 +479,115 @@ export const FinancesModule = {
   },
 
   setupListeners() {
+    // Excel Export using SheetJS
+    window.exportExcel = () => {
+      const finances = KAStorage.getFinances();
+      if (finances.length === 0) {
+        ErrorHandler.showToast("Aucune transaction à exporter !", "error");
+        return;
+      }
+
+      const { totalRevenu: totalRevenue, totalDepense: totalExpenses, solde: totalBalance } = KAStorage.getFinanceStats();
+
+      // Build comprehensive Excel workbook with multiple sheets
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: Transactions
+      const transactionsData = [
+        ["KA FARM - Bilan Financier"],
+        [`Date de génération: ${new Date().toLocaleDateString('fr-FR')}`],
+        [],
+        ["Désignation", "Type", "Rubrique", "Date", "Montant (FCFA)", "Parcelle", "Culture"]
+      ];
+
+      finances.forEach(f => {
+        transactionsData.push([
+          f.description,
+          f.type,
+          f.category,
+          f.date,
+          f.amount,
+          f.parcelId || "",
+          f.cropName || ""
+        ]);
+      });
+
+      // Add summary rows
+      transactionsData.push([]);
+      transactionsData.push(["RÉCAPITULATIF", "", "", "", "", "", ""]);
+      transactionsData.push(["Total Revenus", "", "", "", totalRevenue, "", ""]);
+      transactionsData.push(["Total Dépenses", "", "", "", totalExpenses, "", ""]);
+      transactionsData.push(["Solde Net", "", "", "", totalBalance, "", ""]);
+
+      const ws1 = XLSX.utils.aoa_to_sheet(transactionsData);
+
+      // Set column widths for Transactions sheet
+      ws1['!cols'] = [
+        { wch: 35 }, { wch: 12 }, { wch: 20 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 20 }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws1, "Transactions");
+
+      // Sheet 2: Marges par Parcelle
+      const parcelData = [
+        ["Marges par Parcelle"],
+        ["Parcelle", "Revenus (FCFA)", "Dépenses (FCFA)", "Marge Nette (FCFA)"]
+      ];
+
+      const parcels = [
+        { id: 'P-001', name: 'Parcelle Nord' },
+        { id: 'P-002', name: 'Parcelle Est' },
+        { id: 'P-003', name: 'Parcelle Sud' },
+        { id: 'P-004', name: 'Zone Ombragée' },
+        { id: 'P-005', name: 'Parcelle Ouest' }
+      ];
+
+      parcels.forEach(p => {
+        let rev = 0, exp = 0;
+        finances.forEach(f => {
+          if (f.parcelId === p.id) {
+            if (f.type === 'Revenu') rev += f.amount;
+            else if (f.type === 'Dépense') exp += f.amount;
+          }
+        });
+        parcelData.push([p.name, rev, exp, rev - exp]);
+      });
+
+      const ws2 = XLSX.utils.aoa_to_sheet(parcelData);
+      ws2['!cols'] = [{ wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, ws2, "Marges Parcelles");
+
+      // Sheet 3: Marges par Variété
+      const cropData = [
+        ["Marges par Variété"],
+        ["Variété", "Revenus (FCFA)", "Dépenses (FCFA)", "Marge Nette (FCFA)"]
+      ];
+
+      const cropsList = [
+        'Tomate Mongal F1', 'Oignon Rouge de Galmi', 'Menthe de Thiès',
+        'Chou Cabus', 'Piment Oiseau'
+      ];
+
+      cropsList.forEach(cName => {
+        let rev = 0, exp = 0;
+        finances.forEach(f => {
+          if (f.cropName === cName) {
+            if (f.type === 'Revenu') rev += f.amount;
+            else if (f.type === 'Dépense') exp += f.amount;
+          }
+        });
+        cropData.push([cName, rev, exp, rev - exp]);
+      });
+
+      const ws3 = XLSX.utils.aoa_to_sheet(cropData);
+      ws3['!cols'] = [{ wch: 25 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, ws3, "Marges Variétés");
+
+      // Download the Excel file
+      XLSX.writeFile(wb, `ka_farm_bilan_financier_${new Date().toISOString().split('T')[0]}.xlsx`);
+      ErrorHandler.showToast('Export Excel réussi !', 'success');
+    };
+
     // WhatsApp Export of a single receipt
     window.shareFinanceWhatsApp = (id) => {
       const finances = KAStorage.getFinances();

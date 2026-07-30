@@ -555,7 +555,7 @@ export const StocksModule = {
             <div class="report-card">
               <h4 style="margin: 0 0 8px 0; text-transform: uppercase; font-size: 9px; color: #047857; letter-spacing: 0.5px;">Exploitation & Normes</h4>
               <p style="margin: 4px 0;">📍 <strong>Zone d'activité :</strong> ${zone}</p>
-              <p style="margin: 4px 0;">🔑 <strong>Supervision :</strong> Famille KA (Moussa, Aly & Amadou)</p>
+              <p style="margin: 4px 0;">🔑 <strong>Supervision :</strong> Équipe KA-Farm</p>
               <p style="margin: 4px 0;">🌱 <strong>Type de traitement :</strong> Intrants certifiés 100% bio & écologiques</p>
             </div>
             <div class="report-card" style="border: 1px solid #cbd5e1; background: #f8fafc;">

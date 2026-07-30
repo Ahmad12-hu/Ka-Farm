@@ -105,7 +105,7 @@ const tasks = [
     title: 'Irrigation matin planche tomates',
     category: 'Irrigation',
     dueDate: '2026-07-05',
-    assignee: 'Moussa',
+    assignee: 'Responsable terrain',
     priority: 'Haute',
     completed: false
   },
@@ -123,7 +123,7 @@ const tasks = [
     title: 'Vérifier système goutte-à-goutte',
     category: 'Maintenance',
     dueDate: '2026-07-07',
-    assignee: 'Moussa',
+    assignee: 'Responsable terrain',
     priority: 'Moyenne',
     completed: false
   },
@@ -193,7 +193,7 @@ const finances = [
 const employees = [
   {
     id: 'E-101',
-    name: 'Moussa DIALLO',
+    name: 'Employé terrain',
     role: 'Chef d\'Exploitation',
     phone: '+221 77 123 45 67',
     status: 'Actif',

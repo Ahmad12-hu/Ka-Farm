@@ -19,13 +19,13 @@ export const UserManager = {
     return KAStorage.getCurrentUser() !== null;
   },
 
-  // Check if current user has role Terrain (Moussa - ground operator)
+  // Check if current user has role Terrain (ground operator)
   isTerrain() {
     const user = this.getCurrentUser();
     return user && user.role === 'Terrain';
   },
 
-  // Check if current user has role Bureau (Aly - office supervisor)
+  // Check if current user has role Bureau (office supervisor)
   isBureau() {
     const user = this.getCurrentUser();
     return user && user.role === 'Bureau';
@@ -83,6 +83,32 @@ export const UserManager = {
     // Terrain can only view and report usage
     const user = this.getCurrentUser();
     return user && (user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+  },
+
+  // View-only permissions for shared pages
+  canViewFinances() {
+    // All authenticated roles can view finances (Terrain: read-only sales, Bureau: full access)
+    const user = this.getCurrentUser();
+    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+  },
+
+  canViewEmployees() {
+    // All authenticated roles can view employees (Terrain: view assignments, Bureau: full management)
+    const user = this.getCurrentUser();
+    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+  },
+
+  // View-only permissions for shared pages
+  canViewFinances() {
+    // All authenticated roles can view finances (Terrain: read-only sales, Bureau: full access)
+    const user = this.getCurrentUser();
+    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+  },
+
+  canViewEmployees() {
+    // All authenticated roles can view employees (Terrain: view assignments, Bureau: full management)
+    const user = this.getCurrentUser();
+    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
   },
 
   canManageHarvests() {
