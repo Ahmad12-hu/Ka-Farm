@@ -16,6 +16,9 @@ export default defineConfig(() => {
       },
     },
     build: {
+      // The dashboard entry point is intentionally self-contained and currently
+      // produces a bundle just under 700 kB after minification.
+      chunkSizeWarningLimit: 700,
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
@@ -78,4 +81,3 @@ export default defineConfig(() => {
     },
   };
 });
-

@@ -19,6 +19,13 @@ const DEFAULT_USERS = [
 
 let isInitialized = false;
 
+function shouldSeedLocalDefaults() {
+  if (typeof window === 'undefined' || !window.location) return false;
+
+  const hostname = (window.location.hostname || '').toLowerCase();
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '';
+}
+
 // Default Tasks Data
 const DEFAULT_TASKS = [
   { id: 'T-401', title: 'Irrigation matin de l\'oignon Galmi', category: 'Irrigation', dueDate: '2026-06-26', assignee: 'Responsable terrain', priority: 'Haute', completed: false },
@@ -78,8 +85,9 @@ export const KAStorage = {
     if (isInitialized) return;
     isInitialized = true;
 
-    // Seed default users once globally
-    if (!localStorage.getItem('ka_farm_users')) {
+    // Seed default users only in local development/testing contexts.
+    // This avoids shipping a default account on production domains.
+    if (shouldSeedLocalDefaults() && !localStorage.getItem('ka_farm_users')) {
       const seededUsers = DEFAULT_USERS.map(user => ({
         ...user,
         enterpriseId: 'ka_farm',
