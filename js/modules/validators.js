@@ -1,5 +1,6 @@
 // Zod Validation Schemas pour KA Farm
 import { z } from 'zod';
+import { USER_ROLES, ALL_USER_ROLES } from '../constants/roles.js';
 
 // ==================== SCHÉMAS DE VALIDATION ====================
 
@@ -8,7 +9,7 @@ export const UserSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email('Email invalide'),
   name: z.string().min(2, 'Nom trop court').max(255),
-  role: z.enum(['Bureau', 'admin', 'super_admin']),
+  role: z.enum(ALL_USER_ROLES),
   enterprise_id: z.string().default('ka_farm'),
   enterprise_name: z.string().default('KA Farm'),
   enterprise_code: z.string().default('KA-FARM'),
@@ -212,7 +213,7 @@ export const LoginSchema = z.object({
 export const SignupSchema = z.object({
   name: z.string().trim().min(2, 'Nom complet requis (au moins 2 caractères)').max(255),
   email: z.string().trim().min(1, 'Email requis').email('Email invalide'),
-  role: z.enum(['Terrain', 'Bureau'], { message: 'Rôle invalide' }),
+  role: z.enum(ALL_USER_ROLES, { message: 'Rôle invalide' }),
   enterpriseName: z.string().trim().min(1, "Nom de l'exploitation requis"),
   password: z.string().min(6, 'Mot de passe trop court (minimum 6 caractères)'),
   confirmPassword: z.string().min(1, 'Confirmation du mot de passe requise'),

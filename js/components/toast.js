@@ -119,6 +119,13 @@ class ToastManager {
    * Retourne le HTML du toast
    */
   getToastHTML(message, type) {
+    const safeMessage = String(message ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
     const icons = {
       success: '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
       error: '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
@@ -129,7 +136,7 @@ class ToastManager {
     return `
       ${icons[type] || icons.info}
       <div class="flex-1">
-        <p class="text-sm font-semibold leading-tight">${message}</p>
+        <p class="text-sm font-semibold leading-tight">${safeMessage}</p>
       </div>
       <button class="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

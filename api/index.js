@@ -135,6 +135,19 @@ function isProduction() {
   return process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
 }
 
+function getJwtSecret() {
+  const configuredSecret = (process.env.JWT_SECRET || '').trim();
+  if (configuredSecret) return configuredSecret;
+
+  // Keep a local-only fallback so development and tests continue to work
+  // without changing the current project structure.
+  if (!isProduction()) {
+    return 'ka-farm-dev-only-secret-change-in-production';
+  }
+
+  return null;
+}
+
 // Initialize Firebase Admin SDK (for secure backend operations)
 let adminDb = null;
 let firebaseInitializationError = null;
@@ -211,7 +224,10 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173').split(',');
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -250,6 +266,14 @@ app.use('/api', apiLimiter);
 const JWT_SECRET = process.env.JWT_SECRET || 'ka-farm-super-secret-key-change-in-production';
 
 function requireAuth(req, res, next) {
+  const jwtSecret = getJwtSecret();
+  if (!jwtSecret) {
+    logger.error('JWT secret missing in production', {
+      route: `${req.method} ${req.originalUrl}`
+    });
+    return res.status(503).json({ error: 'Configuration JWT manquante' });
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     logger.warn('Missing auth token', { url: req.originalUrl });
@@ -258,7 +282,7 @@ function requireAuth(req, res, next) {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, jwtSecret);
     req.user = decoded;
     next();
   } catch (err) {
@@ -298,6 +322,11 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
 
+    const jwtSecret = getJwtSecret();
+    if (!jwtSecret) {
+      return res.status(503).json({ error: 'Configuration JWT manquante' });
+    }
+
     // Read users from Firestore
     const users = await syncWithFirestore('ka_farm_users', []);
     const user = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
@@ -313,7 +342,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role, enterpriseId: user.enterpriseId },
-      JWT_SECRET,
+      jwtSecret,
       { expiresIn: '7d' }
     );
 

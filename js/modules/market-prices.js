@@ -2,6 +2,7 @@
 // Graphique simple d'évolution des prix
 
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 export const MarketPricesModule = {
   state: {
@@ -19,13 +20,17 @@ export const MarketPricesModule = {
   crops: ['Tomate Mongal F1', 'Oignon Rouge de Galmi', 'Chou Cabus', 'Menthe de Thiès', 'Piment Oiseau', 'Aubergine'],
 
   async init() {
-    this.storage = KAStorage;
-    await this.waitForElements();
-    this.cacheElements();
-    this.setupListeners();
-    this.loadInitialData();
-    this.renderSinglePriceChart();
-    window.MarketPricesInitialized = true;
+    try {
+      this.storage = KAStorage;
+      await this.waitForElements();
+      this.cacheElements();
+      this.setupListeners();
+      this.loadInitialData();
+      this.renderSinglePriceChart();
+      window.MarketPricesInitialized = true;
+    } catch (err) {
+      ErrorHandler.log(err, 'MarketPricesModule.init');
+    }
   },
 
   waitForElements() {
@@ -131,10 +136,14 @@ export const MarketPricesModule = {
   },
 
   loadInitialData() {
-    this.marketPrices = this.storage.getMarketPrices();
-    this.seasonTrends = this.storage.getSeasonTrends();
-    this.priceAlerts = this.storage.getPriceAlerts();
-    this.updateStats();
+    try {
+      this.marketPrices = this.storage.getMarketPrices();
+      this.seasonTrends = this.storage.getSeasonTrends();
+      this.priceAlerts = this.storage.getPriceAlerts();
+      this.updateStats();
+    } catch (err) {
+      ErrorHandler.log(err, 'MarketPricesModule.loadInitialData', 'warn');
+    }
   },
 
   updateStats() {
@@ -591,28 +600,32 @@ export const MarketPricesModule = {
   },
 
   savePrice() {
-    const price = {
-      id: this.currentPriceId || `MP-${Date.now()}`,
-      crop_name: this.elements.cropSelect.value,
-      market_name: this.elements.marketSelect.value,
-      region: this.elements.regionSelect.value,
-      price_fcfa: parseFloat(this.elements.priceInput.value) || 0,
-      price_date: this.elements.priceDateInput.value,
-      unit: this.elements.unitSelect.value,
-      season: this.elements.seasonSelect.value,
-      supply_level: this.elements.supplySelect.value,
-      demand_level: this.elements.demandSelect.value,
-      notes: this.elements.priceNotesInput.value,
-      price_source: 'SIM',
-      is_estimated: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    if (this.currentPriceId) this.storage.updateMarketPrice(this.currentPriceId, price);
-    else this.storage.addMarketPrice(price);
-    this.closePriceModal();
-    this.loadInitialData();
-    this.render();
+    try {
+      const price = {
+        id: this.currentPriceId || `MP-${Date.now()}`,
+        crop_name: this.elements.cropSelect.value,
+        market_name: this.elements.marketSelect.value,
+        region: this.elements.regionSelect.value,
+        price_fcfa: parseFloat(this.elements.priceInput.value) || 0,
+        price_date: this.elements.priceDateInput.value,
+        unit: this.elements.unitSelect.value,
+        season: this.elements.seasonSelect.value,
+        supply_level: this.elements.supplySelect.value,
+        demand_level: this.elements.demandSelect.value,
+        notes: this.elements.priceNotesInput.value,
+        price_source: 'SIM',
+        is_estimated: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      if (this.currentPriceId) this.storage.updateMarketPrice(this.currentPriceId, price);
+      else this.storage.addMarketPrice(price);
+      this.closePriceModal();
+      this.loadInitialData();
+      this.render();
+    } catch (err) {
+      ErrorHandler.log(err, 'MarketPricesModule.savePrice', 'error');
+    }
   },
 
   editPrice(priceId) { this.openPriceModal(priceId); },
@@ -665,30 +678,34 @@ export const MarketPricesModule = {
   },
 
   saveTrend() {
-    const trend = {
-      id: this.currentTrendId || `ST-${Date.now()}`,
-      crop_name: this.elements.trendCropSelect.value,
-      region: this.elements.trendRegionSelect.value,
-      season: this.elements.trendSeasonSelect.value,
-      avg_price: parseFloat(this.elements.trendAvgPriceInput.value) || 0,
-      min_price: parseFloat(this.elements.trendMinPriceInput.value) || 0,
-      max_price: parseFloat(this.elements.trendMaxPriceInput.value) || 0,
-      std_deviation: 0,
-      trend_direction: this.elements.trendDirectionSelect.value,
-      trend_strength: parseFloat(this.elements.trendStrengthInput.value) || 0.5,
-      prediction_next_month: parseFloat(this.elements.trendPredictionInput.value) || 0,
-      confidence_percent: parseFloat(this.elements.trendConfidenceInput.value) || 80,
-      data_points: parseInt(this.elements.trendDataPointsInput.value) || 10,
-      last_updated: new Date().toISOString().split('T')[0],
-      notes: this.elements.trendNotesInput.value,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    if (this.currentTrendId) this.storage.updateSeasonTrend(this.currentTrendId, trend);
-    else this.storage.addSeasonTrend(trend);
-    this.closeTrendModal();
-    this.loadInitialData();
-    this.render();
+    try {
+      const trend = {
+        id: this.currentTrendId || `ST-${Date.now()}`,
+        crop_name: this.elements.trendCropSelect.value,
+        region: this.elements.trendRegionSelect.value,
+        season: this.elements.trendSeasonSelect.value,
+        avg_price: parseFloat(this.elements.trendAvgPriceInput.value) || 0,
+        min_price: parseFloat(this.elements.trendMinPriceInput.value) || 0,
+        max_price: parseFloat(this.elements.trendMaxPriceInput.value) || 0,
+        std_deviation: 0,
+        trend_direction: this.elements.trendDirectionSelect.value,
+        trend_strength: parseFloat(this.elements.trendStrengthInput.value) || 0.5,
+        prediction_next_month: parseFloat(this.elements.trendPredictionInput.value) || 0,
+        confidence_percent: parseFloat(this.elements.trendConfidenceInput.value) || 80,
+        data_points: parseInt(this.elements.trendDataPointsInput.value) || 10,
+        last_updated: new Date().toISOString().split('T')[0],
+        notes: this.elements.trendNotesInput.value,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      if (this.currentTrendId) this.storage.updateSeasonTrend(this.currentTrendId, trend);
+      else this.storage.addSeasonTrend(trend);
+      this.closeTrendModal();
+      this.loadInitialData();
+      this.render();
+    } catch (err) {
+      ErrorHandler.log(err, 'MarketPricesModule.saveTrend', 'error');
+    }
   },
 
   editTrend(trendId) { this.openTrendModal(trendId); },
@@ -729,28 +746,32 @@ export const MarketPricesModule = {
   },
 
   saveAlert() {
-    const alert = {
-      id: this.currentAlertId || `PA-${Date.now()}`,
-      market_name: this.elements.alertMarketSelect.value,
-      crop_name: this.elements.alertCropSelect.value,
-      alert_type: this.elements.alertTypeSelect.value,
-      threshold_price: parseFloat(this.elements.alertThresholdInput.value) || 0,
-      current_price: 0,
-      trigger_date: null,
-      message: this.elements.alertMessageInput.value,
-      is_active: true,
-      acknowledged: false,
-      acknowledged_by: '',
-      acknowledged_at: null,
-      notes: this.elements.alertNotesInput.value,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    if (this.currentAlertId) this.storage.updatePriceAlert(this.currentAlertId, alert);
-    else this.storage.addPriceAlert(alert);
-    this.closeAlertModal();
-    this.loadInitialData();
-    this.render();
+    try {
+      const alert = {
+        id: this.currentAlertId || `PA-${Date.now()}`,
+        market_name: this.elements.alertMarketSelect.value,
+        crop_name: this.elements.alertCropSelect.value,
+        alert_type: this.elements.alertTypeSelect.value,
+        threshold_price: parseFloat(this.elements.alertThresholdInput.value) || 0,
+        current_price: 0,
+        trigger_date: null,
+        message: this.elements.alertMessageInput.value,
+        is_active: true,
+        acknowledged: false,
+        acknowledged_by: '',
+        acknowledged_at: null,
+        notes: this.elements.alertNotesInput.value,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      if (this.currentAlertId) this.storage.updatePriceAlert(this.currentAlertId, alert);
+      else this.storage.addPriceAlert(alert);
+      this.closeAlertModal();
+      this.loadInitialData();
+      this.render();
+    } catch (err) {
+      ErrorHandler.log(err, 'MarketPricesModule.saveAlert', 'error');
+    }
   },
 
   editAlert(alertId) { this.openAlertModal(alertId); },
