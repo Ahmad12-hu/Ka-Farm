@@ -136,6 +136,9 @@ export const KAStorage = {
     try {
       const scopedKey = this.getScopedKey(key);
       localStorage.setItem(scopedKey, JSON.stringify(val));
+
+      // Sync hook: enqueue action for Firebase sync (non-blocking)
+      this._enqueueSyncAction('SET', key, val);
     } catch (e) {
       ErrorHandler.log(e, `Storage.write: ${key}`);
     }
@@ -145,8 +148,35 @@ export const KAStorage = {
     try {
       const scopedKey = this.getScopedKey(key);
       localStorage.removeItem(scopedKey);
+
+      // Sync hook: enqueue deletion for Firebase sync (non-blocking)
+      this._enqueueSyncAction('DELETE', key, null);
     } catch (e) {
       ErrorHandler.log(e, `Storage.remove: ${key}`);
+    }
+  },
+
+  _enqueueSyncAction(action, key, value) {
+    // Only enqueue if SyncManager is available and user is online
+    if (!window.SyncManager || !navigator.onLine) return;
+
+    try {
+      const actionMap = {
+        'SET': 'SAVE',
+        'DELETE': 'DELETE'
+      };
+
+      window.SyncManager.enqueue({
+        action: actionMap[action] || 'SAVE',
+        key: key,
+        data: value,
+        timestamp: Date.now()
+      }).catch(err => {
+        // Silently fail - localStorage already saved, sync is best-effort
+        console.warn('[KAStorage] Sync enqueue failed:', err);
+      });
+    } catch (e) {
+      // Fail silently - don't break existing functionality
     }
   },
 

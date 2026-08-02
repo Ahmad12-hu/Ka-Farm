@@ -2,6 +2,7 @@
 import { KAStorage } from '../storage.js';
 import { UserManager } from '../user-manager.js';
 import { ErrorHandler } from './error-handler.js';
+import { ALL_USER_ROLES } from '../constants/roles.js';
 
 // jsPDF sera chargé dynamiquement via CDN ou import()
 let jsPDF = null;
@@ -41,7 +42,7 @@ function downloadFile(content, filename, mimeType) {
 
 export function exportFinancesCSV() {
   const user = UserManager.getCurrentUser();
-  if (!user || !['Bureau', 'Terrain', 'admin', 'super_admin'].includes(user.role)) {
+  if (!user || !ALL_USER_ROLES.includes(user.role)) {
     ErrorHandler.showToast('Accès refusé: vous n\'avez pas les droits d\'export.', 'error');
     return;
   }
@@ -79,7 +80,7 @@ export function exportFinancesCSV() {
 
 export function exportStocksCSV() {
   const user = UserManager.getCurrentUser();
-  if (!user || !['Bureau', 'Terrain', 'admin', 'super_admin'].includes(user.role)) {
+  if (!user || !ALL_USER_ROLES.includes(user.role)) {
     ErrorHandler.showToast('Accès refusé.', 'error');
     return;
   }
@@ -111,7 +112,7 @@ export function exportStocksCSV() {
 
 export function exportHarvestsCSV() {
   const user = UserManager.getCurrentUser();
-  if (!user || !['Bureau', 'Terrain', 'admin', 'super_admin'].includes(user.role)) {
+  if (!user || !ALL_USER_ROLES.includes(user.role)) {
     ErrorHandler.showToast('Accès refusé.', 'error');
     return;
   }
@@ -149,7 +150,7 @@ export function exportHarvestsCSV() {
 
 export async function exportFinancesPDF() {
   const user = UserManager.getCurrentUser();
-  if (!user || !['Bureau', 'Terrain', 'admin', 'super_admin'].includes(user.role)) {
+  if (!user || !ALL_USER_ROLES.includes(user.role)) {
     ErrorHandler.showToast('Accès refusé.', 'error');
     return;
   }
@@ -229,7 +230,7 @@ export async function exportFinancesPDF() {
 
 export async function exportStocksPDF() {
   const user = UserManager.getCurrentUser();
-  if (!user || !['Bureau', 'Terrain', 'admin', 'super_admin'].includes(user.role)) {
+  if (!user || !ALL_USER_ROLES.includes(user.role)) {
     ErrorHandler.showToast('Accès refusé.', 'error');
     return;
   }
@@ -290,7 +291,7 @@ export async function exportStocksPDF() {
 
 export async function exportHarvestsPDF() {
   const user = UserManager.getCurrentUser();
-  if (!user || !['Bureau', 'Terrain', 'admin', 'super_admin'].includes(user.role)) {
+  if (!user || !ALL_USER_ROLES.includes(user.role)) {
     ErrorHandler.showToast('Accès refusé.', 'error');
     return;
   }
@@ -355,7 +356,7 @@ export async function exportHarvestsPDF() {
 
 export function canExport() {
   const user = UserManager.getCurrentUser();
-  return user && ['Bureau', 'Terrain', 'admin', 'super_admin'].includes(user.role);
+  return user && ALL_USER_ROLES.includes(user.role);
 }
 
 // Export global pour window (appelé par les boutons HTML)

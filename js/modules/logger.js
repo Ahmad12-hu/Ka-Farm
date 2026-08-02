@@ -2,6 +2,7 @@
 // Utilise console avec style + localStorage pour persistance
 
 const isBrowser = typeof window !== 'undefined';
+const isTestEnvironment = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
 
 // Storage key for error logs
 const STORAGE_KEY = 'kafarm_error_logs';
@@ -19,7 +20,7 @@ const logFunctions = {
   
   error: (message, meta = {}) => {
     const errorStr = typeof meta?.error === 'string' ? meta.error : (meta?.error?.message || JSON.stringify(meta));
-    if (!isBrowser) {
+    if (!isBrowser || isTestEnvironment) {
       console.error(`[ERROR] ${message}:`, meta);
     } else {
       console.error(`%c[ERROR] ${message}: ${errorStr}`, 'color: #EF4444; font-weight: bold;', meta);

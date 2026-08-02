@@ -2,12 +2,13 @@
 // Handles roles, permissions and authorization rules
 
 import { KAStorage } from './storage.js';
+import { USER_ROLES, ALL_USER_ROLES, ROLE_PERMISSIONS, isAdminRole } from './constants/roles.js';
 
 export const UserManager = {
   getRoles() {
     return {
-      TERRAIN: 'Terrain',
-      BUREAU: 'Bureau'
+      TERRAIN: USER_ROLES.TERRAIN,
+      BUREAU: USER_ROLES.BUREAU
     };
   },
 
@@ -34,95 +35,60 @@ export const UserManager = {
   // Check if current user is admin
   isAdmin() {
     const user = this.getCurrentUser();
-    return user && (user.role === 'admin' || user.role === 'super_admin');
+    return user && isAdminRole(user.role);
   },
 
   // Role permissions checking
   canEditCrops() {
-    // Both roles can view and edit crops
-    // Terrain performs ground updates (status, irrigation)
-    // Bureau plans them (scheduling, planning)
     const user = this.getCurrentUser();
-    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && ALL_USER_ROLES.includes(user.role));
   },
 
   canEditFinances() {
-    // Bureau can manage all aspects of finances (revenues, expenses, analysis)
-    // Terrain can only enter sales at market (limited access)
-    // Admin and super_admin have full access
     const user = this.getCurrentUser();
-    return user && (user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && (user.role === USER_ROLES.BUREAU || isAdminRole(user.role)));
   },
 
   canEnterSales() {
-    // Terrain can enter sales at market
-    // Bureau can also enter sales as part of full finance management
-    // Admin and super_admin have full access
     const user = this.getCurrentUser();
-    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && ALL_USER_ROLES.includes(user.role));
   },
 
   canManageTasks() {
-    // Both can manage tasks
-    // Terrain mainly executes and updates status
-    // Bureau can create, assign and prioritize
-    // Admin and super_admin have full access
     const user = this.getCurrentUser();
-    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && ALL_USER_ROLES.includes(user.role));
   },
 
   canManageEmployees() {
-    // Only Bureau and admin can manage employees (hiring, payments)
-    // Terrain can only view their own assignments
     const user = this.getCurrentUser();
-    return user && (user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && (user.role === USER_ROLES.BUREAU || isAdminRole(user.role)));
   },
 
   canManageStocks() {
-    // Only Bureau and admin can manage stocks (inventory, purchases)
-    // Terrain can only view and report usage
     const user = this.getCurrentUser();
-    return user && (user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && (user.role === USER_ROLES.BUREAU || isAdminRole(user.role)));
   },
 
   // View-only permissions for shared pages
   canViewFinances() {
-    // All authenticated roles can view finances (Terrain: read-only sales, Bureau: full access)
     const user = this.getCurrentUser();
-    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && ALL_USER_ROLES.includes(user.role));
   },
 
   canViewEmployees() {
-    // All authenticated roles can view employees (Terrain: view assignments, Bureau: full management)
     const user = this.getCurrentUser();
-    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
-  },
-
-  // View-only permissions for shared pages
-  canViewFinances() {
-    // All authenticated roles can view finances (Terrain: read-only sales, Bureau: full access)
-    const user = this.getCurrentUser();
-    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
-  },
-
-  canViewEmployees() {
-    // All authenticated roles can view employees (Terrain: view assignments, Bureau: full management)
-    const user = this.getCurrentUser();
-    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && ALL_USER_ROLES.includes(user.role));
   },
 
   canManageHarvests() {
-    // Terrain records harvests in the field
-    // Bureau can also manage harvests for planning/analysis
-    // Admin and super_admin have full access
     const user = this.getCurrentUser();
-    return user && (user.role === 'Terrain' || user.role === 'Bureau' || user.role === 'admin' || user.role === 'super_admin');
+    return !!(user && ALL_USER_ROLES.includes(user.role));
   },
 
   // Require login helper. Redirect to login if not authenticated
   requireAuth() {
     if (!this.isLoggedIn()) {
-      window.location.href = '/pages/auth/login.html';
+      window.location.assign('/pages/auth/login.html');
       return false;
     }
     return true;
@@ -131,7 +97,7 @@ export const UserManager = {
   // Redirect if logged in (e.g., from login page to dashboard)
   redirectIfAuth() {
     if (this.isLoggedIn()) {
-      window.location.href = '/pages/shared/dashboard.html';
+      window.location.assign('/pages/shared/dashboard.html');
     }
   }
 };

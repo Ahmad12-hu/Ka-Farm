@@ -2,6 +2,7 @@
 // Fonctionnalité 2.3 : Calculateur de compostage organique
 
 import { KAStorage } from '../storage.js';
+import { ErrorHandler } from './error-handler.js';
 
 // ============================================================
 // MAIN MODULE EXPORT
