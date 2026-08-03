@@ -170,8 +170,16 @@
             ci-dessous.
           </p>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-[#143E23]/20">
-            <!-- Export Section -->
+          <!-- Auto Backup Status -->
+          <div id="backup-status" class="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+              📅 Dernière sauvegarde automatique: <span id="last-backup-time">Jamais</span>
+            </p>
+          </div>
+
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-slate-100 dark:border-[#143E23]/20">
+            <!-- Manual Backup Section -->
             <div
               class="p-4 bg-slate-50 dark:bg-[#061109]/40 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl flex flex-col justify-between space-y-3">
               <div>
@@ -179,16 +187,38 @@
                   <svg class="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                      d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                    </path>
+                  </svg>
+                  Sauvegarde Manuelle
+                </p>
+                <p class="text-[10px] text-slate-400 mt-1 leading-normal font-semibold">Sauvegarde immédiate dans
+                  le cloud et en local.</p>
+              </div>
+              <button onclick="window.manualBackup()"
+                class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5">
+                💾 Sauvegarder maintenant
+              </button>
+            </div>
+
+            <!-- Download Backup Section -->
+            <div
+              class="p-4 bg-slate-50 dark:bg-[#061109]/40 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl flex flex-col justify-between space-y-3">
+              <div>
+                <p class="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5">
+                  <svg class="h-3.5 w-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                   </svg>
-                  Exporter mes données
+                  Télécharger Backup
                 </p>
-                <p class="text-[10px] text-slate-400 mt-1 leading-normal font-semibold">Téléchargez un fichier de
-                  sauvegarde au format JSON contenant toutes vos cultures, pépinières, finances et stocks.</p>
+                <p class="text-[10px] text-slate-400 mt-1 leading-normal font-semibold">Export JSON complet de
+                  toutes vos données.</p>
               </div>
-              <button onclick="window.exportBackupData()"
-                class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5">
-                Exporter en JSON
+              <button onclick="window.downloadBackup()"
+                class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5">
+                📥 Télécharger JSON
               </button>
             </div>
 
@@ -202,10 +232,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                   </svg>
-                  Importer une sauvegarde
+                  Restaurer une sauvegarde
                 </p>
                 <p class="text-[10px] text-slate-400 mt-1 leading-normal font-semibold">Restaurez vos données
-                  d'exploitation à partir d'un fichier de sauvegarde JSON précédemment exporté.</p>
+                  d'exploitation à partir d'un fichier JSON.</p>
               </div>
 
               <div class="relative w-full">
@@ -213,7 +243,7 @@
                   class="hidden">
                 <button onclick="document.getElementById('import-file-input').click()"
                   class="w-full py-2 bg-slate-200 dark:bg-[#0D2615] hover:bg-slate-300 dark:hover:bg-[#11321C] text-slate-700 dark:text-slate-200 font-black text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 border border-slate-300 dark:border-[#1A4525]">
-                  Importer un fichier
+                  📂 Importer un fichier
                 </button>
               </div>
             </div>

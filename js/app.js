@@ -5,6 +5,7 @@ import { WolofAudio } from './wolof-audio.js';
 import { ErrorHandler } from './modules/error-handler.js';
 import { MarketPricesModule } from './modules/market-prices.js';
 import { FeedbackModule } from './modules/feedback.js';
+import { BackupModule } from './modules/backup.js';
 
 // Global variables for other scripts to use
 window.KAStorage = KAStorage;
@@ -368,6 +369,9 @@ export const App = {
     } else {
       console.log('Skipping FeedbackModule on auth/admin page');
     }
+
+    // Initialize BackupModule on all pages
+    BackupModule.init();
   },
 
   applyTheme(dark) {

@@ -3,6 +3,7 @@ window.ErrorHandler = ErrorHandler;
 
 import { KAStorage } from '../../js/storage.js';
 import { loadDemoData as loadDemoDataFromModule } from '../../js/modules/demo-data.js';
+import { BackupModule } from '../../js/modules/backup.js';
 
 window.runStorageMigration = () => {
   KAStorage.init();
@@ -137,20 +138,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (confirm("Attention ! L'importation de cette sauvegarde va écraser toutes vos données actuelles. Voulez-vous continuer ?")) {
-          if (backup.crops) localStorage.setItem(KAStorage.getScopedKey('ka_farm_crops'), backup.crops);
-          if (backup.nurseries) localStorage.setItem(KAStorage.getScopedKey('ka_farm_nurseries'), backup.nurseries);
-          if (backup.stocks) localStorage.setItem(KAStorage.getScopedKey('ka_farm_stocks'), backup.stocks);
-          if (backup.tasks) localStorage.setItem(KAStorage.getScopedKey('ka_farm_tasks'), backup.tasks);
-          if (backup.finances) localStorage.setItem(KAStorage.getScopedKey('ka_farm_finances'), backup.finances);
-          if (backup.parcelles) localStorage.setItem(KAStorage.getScopedKey('ka_farm_parcelles'), backup.parcelles);
-          if (backup.employees) localStorage.setItem(KAStorage.getScopedKey('ka_farm_employees'), backup.employees);
-          if (backup.attendance) localStorage.setItem(KAStorage.getScopedKey('ka_farm_attendance'), backup.attendance);
-          if (backup.employee_payments) localStorage.setItem(KAStorage.getScopedKey('ka_farm_employee_payments'), backup.employee_payments);
-
-          if (window.ErrorHandler) {
-            window.ErrorHandler.showToast("Importation réussie ! Vos données d'exploitation ont été restaurées. L'application va s'actualiser.", 'success');
-          }
-          window.location.reload();
+          // Utiliser le module Backup pour restaurer
+          BackupModule.restoreFromBackup(backup);
+          
+          // Recharger après 2 secondes pour laisser le temps au toast de s'afficher
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
         }
       } catch (err) {
         if (window.ErrorHandler) {
@@ -160,6 +154,38 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     reader.readAsText(file);
   };
+
+  // Remplacer les anciennes fonctions par les nouvelles du BackupModule
+  window.manualBackup = () => {
+    BackupModule.manualBackup();
+  };
+
+  window.downloadBackup = () => {
+    BackupModule.downloadBackup();
+  };
+
+  // Mettre à jour le statut de dernière sauvegarde
+  const updateBackupStatus = () => {
+    const lastBackupTime = localStorage.getItem('ka_farm_last_backup');
+    const lastBackupElement = document.getElementById('last-backup-time');
+    
+    if (lastBackupElement) {
+      if (lastBackupTime) {
+        const date = new Date(parseInt(lastBackupTime));
+        lastBackupElement.textContent = date.toLocaleString('fr-FR');
+      } else {
+        lastBackupElement.textContent = 'Jamais';
+      }
+    }
+  };
+
+  // Mettre à jour le statut au chargement
+  updateBackupStatus();
+
+  // Écouter les événements de mise à jour pour rafraîchir le statut
+  document.addEventListener('ka_data_updated', () => {
+    updateBackupStatus();
+  });
 
   window.copyInvitationLink = () => {
     const signupUrl = window.location.origin + '/pages/auth/signup.html';
