@@ -601,7 +601,7 @@ export const App = {
               Prix du Marché
             </a>
             <a href="/pages/shared/tools-sharing.html" data-tab="tools-sharing" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-cyan-300">
-              <i data-lucide="tools" class="h-4 w-4 text-cyan-400"></i>
+              <i data-lucide="wrench" class="h-4 w-4 text-cyan-400"></i>
               Bourse d'Outils
             </a>
             <a href="/pages/shared/elevage.html" data-tab="elevage" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-[#ffedd5]">
