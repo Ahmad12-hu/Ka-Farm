@@ -414,7 +414,8 @@ let serverTreatments = [];
 let serverCropProfits = [];
 
 // Helper to read from Firestore using Admin SDK
-async function syncWithFirestore(collection, fallbackData) {
+// Multi-tenant: data is organized as app_data/{enterpriseId}/{collection}
+async function syncWithFirestore(collection, fallbackData, enterpriseId = 'ka_farm') {
   const errorMsg = getFirestoreUnavailableMessage();
   if (errorMsg) {
     logger.error(`Firestore read error for ${collection}`, { error: errorMsg });
@@ -422,7 +423,7 @@ async function syncWithFirestore(collection, fallbackData) {
   }
 
   try {
-    const docSnap = await adminDb.collection("app_data").doc(collection).get();
+    const docSnap = await adminDb.collection("app_data").doc(enterpriseId).collection(collection).doc('data').get();
     if (docSnap.exists) {
       return docSnap.data().data || fallbackData;
     }
@@ -433,7 +434,7 @@ async function syncWithFirestore(collection, fallbackData) {
   }
 }
 
-async function saveToFirestore(collection, data) {
+async function saveToFirestore(collection, data, enterpriseId = 'ka_farm') {
   const errorMsg = getFirestoreUnavailableMessage();
   if (errorMsg) {
     logger.error(`Firestore write error for ${collection}`, { error: errorMsg });
@@ -441,7 +442,7 @@ async function saveToFirestore(collection, data) {
   }
 
   try {
-    await adminDb.collection("app_data").doc(collection).set({
+    await adminDb.collection("app_data").doc(enterpriseId).collection(collection).doc('data').set({
       data,
       updatedAt: new Date().toISOString()
     });
@@ -455,7 +456,8 @@ async function saveToFirestore(collection, data) {
 // ==================== CROPS ====================
 app.get('/api/crops', async (req, res) => {
   try {
-    const data = await Cache.memo('crops_list', async () => await syncWithFirestore('crops', serverCrops), 30000);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await Cache.memo('crops_list', async () => await syncWithFirestore('crops', serverCrops, enterpriseId), 30000);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -473,7 +475,8 @@ app.post('/api/crops', async (req, res) => {
       serverCrops.push(crop);
     }
     await Cache.invalidate('crops_list');
-    await saveToFirestore('crops', serverCrops);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('crops', serverCrops, enterpriseId);
     res.json({ success: true, crop });
   } catch (error) {
     logger.error('Error saving crop', { error: error.message });
@@ -491,7 +494,8 @@ app.put('/api/crops/:id', async (req, res) => {
     const idx = serverCrops.findIndex(c => c.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Culture non trouvée' });
     serverCrops[idx] = { ...serverCrops[idx], ...patch };
-    await saveToFirestore('crops', serverCrops);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('crops', serverCrops, enterpriseId);
     res.json({ success: true, crop: serverCrops[idx] });
   } catch (error) {
     logger.error('Error updating crop', { error: error.message });
@@ -502,14 +506,16 @@ app.put('/api/crops/:id', async (req, res) => {
 app.delete('/api/crops/:id', async (req, res) => {
   const { id } = req.params;
   serverCrops = serverCrops.filter(c => c.id !== id);
-  await saveToFirestore('crops', serverCrops);
+  const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+  await saveToFirestore('crops', serverCrops, enterpriseId);
   res.json({ success: true });
 });
 
 // ==================== PARCELLES ====================
 app.get('/api/parcelles', async (req, res) => {
   try {
-    const data = await Cache.memo('parcelles_list', async () => await syncWithFirestore('parcelles', serverParcelles), 30000);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await Cache.memo('parcelles_list', async () => await syncWithFirestore('parcelles', serverParcelles, enterpriseId), 30000);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -527,7 +533,8 @@ app.post('/api/parcelles', async (req, res) => {
       serverParcelles.push(parcelle);
     }
     await Cache.invalidate('parcelles_list');
-    await saveToFirestore('parcelles', serverParcelles);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('parcelles', serverParcelles, enterpriseId);
     res.json({ success: true, parcelle });
   } catch (error) {
     logger.error('Error saving parcelle', { error: error.message });
@@ -545,7 +552,8 @@ app.put('/api/parcelles/:id', async (req, res) => {
     const idx = serverParcelles.findIndex(p => p.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Parcelle non trouvée' });
     serverParcelles[idx] = { ...serverParcelles[idx], ...patch };
-    await saveToFirestore('parcelles', serverParcelles);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('parcelles', serverParcelles, enterpriseId);
     res.json({ success: true, parcelle: serverParcelles[idx] });
   } catch (error) {
     logger.error('Error updating parcelle', { error: error.message });
@@ -556,14 +564,16 @@ app.put('/api/parcelles/:id', async (req, res) => {
 app.delete('/api/parcelles/:id', async (req, res) => {
   const { id } = req.params;
   serverParcelles = serverParcelles.filter(p => p.id !== id);
-  await saveToFirestore('parcelles', serverParcelles);
+  const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+  await saveToFirestore('parcelles', serverParcelles, enterpriseId);
   res.json({ success: true });
 });
 
 // ==================== TASKS ====================
 app.get('/api/tasks', async (req, res) => {
   try {
-    const data = await Cache.memo('tasks_list', async () => await syncWithFirestore('tasks', serverTasks), 15000);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await Cache.memo('tasks_list', async () => await syncWithFirestore('tasks', serverTasks, enterpriseId), 15000);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -580,7 +590,8 @@ app.post('/api/tasks', async (req, res) => {
     } else {
       serverTasks.push(task);
     }
-    await saveToFirestore('tasks', serverTasks);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('tasks', serverTasks, enterpriseId);
     res.json({ success: true, task });
   } catch (error) {
     logger.error('Error saving task', { error: error.message });
@@ -598,7 +609,8 @@ app.put('/api/tasks/:id', async (req, res) => {
     const idx = serverTasks.findIndex(t => t.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Tâche non trouvée' });
     serverTasks[idx] = { ...serverTasks[idx], ...patch };
-    await saveToFirestore('tasks', serverTasks);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('tasks', serverTasks, enterpriseId);
     res.json({ success: true, task: serverTasks[idx] });
   } catch (error) {
     logger.error('Error updating task', { error: error.message });
@@ -609,14 +621,16 @@ app.put('/api/tasks/:id', async (req, res) => {
 app.delete('/api/tasks/:id', async (req, res) => {
   const { id } = req.params;
   serverTasks = serverTasks.filter(t => t.id !== id);
-  await saveToFirestore('tasks', serverTasks);
+  const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+  await saveToFirestore('tasks', serverTasks, enterpriseId);
   res.json({ success: true });
 });
 
 // ==================== FINANCES ====================
 app.get('/api/finances', async (req, res) => {
   try {
-    const data = await Cache.memo('finances_list', async () => await syncWithFirestore('finances', serverFinances), 30000);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await Cache.memo('finances_list', async () => await syncWithFirestore('finances', serverFinances, enterpriseId), 30000);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -636,7 +650,8 @@ app.post('/api/finances', async (req, res) => {
     } else {
       serverFinances.push(finance);
     }
-    await saveToFirestore('finances', serverFinances);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('finances', serverFinances, enterpriseId);
     res.json({ success: true, finance });
   } catch (error) {
     logger.error('Error saving finance', { error: error.message });
@@ -651,7 +666,8 @@ app.delete('/api/finances/:id', async (req, res) => {
   try {
     const { id } = req.params;
     serverFinances = serverFinances.filter(f => f.id !== id);
-    await saveToFirestore('finances', serverFinances);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('finances', serverFinances, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting finance', { error: error.message });
@@ -665,7 +681,8 @@ app.delete('/api/finances/:id', async (req, res) => {
 // ==================== EMPLOYEES ====================
 app.get('/api/employees', async (req, res) => {
   try {
-    const data = await Cache.memo('employees_list', async () => await syncWithFirestore('employees', serverEmployees), 30000);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await Cache.memo('employees_list', async () => await syncWithFirestore('employees', serverEmployees, enterpriseId), 30000);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -685,7 +702,8 @@ app.post('/api/employees', async (req, res) => {
     } else {
       serverEmployees.push(employee);
     }
-    await saveToFirestore('employees', serverEmployees);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('employees', serverEmployees, enterpriseId);
     res.json({ success: true, employee });
   } catch (error) {
     logger.error('Error saving employee', { error: error.message });
@@ -703,7 +721,8 @@ app.put('/api/employees/:id', async (req, res) => {
     const idx = serverEmployees.findIndex(e => e.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Employé non trouvé' });
     serverEmployees[idx] = { ...serverEmployees[idx], ...patch };
-    await saveToFirestore('employees', serverEmployees);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('employees', serverEmployees, enterpriseId);
     res.json({ success: true, employee: serverEmployees[idx] });
   } catch (error) {
     logger.error('Error updating employee', { error: error.message });
@@ -715,7 +734,8 @@ app.delete('/api/employees/:id', async (req, res) => {
   try {
     const { id } = req.params;
     serverEmployees = serverEmployees.filter(e => e.id !== id);
-    await saveToFirestore('employees', serverEmployees);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('employees', serverEmployees, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting employee', { error: error.message });
@@ -729,7 +749,8 @@ app.delete('/api/employees/:id', async (req, res) => {
 // ==================== ELEVAGE / CHEPTEL ====================
 app.get('/api/cheptel', async (req, res) => {
   try {
-    const data = await Cache.memo('cheptel_list', async () => await syncWithFirestore('cheptel', serverCheptel), 30000);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await Cache.memo('cheptel_list', async () => await syncWithFirestore('cheptel', serverCheptel, enterpriseId), 30000);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -746,7 +767,8 @@ app.post('/api/cheptel', async (req, res) => {
     } else {
       serverCheptel.push(group);
     }
-    await saveToFirestore('cheptel', serverCheptel);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('cheptel', serverCheptel, enterpriseId);
     res.json({ success: true, group });
   } catch (error) {
     logger.error('Error saving cheptel', { error: error.message });
@@ -764,7 +786,8 @@ app.put('/api/cheptel/:id', async (req, res) => {
     const idx = serverCheptel.findIndex(c => c.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Groupe d\'élevage non trouvé' });
     serverCheptel[idx] = { ...serverCheptel[idx], ...patch };
-    await saveToFirestore('cheptel', serverCheptel);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('cheptel', serverCheptel, enterpriseId);
     res.json({ success: true, group: serverCheptel[idx] });
   } catch (error) {
     logger.error('Error updating cheptel', { error: error.message });
@@ -775,14 +798,16 @@ app.put('/api/cheptel/:id', async (req, res) => {
 app.delete('/api/cheptel/:id', async (req, res) => {
   const { id } = req.params;
   serverCheptel = serverCheptel.filter(c => c.id !== id);
-  await saveToFirestore('cheptel', serverCheptel);
+  const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+  await saveToFirestore('cheptel', serverCheptel, enterpriseId);
   res.json({ success: true });
 });
 
 // ==================== ELEVAGE PRODUCTION ====================
 app.get('/api/elevage/production', async (req, res) => {
   try {
-    const data = await syncWithFirestore('elevage_production', serverElevageProduction);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await syncWithFirestore('elevage_production', serverElevageProduction, enterpriseId);
     const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
     res.json(sorted);
   } catch (error) {
@@ -794,7 +819,8 @@ app.post('/api/elevage/production', async (req, res) => {
   try {
     const log = ElevageProductionSchema.parse(req.body);
     serverElevageProduction.push(log);
-    await saveToFirestore('elevage_production', serverElevageProduction);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('elevage_production', serverElevageProduction, enterpriseId);
     res.json({ success: true, log });
   } catch (error) {
     logger.error('Error saving elevage production', { error: error.message });
@@ -809,7 +835,8 @@ app.delete('/api/elevage/production/:id', async (req, res) => {
   try {
     const { id } = req.params;
     serverElevageProduction = serverElevageProduction.filter(l => l.id !== id);
-    await saveToFirestore('elevage_production', serverElevageProduction);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('elevage_production', serverElevageProduction, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting elevage production', { error: error.message });
@@ -823,7 +850,8 @@ app.delete('/api/elevage/production/:id', async (req, res) => {
 // ==================== ELEVAGE HEALTH ====================
 app.get('/api/elevage/health', async (req, res) => {
   try {
-    const data = await syncWithFirestore('elevage_health', serverElevageHealth);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await syncWithFirestore('elevage_health', serverElevageHealth, enterpriseId);
     const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
     res.json(sorted);
   } catch (error) {
@@ -835,7 +863,8 @@ app.post('/api/elevage/health', async (req, res) => {
   try {
     const log = ElevageHealthSchema.parse(req.body);
     serverElevageHealth.push(log);
-    await saveToFirestore('elevage_health', serverElevageHealth);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('elevage_health', serverElevageHealth, enterpriseId);
     res.json({ success: true, log });
   } catch (error) {
     logger.error('Error saving elevage health', { error: error.message });
@@ -850,7 +879,8 @@ app.delete('/api/elevage/health/:id', async (req, res) => {
   try {
     const { id } = req.params;
     serverElevageHealth = serverElevageHealth.filter(l => l.id !== id);
-    await saveToFirestore('elevage_health', serverElevageHealth);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('elevage_health', serverElevageHealth, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting elevage health', { error: error.message });
@@ -864,7 +894,8 @@ app.delete('/api/elevage/health/:id', async (req, res) => {
 // ==================== TREATMENTS ====================
 app.get('/api/treatments', async (req, res) => {
   try {
-    const data = await syncWithFirestore('treatments', serverTreatments);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await syncWithFirestore('treatments', serverTreatments, enterpriseId);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -886,7 +917,8 @@ app.post('/api/treatments', async (req, res) => {
       serverTreatments.push(treatment);
     }
 
-    await saveToFirestore('treatments', serverTreatments);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('treatments', serverTreatments, enterpriseId);
     res.json({ success: true, treatment });
   } catch (error) {
     logger.error('Error saving treatment', { error: error.message });
@@ -902,7 +934,8 @@ app.post('/api/treatments/sync', async (req, res) => {
     const { treatments } = req.body;
     if (treatments && Array.isArray(treatments)) {
       serverTreatments = treatments;
-      await saveToFirestore('treatments', serverTreatments);
+      const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+      await saveToFirestore('treatments', serverTreatments, enterpriseId);
       res.json({ success: true, message: 'Traitements synchronisés en mémoire', treatments });
     } else {
       res.status(400).json({ error: 'Données de traitements invalides' });
@@ -919,7 +952,8 @@ app.post('/api/treatments/sync', async (req, res) => {
 // ==================== CROP PROFITS ====================
 app.get('/api/crop-profits', async (req, res) => {
   try {
-    const data = await syncWithFirestore('crop_profits', serverCropProfits);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await syncWithFirestore('crop_profits', serverCropProfits, enterpriseId);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -941,7 +975,8 @@ app.post('/api/crop-profits', async (req, res) => {
       serverCropProfits.push(profit);
     }
 
-    await saveToFirestore('crop_profits', serverCropProfits);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('crop_profits', serverCropProfits, enterpriseId);
     res.json({ success: true, profit });
   } catch (error) {
     logger.error('Error saving crop profit', { error: error.message });
@@ -957,7 +992,8 @@ app.post('/api/crop-profits/sync', async (req, res) => {
     const { cropProfits } = req.body;
     if (cropProfits && Array.isArray(cropProfits)) {
       serverCropProfits = cropProfits;
-      await saveToFirestore('crop_profits', serverCropProfits);
+      const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+      await saveToFirestore('crop_profits', serverCropProfits, enterpriseId);
       res.json({ success: true, message: 'Analyses de rentabilité synchronisées en mémoire', cropProfits });
     } else {
       res.status(400).json({ error: 'Données de rentabilité invalides' });
@@ -974,7 +1010,8 @@ app.post('/api/crop-profits/sync', async (req, res) => {
 // ==================== MESSAGES ====================
 app.get('/api/messages', async (req, res) => {
   try {
-    const data = await syncWithFirestore('messages', serverMessages);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await syncWithFirestore('messages', serverMessages, enterpriseId);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -993,7 +1030,8 @@ app.post('/api/messages', async (req, res) => {
       isPrivate: !!isPrivate
     };
     serverMessages.push(newMsg);
-    await saveToFirestore('messages', serverMessages);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    await saveToFirestore('messages', serverMessages, enterpriseId);
     res.json({ success: true, message: newMsg });
   } catch (error) {
     logger.error('Error saving message', { error: error.message });
@@ -1007,7 +1045,8 @@ app.post('/api/messages', async (req, res) => {
 // ==================== STOCKS ====================
 app.get('/api/stocks', async (req, res) => {
   try {
-    const data = await syncWithFirestore('stocks', serverStocks);
+    const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+    const data = await syncWithFirestore('stocks', serverStocks, enterpriseId);
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || 'Service Firestore indisponible' });
@@ -1019,7 +1058,8 @@ app.post('/api/stocks', async (req, res) => {
     const { stocks } = req.body;
     if (stocks && Array.isArray(stocks)) {
       serverStocks = stocks;
-      await saveToFirestore('stocks', serverStocks);
+      const enterpriseId = req.user?.enterpriseId || 'ka_farm';
+      await saveToFirestore('stocks', serverStocks, enterpriseId);
       res.json({ success: true, message: 'Stocks synchronisés', stocks });
     } else {
       res.status(400).json({ error: 'Données de stock invalides' });
