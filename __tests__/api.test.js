@@ -32,16 +32,25 @@ jest.mock('firebase-admin/app', () => ({
   cert: jest.fn(() => ({ projectId: 'ka-farm-test' }))
 }));
 
-jest.mock('firebase-admin/firestore', () => ({
-  getFirestore: jest.fn(() => ({
-    collection: jest.fn(() => ({
-      doc: jest.fn(() => ({
-        get: jest.fn(() => Promise.resolve({ exists: false })),
-        set: jest.fn(() => Promise.resolve())
+// Mock for multi-tenant structure: adminDb.collection("app_data").doc(enterpriseId).collection(collection).doc("data")
+jest.mock('firebase-admin/firestore', () => {
+  const mockCollection = () => ({
+    doc: jest.fn(() => ({
+      collection: jest.fn(() => ({
+        doc: jest.fn(() => ({
+          get: jest.fn(() => Promise.resolve({ exists: false })),
+          set: jest.fn(() => Promise.resolve())
+        }))
       }))
     }))
-  }))
-}));
+  });
+
+  return {
+    getFirestore: jest.fn(() => ({
+      collection: jest.fn(mockCollection)
+    }))
+  };
+});
 
 // Mock jsonwebtoken to bypass auth in tests using the remaining admin account
 jest.mock('jsonwebtoken', () => ({
