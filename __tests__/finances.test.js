@@ -31,6 +31,9 @@ window.confirm = jest.fn(() => true);
 // Mock lucide icons
 window.lucide = { createIcons: () => {} };
 
+// Mock fetch
+global.fetch = () => Promise.resolve({});
+
 describe('FinancesModule', () => {
   beforeEach(() => {
     localStorage.clear();

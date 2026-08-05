@@ -139,13 +139,16 @@ function getJwtSecret() {
   const configuredSecret = (process.env.JWT_SECRET || '').trim();
   if (configuredSecret) return configuredSecret;
 
-  // Keep a local-only fallback so development and tests continue to work
-  // without changing the current project structure.
   if (!isProduction()) {
+    // Development fallback with explicit warning
+    console.warn('[SECURITY WARNING] Using insecure JWT fallback for development. Set JWT_SECRET in production.');
     return 'ka-farm-dev-only-secret-change-in-production';
   }
 
-  return null;
+  // Production: fail-fast with clear error
+  const errorMsg = 'JWT_SECRET environment variable is required in production';
+  console.error(`[FATAL] ${errorMsg}`);
+  throw new Error(errorMsg);
 }
 
 // Initialize Firebase Admin SDK (for secure backend operations)
@@ -263,10 +266,14 @@ const writeLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // Auth middleware: require valid JWT token
-const JWT_SECRET = process.env.JWT_SECRET || 'ka-farm-super-secret-key-change-in-production';
-
 function requireAuth(req, res, next) {
-  const jwtSecret = getJwtSecret();
+  let jwtSecret;
+  try {
+    jwtSecret = getJwtSecret();
+  } catch (error) {
+    logger.error('JWT configuration error', { error: error.message });
+    return res.status(503).json({ error: 'Configuration JWT manquante ou invalide' });
+  }
   if (!jwtSecret) {
     logger.error('JWT secret missing in production', {
       route: `${req.method} ${req.originalUrl}`

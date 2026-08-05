@@ -27,6 +27,9 @@ Object.defineProperty(window, 'KAStorage', { value: mockKAStorage });
 // Mock window.confirm
 window.confirm = () => true;
 
+// Mock fetch
+global.fetch = () => Promise.resolve({});
+
 describe('StocksModule', () => {
   beforeEach(() => {
     localStorage.clear();
