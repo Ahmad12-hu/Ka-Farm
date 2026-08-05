@@ -7,10 +7,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Fonction helper : vérifie le rôle dans le document utilisateur
+    // Fonction helper : vérifie le rôle dans le token JWT
     function hasRole(role) {
       return isAuthenticated()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+        && request.auth.token.role == role;
+    }
+
+    // Fonction helper : vérifie que l'utilisateur accède à son propre entreprise
+    function isInSameEnterprise(enterpriseId) {
+      return isAuthenticated()
+        && request.auth.token.enterpriseId == enterpriseId;
     }
 
     // Collection des utilisateurs (pour les rôles)
@@ -19,10 +25,16 @@ service cloud.firestore {
       allow write: if false; // écriture réservée au backend/admin
     }
 
-    // Données de l'application (toutes les collections existantes)
-    match /app_data/{document=**} {
-      allow read: if isAuthenticated();
-      allow write: if hasRole('BUREAU') || hasRole('ADMIN');
+    // Données de l'application - Structure multi-tenant :
+    // app_data/{enterpriseId}/{collection}/data
+    match /app_data/{enterpriseId}/{collection=**} {
+      // Lecture : utilisateur authentifié du même entreprise
+      allow read: if isAuthenticated() && isInSameEnterprise(enterpriseId);
+
+      // Écriture : Admin ou Bureau du même entreprise
+      allow write: if isAuthenticated()
+        && isInSameEnterprise(enterpriseId)
+        && (hasRole('ADMIN') || hasRole('BUREAU'));
     }
 
     // Bloque tout accès autre par défaut
