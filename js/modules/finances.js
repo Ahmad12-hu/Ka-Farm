@@ -427,25 +427,26 @@ export const FinancesModule = {
   },
 
   calculateCompost() {
-    const carbonInput = document.getElementById('compost-carbon-input');
-    const nitrogenInput = document.getElementById('compost-nitrogen-input');
-    
-    if (!carbonInput || !nitrogenInput) return;
+    try {
+      const carbonInput = document.getElementById('compost-carbon-input');
+      const nitrogenInput = document.getElementById('compost-nitrogen-input');
+      
+      if (!carbonInput || !nitrogenInput) return;
 
-    const carbonKg = parseFloat(carbonInput.value) || 0;
-    const nitrogenKg = parseFloat(nitrogenInput.value) || 0;
+      const carbonKg = parseFloat(carbonInput.value) || 0;
+      const nitrogenKg = parseFloat(nitrogenInput.value) || 0;
 
-    const resultBox = document.getElementById('compost-result-box');
-    const ratioText = document.getElementById('compost-ratio-text');
-    const statusLabel = document.getElementById('compost-status-label');
-    const adviceText = document.getElementById('compost-advice-text');
+      const resultBox = document.getElementById('compost-result-box');
+      const ratioText = document.getElementById('compost-ratio-text');
+      const statusLabel = document.getElementById('compost-status-label');
+      const adviceText = document.getElementById('compost-advice-text');
 
-    if (!resultBox) return;
+      if (!resultBox) return;
 
-    if (carbonKg === 0 && nitrogenKg === 0) {
-      resultBox.classList.add('hidden');
-      return;
-    }
+      if (carbonKg === 0 && nitrogenKg === 0) {
+        resultBox.classList.add('hidden');
+        return;
+      }
 
     resultBox.classList.remove('hidden');
 
@@ -475,6 +476,10 @@ export const FinancesModule = {
       statusLabel.className = 'inline-block text-[10px] font-black text-orange-500 bg-orange-500/10 px-2.5 py-1 rounded-full border border-orange-500/20';
       const neededNitrogen = Math.round((carbonKg * 60 - carbonKg * 30) / (30 - 15));
       adviceText.textContent = `Votre tas est trop sec et carboné. La décomposition sera extrêmement lente par manque d'azote pour les bactéries. Ajoutez environ ${neededNitrogen} kg de matières azotées (fientes de poule, bouse de vache, herbe verte ou déchets de cuisine humides).`;
+    }
+    } catch (err) {
+      ErrorHandler.log(err, 'Finances.calculateCompost');
+      ErrorHandler.showToast('Erreur lors du calcul du compost.', 'error');
     }
   },
 
@@ -839,9 +844,15 @@ export const FinancesModule = {
     // Delete finance item
     window.deleteFinance = (id) => {
       if (!confirm('Voulez-vous supprimer cette ligne de comptabilité ?')) return;
-      const finances = KAStorage.getFinances().filter(f => f.id !== id);
-      KAStorage.saveFinances(finances);
-      this.renderFinances();
+      try {
+        const finances = KAStorage.getFinances().filter(f => f.id !== id);
+        KAStorage.saveFinances(finances);
+        this.renderFinances();
+        ErrorHandler.showToast('Ligne de comptabilité supprimée.', 'info');
+      } catch (err) {
+        ErrorHandler.log(err, 'Finances.deleteFinance');
+        ErrorHandler.showToast('Erreur lors de la suppression.', 'error');
+      }
     };
 
     // Form submit
@@ -849,38 +860,43 @@ export const FinancesModule = {
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const desc = document.getElementById('form-fin-desc').value;
-        const type = document.getElementById('form-fin-type').value;
-        const cat = document.getElementById('form-fin-cat').value;
-        const amt = parseFloat(document.getElementById('form-fin-amount').value);
-        const date = document.getElementById('form-fin-date').value;
-        const parcelId = document.getElementById('form-fin-parcel').value;
-        const cropName = document.getElementById('form-fin-crop').value;
+        try {
+          const desc = document.getElementById('form-fin-desc').value;
+          const type = document.getElementById('form-fin-type').value;
+          const cat = document.getElementById('form-fin-cat').value;
+          const amt = parseFloat(document.getElementById('form-fin-amount').value);
+          const date = document.getElementById('form-fin-date').value;
+          const parcelId = document.getElementById('form-fin-parcel').value;
+          const cropName = document.getElementById('form-fin-crop').value;
 
-        if (!desc || !amt || !date) return;
+          if (!desc || !amt || !date) return;
 
-        const finances = KAStorage.getFinances();
-        finances.unshift({
-          id: `F-${Date.now()}`,
-          description: desc,
-          type: type,
-          category: cat,
-          amount: amt,
-          date: date,
-          parcelId: parcelId || undefined,
-          cropName: cropName || undefined
-        });
+          const finances = KAStorage.getFinances();
+          finances.unshift({
+            id: `F-${Date.now()}`,
+            description: desc,
+            type: type,
+            category: cat,
+            amount: amt,
+            date: date,
+            parcelId: parcelId || undefined,
+            cropName: cropName || undefined
+          });
 
-        KAStorage.saveFinances(finances);
-        this.renderFinances();
-        form.reset();
-        
-        // Reset date
-        const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('form-fin-date').value = todayStr;
+          KAStorage.saveFinances(finances);
+          this.renderFinances();
+          form.reset();
+          
+          // Reset date
+          const todayStr = new Date().toISOString().split('T')[0];
+          document.getElementById('form-fin-date').value = todayStr;
 
-        document.getElementById('finance-modal').classList.add('hidden');
-        ErrorHandler.showToast('Flux de trésorerie enregistré avec succès !', 'success');
+          document.getElementById('finance-modal').classList.add('hidden');
+          ErrorHandler.showToast('Flux de trésorerie enregistré avec succès !', 'success');
+        } catch (err) {
+          ErrorHandler.log(err, 'Finances.formSubmit');
+          ErrorHandler.showToast('Erreur lors de l\'enregistrement du flux financier.', 'error');
+        }
       });
     }
 

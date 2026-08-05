@@ -770,133 +770,161 @@ export const ParcellesModule = {
   },
 
   submitAddParcel() {
-    const name = document.getElementById('form-add-name').value;
-    const surface = parseInt(document.getElementById('form-add-surface').value);
-    const status = document.getElementById('form-add-status').value;
-    const lat = parseFloat(document.getElementById('form-add-lat').value);
-    const lng = parseFloat(document.getElementById('form-add-lng').value);
-    const waterStatus = document.getElementById('form-add-water').value;
-    const type_sol = document.getElementById('form-add-sol').value;
-    const currentCrop = document.getElementById('form-add-crop').value.trim();
-    const historyText = document.getElementById('form-add-history').value.trim();
+    try {
+      const name = document.getElementById('form-add-name').value;
+      const surface = parseInt(document.getElementById('form-add-surface').value);
+      const status = document.getElementById('form-add-status').value;
+      const lat = parseFloat(document.getElementById('form-add-lat').value);
+      const lng = parseFloat(document.getElementById('form-add-lng').value);
+      const waterStatus = document.getElementById('form-add-water').value;
+      const type_sol = document.getElementById('form-add-sol').value;
+      const currentCrop = document.getElementById('form-add-crop').value.trim();
+      const historyText = document.getElementById('form-add-history').value.trim();
 
-    // Generate neat unique ID
-    const nextNum = parcelles.reduce((max, p) => {
-      const num = parseInt(p.id.split('-')[1]);
-      return num > max ? num : max;
-    }, 0) + 1;
-    const id = `P-${String(nextNum).padStart(3, '0')}`;
+      // Generate neat unique ID
+      const nextNum = parcelles.reduce((max, p) => {
+        const num = parseInt(p.id.split('-')[1]);
+        return num > max ? num : max;
+      }, 0) + 1;
+      const id = `P-${String(nextNum).padStart(3, '0')}`;
 
-    // Create history array
-    let history = [];
-    if (historyText) {
-      history = historyText.split(',').map(s => s.trim()).filter(Boolean);
-    }
-    if (currentCrop && !history.includes(currentCrop)) {
-      history.unshift(currentCrop);
-    }
+      // Create history array
+      let history = [];
+      if (historyText) {
+        history = historyText.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (currentCrop && !history.includes(currentCrop)) {
+        history.unshift(currentCrop);
+      }
 
-    const newParcel = {
-      id,
-      name,
-      surface,
-      lat,
-      lng,
-      status,
-      type_sol: type_sol || 'limoneux',
-      waterStatus,
-      currentCrop: currentCrop || '',
-      history
-    };
+      const newParcel = {
+        id,
+        name,
+        surface,
+        lat,
+        lng,
+        status,
+        type_sol: type_sol || 'limoneux',
+        waterStatus,
+        currentCrop: currentCrop || '',
+        history
+      };
 
-    parcelles.push(newParcel);
-    KAStorage.saveParcelles(parcelles);
-    
-    selectedParcelId = id;
-    this.closeAddParcelModal();
-    this.render();
+      parcelles.push(newParcel);
+      KAStorage.saveParcelles(parcelles);
+      
+      selectedParcelId = id;
+      this.closeAddParcelModal();
+      this.render();
 
-    // Update global app badges (especially for counting parcelles)
-    if (window.App && typeof window.App.updateBadges === 'function') {
-      window.App.updateBadges();
+      // Update global app badges (especially for counting parcelles)
+      if (window.App && typeof window.App.updateBadges === 'function') {
+        window.App.updateBadges();
+      }
+
+      ErrorHandler.showToast('Parcelle ajoutée avec succès !', 'success');
+    } catch (err) {
+      ErrorHandler.log(err, 'Parcelles.submitAddParcel');
+      ErrorHandler.showToast('Erreur lors de l\'ajout de la parcelle.', 'error');
     }
   },
 
   submitEditParcel() {
-    const id = document.getElementById('form-edit-id').value;
-    const name = document.getElementById('form-edit-name').value;
-    const surface = parseInt(document.getElementById('form-edit-surface').value);
-    const status = document.getElementById('form-edit-status').value;
-    const lat = parseFloat(document.getElementById('form-edit-lat').value);
-    const lng = parseFloat(document.getElementById('form-edit-lng').value);
-    const waterStatus = document.getElementById('form-edit-water').value;
-    const type_sol = document.getElementById('form-edit-sol').value;
-    const currentCrop = document.getElementById('form-edit-crop').value.trim();
+    try {
+      const id = document.getElementById('form-edit-id').value;
+      const name = document.getElementById('form-edit-name').value;
+      const surface = parseInt(document.getElementById('form-edit-surface').value);
+      const status = document.getElementById('form-edit-status').value;
+      const lat = parseFloat(document.getElementById('form-edit-lat').value);
+      const lng = parseFloat(document.getElementById('form-edit-lng').value);
+      const waterStatus = document.getElementById('form-edit-water').value;
+      const type_sol = document.getElementById('form-edit-sol').value;
+      const currentCrop = document.getElementById('form-edit-crop').value.trim();
 
-    const idx = parcelles.findIndex(p => p.id === id);
-    if (idx !== -1) {
-      // If crop changed or was set, prepend to history if not there
-      const history = parcelles[idx].history || [];
-      if (currentCrop && currentCrop !== parcelles[idx].currentCrop && !history.includes(currentCrop)) {
-        history.unshift(currentCrop);
+      const idx = parcelles.findIndex(p => p.id === id);
+      if (idx !== -1) {
+        // If crop changed or was set, prepend to history if not there
+        const history = parcelles[idx].history || [];
+        if (currentCrop && currentCrop !== parcelles[idx].currentCrop && !history.includes(currentCrop)) {
+          history.unshift(currentCrop);
+        }
+
+        parcelles[idx] = {
+          ...parcelles[idx],
+          name,
+          surface,
+          status,
+          lat,
+          lng,
+          type_sol: type_sol || parcelles[idx].type_sol || 'limoneux',
+          waterStatus,
+          currentCrop,
+          history
+        };
+
+        KAStorage.saveParcelles(parcelles);
+        this.closeEditParcelModal();
+        this.render();
+
+        ErrorHandler.showToast('Parcelle modifiée avec succès !', 'success');
       }
-
-      parcelles[idx] = {
-        ...parcelles[idx],
-        name,
-        surface,
-        status,
-        lat,
-        lng,
-        type_sol: type_sol || parcelles[idx].type_sol || 'limoneux',
-        waterStatus,
-        currentCrop,
-        history
-      };
-
-      KAStorage.saveParcelles(parcelles);
-      this.closeEditParcelModal();
-      this.render();
+    } catch (err) {
+      ErrorHandler.log(err, 'Parcelles.submitEditParcel');
+      ErrorHandler.showToast('Erreur lors de la modification de la parcelle.', 'error');
     }
   },
 
   submitAddHistory() {
-    const cropName = document.getElementById('form-hist-crop').value.trim();
-    if (!cropName) return;
+    try {
+      const cropName = document.getElementById('form-hist-crop').value.trim();
+      if (!cropName) return;
 
-    const idx = parcelles.findIndex(p => p.id === selectedParcelId);
-    if (idx !== -1) {
-      if (!parcelles[idx].history) parcelles[idx].history = [];
-      
-      // Prepend cropName to rotation history
-      parcelles[idx].history.unshift(cropName);
-      
-      // Update active crop automatically if status is cultivated
-      if (parcelles[idx].status === 'Cultivée') {
-        parcelles[idx].currentCrop = cropName;
+      const idx = parcelles.findIndex(p => p.id === selectedParcelId);
+      if (idx !== -1) {
+        if (!parcelles[idx].history) parcelles[idx].history = [];
+        
+        // Prepend cropName to rotation history
+        parcelles[idx].history.unshift(cropName);
+        
+        // Update active crop automatically if status is cultivated
+        if (parcelles[idx].status === 'Cultivée') {
+          parcelles[idx].currentCrop = cropName;
+        }
+
+        KAStorage.saveParcelles(parcelles);
+        this.closeAddHistoryModal();
+        this.render();
+
+        ErrorHandler.showToast('Historique de rotation ajouté !', 'success');
       }
-
-      KAStorage.saveParcelles(parcelles);
-      this.closeAddHistoryModal();
-      this.render();
+    } catch (err) {
+      ErrorHandler.log(err, 'Parcelles.submitAddHistory');
+      ErrorHandler.showToast('Erreur lors de l\'ajout de l\'historique.', 'error');
     }
   },
 
   submitBreakEvenConfig() {
-    const id = document.getElementById('form-be-id').value;
-    const cost = parseInt(document.getElementById('form-be-cost').value) || 0;
-    const price = parseInt(document.getElementById('form-be-price').value) || 0;
-    const yieldVal = parseFloat(document.getElementById('form-be-yield').value) || 0;
+    try {
+      const id = document.getElementById('form-be-id').value;
+      const cost = parseInt(document.getElementById('form-be-cost').value) || 0;
+      const price = parseInt(document.getElementById('form-be-price').value) || 0;
+      const yieldVal = parseFloat(document.getElementById('form-be-yield').value) || 0;
 
-    const idx = parcelles.findIndex(p => p.id === id);
-    if (idx !== -1) {
-      parcelles[idx].inputCost = cost;
-      parcelles[idx].marketPrice = price;
-      parcelles[idx].yieldPerSqM = yieldVal;
+      const idx = parcelles.findIndex(p => p.id === id);
+      if (idx !== -1) {
+        parcelles[idx].inputCost = cost;
+        parcelles[idx].marketPrice = price;
+        parcelles[idx].yieldPerSqM = yieldVal;
 
-      KAStorage.saveParcelles(parcelles);
-      window.closeBreakEvenConfigModal();
-      this.render();
+        KAStorage.saveParcelles(parcelles);
+        window.closeBreakEvenConfigModal();
+        this.render();
+
+        ErrorHandler.showToast('Configuration du seuil de rentabilité enregistrée !', 'success');
+      }
+    } catch (err) {
+      ErrorHandler.log(err, 'Parcelles.submitBreakEvenConfig');
+      ErrorHandler.showToast('Erreur lors de la configuration.', 'error');
     }
   },
 
@@ -1204,18 +1232,25 @@ window.closeAddHistoryModal = () => {
 
 window.deleteParcel = (id) => {
   if (confirm(`Êtes-vous sûr de vouloir supprimer définitivement la parcelle ${id} ? Cette action effacera également son historique.`)) {
-    parcelles = parcelles.filter(p => p.id !== id);
-    KAStorage.saveParcelles(parcelles);
-    
-    if (selectedParcelId === id) {
-      selectedParcelId = parcelles.length > 0 ? parcelles[0].id : null;
-    }
-    
-    ParcellesModule.render();
+    try {
+      parcelles = parcelles.filter(p => p.id !== id);
+      KAStorage.saveParcelles(parcelles);
+      
+      if (selectedParcelId === id) {
+        selectedParcelId = parcelles.length > 0 ? parcelles[0].id : null;
+      }
+      
+      ParcellesModule.render();
 
-    // Update global app badges
-    if (window.App && typeof window.App.updateBadges === 'function') {
-      window.App.updateBadges();
+      // Update global app badges
+      if (window.App && typeof window.App.updateBadges === 'function') {
+        window.App.updateBadges();
+      }
+
+      ErrorHandler.showToast('Parcelle supprimée avec succès.', 'success');
+    } catch (err) {
+      ErrorHandler.log(err, 'Parcelles.deleteParcel');
+      ErrorHandler.showToast('Erreur lors de la suppression de la parcelle.', 'error');
     }
   }
 };

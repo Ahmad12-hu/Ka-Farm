@@ -529,30 +529,37 @@ export const EmployeesModule = {
    * @returns {void}
    */
   submitAddEmployee() {
-    const name = document.getElementById('form-emp-name').value.trim();
-    const phone = document.getElementById('form-emp-phone').value.trim();
-    const role = document.getElementById('form-emp-role').value.trim();
-    const dailyRate = parseInt(document.getElementById('form-emp-rate').value);
-    const status = document.getElementById('form-emp-status').value;
+    try {
+      const name = document.getElementById('form-emp-name').value.trim();
+      const phone = document.getElementById('form-emp-phone').value.trim();
+      const role = document.getElementById('form-emp-role').value.trim();
+      const dailyRate = parseInt(document.getElementById('form-emp-rate').value);
+      const status = document.getElementById('form-emp-status').value;
 
-    const nextNum = employees.reduce((max, e) => {
-      const num = parseInt(e.id.split('-')[1]);
-      return num > max ? num : max;
-    }, 0) + 1;
-    const id = `E-${String(nextNum).padStart(3, '0')}`;
+      const nextNum = employees.reduce((max, e) => {
+        const num = parseInt(e.id.split('-')[1]);
+        return num > max ? num : max;
+      }, 0) + 1;
+      const id = `E-${String(nextNum).padStart(3, '0')}`;
 
-    const newEmp = { id, name, phone, role, dailyRate, status };
-    employees.push(newEmp);
-    KAStorage.saveEmployees(employees);
+      const newEmp = { id, name, phone, role, dailyRate, status };
+      employees.push(newEmp);
+      KAStorage.saveEmployees(employees);
 
-    selectedEmployeeId = id;
-    this.closeAddEmployeeModal();
-    this.render();
-    this.loadEmployeeSelects();
+      selectedEmployeeId = id;
+      this.closeAddEmployeeModal();
+      this.render();
+      this.loadEmployeeSelects();
 
-    // Trigger sidebar badge count update
-    if (window.App && typeof window.App.updateBadges === 'function') {
-      window.App.updateBadges();
+      // Trigger sidebar badge count update
+      if (window.App && typeof window.App.updateBadges === 'function') {
+        window.App.updateBadges();
+      }
+
+      ErrorHandler.showToast('Employé ajouté avec succès !', 'success');
+    } catch (err) {
+      ErrorHandler.log(err, 'Employees.submitAddEmployee');
+      ErrorHandler.showToast('Erreur lors de l\'ajout de l\'employé.', 'error');
     }
   },
 
@@ -561,61 +568,75 @@ export const EmployeesModule = {
    * Met à jour les champs modifiables sans changer l'ID
    */
   submitEditEmployee() {
-    const id = document.getElementById('form-edit-emp-id').value;
-    const name = document.getElementById('form-edit-emp-name').value.trim();
-    const phone = document.getElementById('form-edit-emp-phone').value.trim();
-    const role = document.getElementById('form-edit-emp-role').value.trim();
-    const dailyRate = parseInt(document.getElementById('form-edit-emp-rate').value);
-    const status = document.getElementById('form-edit-emp-status').value;
+    try {
+      const id = document.getElementById('form-edit-emp-id').value;
+      const name = document.getElementById('form-edit-emp-name').value.trim();
+      const phone = document.getElementById('form-edit-emp-phone').value.trim();
+      const role = document.getElementById('form-edit-emp-role').value.trim();
+      const dailyRate = parseInt(document.getElementById('form-edit-emp-rate').value);
+      const status = document.getElementById('form-edit-emp-status').value;
 
-    const idx = employees.findIndex(e => e.id === id);
-    if (idx !== -1) {
-      employees[idx] = { ...employees[idx], name, phone, role, dailyRate, status };
-      KAStorage.saveEmployees(employees);
-      this.closeEditEmployeeModal();
-      this.render();
-      this.loadEmployeeSelects();
+      const idx = employees.findIndex(e => e.id === id);
+      if (idx !== -1) {
+        employees[idx] = { ...employees[idx], name, phone, role, dailyRate, status };
+        KAStorage.saveEmployees(employees);
+        this.closeEditEmployeeModal();
+        this.render();
+        this.loadEmployeeSelects();
+
+        ErrorHandler.showToast('Employé modifié avec succès !', 'success');
+      }
+    } catch (err) {
+      ErrorHandler.log(err, 'Employees.submitEditEmployee');
+      ErrorHandler.showToast('Erreur lors de la modification de l\'employé.', 'error');
     }
   },
 
   submitAssignTask() {
-    const title = document.getElementById('form-task-title').value.trim();
-    const category = document.getElementById('form-task-category').value;
-    const priority = document.getElementById('form-task-priority').value;
-    const dueDate = document.getElementById('form-task-duedate').value;
+    try {
+      const title = document.getElementById('form-task-title').value.trim();
+      const category = document.getElementById('form-task-category').value;
+      const priority = document.getElementById('form-task-priority').value;
+      const dueDate = document.getElementById('form-task-duedate').value;
 
-    const emp = employees.find(e => e.id === selectedEmployeeId);
-    if (!emp) return;
+      const emp = employees.find(e => e.id === selectedEmployeeId);
+      if (!emp) return;
 
-    // Load actual tasks from storage
-    const currentTasks = KAStorage.getTasks();
+      // Load actual tasks from storage
+      const currentTasks = KAStorage.getTasks();
 
-    // Generate unique T- ID
-    const nextNum = currentTasks.reduce((max, t) => {
-      const num = parseInt(t.id.split('-')[1]);
-      return num > max ? num : max;
-    }, 0) + 1;
-    const id = `T-${String(nextNum).padStart(3, '0')}`;
+      // Generate unique T- ID
+      const nextNum = currentTasks.reduce((max, t) => {
+        const num = parseInt(t.id.split('-')[1]);
+        return num > max ? num : max;
+      }, 0) + 1;
+      const id = `T-${String(nextNum).padStart(3, '0')}`;
 
-    const newTask = {
-      id,
-      title,
-      category,
-      dueDate,
-      assignee: emp.name, // assign using exact worker name
-      priority,
-      completed: false
-    };
+      const newTask = {
+        id,
+        title,
+        category,
+        dueDate,
+        assignee: emp.name, // assign using exact worker name
+        priority,
+        completed: false
+      };
 
-    currentTasks.unshift(newTask);
-    KAStorage.saveTasks(currentTasks);
+      currentTasks.unshift(newTask);
+      KAStorage.saveTasks(currentTasks);
 
-    this.closeAssignTaskModal();
-    this.render();
-    
-    // Update dashboard & global badging if exists
-    if (window.App && typeof window.App.updateBadges === 'function') {
-      window.App.updateBadges();
+      this.closeAssignTaskModal();
+      this.render();
+      
+      // Update dashboard & global badging if exists
+      if (window.App && typeof window.App.updateBadges === 'function') {
+        window.App.updateBadges();
+      }
+
+      ErrorHandler.showToast('Tâche assignée avec succès !', 'success');
+    } catch (err) {
+      ErrorHandler.log(err, 'Employees.submitAssignTask');
+      ErrorHandler.showToast('Erreur lors de l\'assignation de la tâche.', 'error');
     }
   },
 
@@ -624,91 +645,103 @@ export const EmployeesModule = {
    * Met à jour ou ajoute les enregistrements de présence pour la date sélectionnée
    */
   submitAttendancePointage() {
-    const selectedDate = document.getElementById('attendance-date')?.value || '2026-06-26';
-    const activeEmployees = employees.filter(e => e.status === 'Actif');
+    try {
+      const selectedDate = document.getElementById('attendance-date')?.value || '2026-06-26';
+      const activeEmployees = employees.filter(e => e.status === 'Actif');
 
-    let currentAttendance = KAStorage.getAttendance();
+      let currentAttendance = KAStorage.getAttendance();
 
-    activeEmployees.forEach(emp => {
-      const selectedStatus = document.querySelector(`input[name="status-${emp.id}"]:checked`)?.value || 'Présent';
-      const notes = document.querySelector(`input[name="notes-${emp.id}"]`)?.value.trim() || '';
+      activeEmployees.forEach(emp => {
+        const selectedStatus = document.querySelector(`input[name="status-${emp.id}"]:checked`)?.value || 'Présent';
+        const notes = document.querySelector(`input[name="notes-${emp.id}"]`)?.value.trim() || '';
 
-      // Find and replace or add
-      const idx = currentAttendance.findIndex(a => a.employeeId === emp.id && a.date === selectedDate);
-      if (idx !== -1) {
-        currentAttendance[idx] = { employeeId: emp.id, date: selectedDate, status: selectedStatus, notes };
-      } else {
-        currentAttendance.push({ employeeId: emp.id, date: selectedDate, status: selectedStatus, notes });
-      }
-    });
+        // Find and replace or add
+        const idx = currentAttendance.findIndex(a => a.employeeId === emp.id && a.date === selectedDate);
+        if (idx !== -1) {
+          currentAttendance[idx] = { employeeId: emp.id, date: selectedDate, status: selectedStatus, notes };
+        } else {
+          currentAttendance.push({ employeeId: emp.id, date: selectedDate, status: selectedStatus, notes });
+        }
+      });
 
-    KAStorage.saveAttendance(currentAttendance);
-    this.render();
+      KAStorage.saveAttendance(currentAttendance);
+      this.render();
 
-    // Alert toast
-    ErrorHandler.showToast('Pointage journalier enregistré avec succès !', 'success');
+      // Alert toast
+      ErrorHandler.showToast('Pointage journalier enregistré avec succès !', 'success');
+    } catch (err) {
+      ErrorHandler.log(err, 'Employees.submitAttendancePointage');
+      ErrorHandler.showToast('Erreur lors de l\'enregistrement du pointage.', 'error');
+    }
   },
 
   submitPayment() {
-    const employeeId = document.getElementById('form-pay-employee-id').value;
-    const amount = parseInt(document.getElementById('form-pay-amount').value);
-    const periodStart = document.getElementById('form-pay-start-date').value;
-    const periodEnd = document.getElementById('form-pay-end-date').value;
-    const date = document.getElementById('form-pay-date').value;
-    const paymentMethod = document.getElementById('form-pay-method').value;
-    const syncFinance = document.getElementById('form-pay-sync-finance').checked;
+    try {
+      const employeeId = document.getElementById('form-pay-employee-id').value;
+      const amount = parseInt(document.getElementById('form-pay-amount').value);
+      const periodStart = document.getElementById('form-pay-start-date').value;
+      const periodEnd = document.getElementById('form-pay-end-date').value;
+      const date = document.getElementById('form-pay-date').value;
+      const paymentMethod = document.getElementById('form-pay-method').value;
+      const syncFinance = document.getElementById('form-pay-sync-finance').checked;
 
-    const emp = employees.find(e => e.id === employeeId);
-    if (!emp) return;
+      const emp = employees.find(e => e.id === employeeId);
+      if (!emp) return;
 
-    // Create Payment object
-    const nextPayNum = payments.reduce((max, p) => {
-      const num = parseInt(p.id.split('-')[1] || p.id.replace('PAY-', ''));
-      return num > max ? num : max;
-    }, 0) + 1;
-    const payId = `PAY-${String(nextPayNum).padStart(3, '0')}`;
-
-    const newPayment = {
-      id: payId,
-      employeeId,
-      amount,
-      date,
-      periodStart,
-      periodEnd,
-      paymentMethod,
-      status: 'Payé'
-    };
-
-    payments.push(newPayment);
-    KAStorage.saveEmployeePayments(payments);
-
-    // Synchronize with finances if selected
-    if (syncFinance) {
-      const finances = KAStorage.getFinances();
-      const nextFinNum = finances.reduce((max, f) => {
-        const num = parseInt(f.id.split('-')[1]);
+      // Create Payment object
+      const nextPayNum = payments.reduce((max, p) => {
+        const num = parseInt(p.id.split('-')[1] || p.id.replace('PAY-', ''));
         return num > max ? num : max;
       }, 0) + 1;
-      const finId = `F-${String(nextFinNum).padStart(3, '0')}`;
+      const payId = `PAY-${String(nextPayNum).padStart(3, '0')}`;
 
-      const newFinanceEntry = {
-        id: finId,
-        description: `Salaire versé à ${emp.name}`,
-        category: 'Salaires',
-        type: 'Dépense',
+      const newPayment = {
+        id: payId,
+        employeeId,
         amount,
-        date
+        date,
+        periodStart,
+        periodEnd,
+        paymentMethod,
+        status: 'Payé'
       };
 
-      finances.unshift(newFinanceEntry);
-      KAStorage.saveFinances(finances);
+      payments.push(newPayment);
+      KAStorage.saveEmployeePayments(payments);
+
+      // Synchronize with finances if selected
+      if (syncFinance) {
+        const finances = KAStorage.getFinances();
+        const nextFinNum = finances.reduce((max, f) => {
+          const num = parseInt(f.id.split('-')[1]);
+          return num > max ? num : max;
+        }, 0) + 1;
+        const finId = `F-${String(nextFinNum).padStart(3, '0')}`;
+
+        const newFinanceEntry = {
+          id: finId,
+          description: `Salaire versé à ${emp.name}`,
+          category: 'Salaires',
+          type: 'Dépense',
+          amount,
+          date
+        };
+
+        finances.unshift(newFinanceEntry);
+        KAStorage.saveFinances(finances);
+      }
+
+      this.closePaymentModal();
+      this.render();
+
+      // Refresh salary calculation display
+      window.calculateSalary();
+
+      ErrorHandler.showToast('Paiement enregistré avec succès !', 'success');
+    } catch (err) {
+      ErrorHandler.log(err, 'Employees.submitPayment');
+      ErrorHandler.showToast('Erreur lors de l\'enregistrement du paiement.', 'error');
     }
-
-    this.closePaymentModal();
-    this.render();
-
-    // Refresh salary calculation display
-    window.calculateSalary();
   },
 
   closeAddEmployeeModal() {
@@ -811,29 +844,42 @@ window.closeAssignTaskModal = () => {
 
 window.deleteEmployee = (id) => {
   if (confirm(`Êtes-vous sûr de vouloir licencier/supprimer définitivement l'ouvrier ${id} ? Ses pointages et paiements seront conservés.`)) {
-    employees = employees.filter(e => e.id !== id);
-    KAStorage.saveEmployees(employees);
+    try {
+      employees = employees.filter(e => e.id !== id);
+      KAStorage.saveEmployees(employees);
 
-    if (selectedEmployeeId === id) {
-      selectedEmployeeId = employees.length > 0 ? employees[0].id : null;
-    }
+      if (selectedEmployeeId === id) {
+        selectedEmployeeId = employees.length > 0 ? employees[0].id : null;
+      }
 
-    EmployeesModule.render();
-    EmployeesModule.loadEmployeeSelects();
+      EmployeesModule.render();
+      EmployeesModule.loadEmployeeSelects();
 
-    if (window.App && typeof window.App.updateBadges === 'function') {
-      window.App.updateBadges();
+      if (window.App && typeof window.App.updateBadges === 'function') {
+        window.App.updateBadges();
+      }
+
+      ErrorHandler.showToast('Employé supprimé du registre.', 'info');
+    } catch (err) {
+      ErrorHandler.log(err, 'Employees.deleteEmployee');
+      ErrorHandler.showToast('Erreur lors de la suppression de l\'employé.', 'error');
     }
   }
 };
 
 window.toggleTaskStatusFromEmployees = (id) => {
-  const currentTasks = KAStorage.getTasks();
-  const idx = currentTasks.findIndex(t => t.id === id);
-  if (idx !== -1) {
-    currentTasks[idx].completed = !currentTasks[idx].completed;
-    KAStorage.saveTasks(currentTasks);
-    EmployeesModule.render();
+  try {
+    const currentTasks = KAStorage.getTasks();
+    const idx = currentTasks.findIndex(t => t.id === id);
+    if (idx !== -1) {
+      currentTasks[idx].completed = !currentTasks[idx].completed;
+      KAStorage.saveTasks(currentTasks);
+      EmployeesModule.render();
+      ErrorHandler.showToast('Statut de tâche mis à jour.', 'success');
+    }
+  } catch (err) {
+    ErrorHandler.log(err, 'Employees.toggleTaskStatusFromEmployees');
+    ErrorHandler.showToast('Erreur lors de la mise à jour de la tâche.', 'error');
   }
 };
 

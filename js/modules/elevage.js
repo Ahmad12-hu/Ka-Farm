@@ -1,4 +1,3 @@
-
 // KA Farm - Training & Formation Module - Comprehensive Senegal-focused Agricultural Education
 import { KAStorage } from '../storage.js';
 import { ErrorHandler } from './error-handler.js';
@@ -9,11 +8,15 @@ export const TrainingModule = {
   quizScore: 0,
 
   init() {
-    KAStorage.init();
-    this.setupEventListeners();
-    this.applyLanguage(this.currentLanguage);
-    this.loadCropGuides();
-    this.loadQuiz();
+    try {
+      KAStorage.init();
+      this.setupEventListeners();
+      this.applyLanguage(this.currentLanguage);
+      this.loadCropGuides();
+      this.loadQuiz();
+    } catch (err) {
+      ErrorHandler.log(err, 'TrainingModule.init');
+    }
   },
 
   setupEventListeners() {
@@ -54,16 +57,20 @@ export const TrainingModule = {
 
     // Quiz answer checker
     window.checkQuizAnswer = (questionIndex, selectedIndex, correctIndex) => {
-      if (selectedIndex === correctIndex) {
-        this.quizScore++;
-        const badge = document.getElementById('quiz-score-badge');
-        if (badge) {
-          badge.textContent = `Score: ${this.quizScore}/3`;
-          badge.classList.remove('hidden');
+      try {
+        if (selectedIndex === correctIndex) {
+          this.quizScore++;
+          const badge = document.getElementById('quiz-score-badge');
+          if (badge) {
+            badge.textContent = `Score: ${this.quizScore}/3`;
+            badge.classList.remove('hidden');
+          }
+          ErrorHandler.showToast('✓ Correct ! Excellent travail agricole !', 'success');
+        } else {
+          ErrorHandler.showToast('✗ Incorrect. Révisez les fiches techniques ci-dessus pour progresser.', 'error');
         }
-        ErrorHandler.showToast('✓ Correct ! Excellent travail agricole !', 'success');
-      } else {
-        ErrorHandler.showToast('✗ Incorrect. Révisez les fiches techniques ci-dessus pour progresser.', 'error');
+      } catch (err) {
+        ErrorHandler.log(err, 'TrainingModule.checkQuizAnswer');
       }
     };
   },
@@ -130,37 +137,42 @@ export const TrainingModule = {
   },
 
   loadCropGuides() {
-    const container = document.getElementById('crop-tabs-container');
-    if (!container) return;
+    try {
+      const container = document.getElementById('crop-tabs-container');
+      if (!container) return;
 
-    container.innerHTML = '';
+      container.innerHTML = '';
 
-    const crops = [
-      { key: 'oignon', label: '🧅 Oignon' },
-      { key: 'tomate', label: '🍅 Tomate' },
-      { key: 'piment', label: '🌶️ Piment' },
-      { key: 'gombo', label: '🌱 Gombo' },
-      { key: 'chou', label: '🥬 Chou' },
-      { key: 'aubergine', label: '🍆 Aubergine' },
-      { key: 'carotte', label: '🥕 Carotte' },
-      { key: 'laitue', label: '🥬 Laitue' },
-      { key: 'compostage_bio', label: '🍃 Compost Bio' },
-      { key: 'biopesticides_recettes', label: '🛡️ Biopesticides' },
-      { key: 'goutte_a_goutte', label: '💧 Goutte-à-goutte' }
-    ];
+      const crops = [
+        { key: 'oignon', label: '🧅 Oignon' },
+        { key: 'tomate', label: '🍅 Tomate' },
+        { key: 'piment', label: '🌶️ Piment' },
+        { key: 'gombo', label: '🌱 Gombo' },
+        { key: 'chou', label: '🥬 Chou' },
+        { key: 'aubergine', label: '🍆 Aubergine' },
+        { key: 'carotte', label: '🥕 Carotte' },
+        { key: 'laitue', label: '🥬 Laitue' },
+        { key: 'compostage_bio', label: '🍃 Compost Bio' },
+        { key: 'biopesticides_recettes', label: '🛡️ Biopesticides' },
+        { key: 'goutte_a_goutte', label: '💧 Goutte-à-goutte' }
+      ];
 
-    crops.forEach((crop, index) => {
-      const btn = document.createElement('button');
-      btn.className = `crop-guide-tab px-4 py-2.5 text-xs font-black border-b-2 rounded-t-lg transition-all cursor-pointer ${
-        index === 0 ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-slate-450 dark:text-slate-400 hover:text-emerald-500'
-      }`;
-      btn.textContent = crop.label;
-      btn.onclick = () => this.selectCrop(crop.key);
-      container.appendChild(btn);
-    });
+      crops.forEach((crop, index) => {
+        const btn = document.createElement('button');
+        btn.className = `crop-guide-tab px-4 py-2.5 text-xs font-black border-b-2 rounded-t-lg transition-all cursor-pointer ${
+          index === 0 ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-slate-450 dark:text-slate-400 hover:text-emerald-500'
+        }`;
+        btn.textContent = crop.label;
+        btn.onclick = () => this.selectCrop(crop.key);
+        container.appendChild(btn);
+      });
 
-    // Load first crop by default
-    this.selectCrop('oignon');
+      // Load first crop by default
+      this.selectCrop('oignon');
+    } catch (err) {
+      ErrorHandler.log(err, 'TrainingModule.loadCropGuides');
+      ErrorHandler.showToast('Erreur lors du chargement des guides de culture.', 'error');
+    }
   },
 
   selectCrop(cropKey) {
@@ -482,95 +494,109 @@ export const TrainingModule = {
   },
 
   loadQuiz() {
-    const container = document.getElementById('quiz-container');
-    if (!container) return;
+    try {
+      const container = document.getElementById('quiz-container');
+      if (!container) return;
 
-    const questions = [
-      {
-        question: 'Quelle pratique réduit drastiquement l\'évaporation de l\'eau sous le soleil du Sénégal ?',
-        options: ['L\'arrosage intensif à midi', 'Le paillage épais des planches', 'Laisser le sol nu', 'Pulvériser du sel'],
-        correct: 1
-      },
-      {
-        question: 'Pourquoi est-il déconseillé de replanter du piment après une aubergine ?',
-        options: ['Deux cultures qui se détestent', 'Ce sont toutes deux des Solanacées', 'Le piment refuse la terre noire', 'Aucune contre-indication'],
-        correct: 1
-      },
-      {
-        question: 'Quel traitement combat les chenilles du chou ?',
-        options: ['De l\'urée chimique', 'Le purin de Neem', 'De l\'eau saline', 'Couper la pépinière'],
-        correct: 1
-      }
-    ];
+      const questions = [
+        {
+          question: 'Quelle pratique réduit drastiquement l\'évaporation de l\'eau sous le soleil du Sénégal ?',
+          options: ['L\'arrosage intensif à midi', 'Le paillage épais des planches', 'Laisser le sol nu', 'Pulvériser du sel'],
+          correct: 1
+        },
+        {
+          question: 'Pourquoi est-il déconseillé de replanter du piment après une aubergine ?',
+          options: ['Deux cultures qui se détestent', 'Ce sont toutes deux des Solanacées', 'Le piment refuse la terre noire', 'Aucune contre-indication'],
+          correct: 1
+        },
+        {
+          question: 'Quel traitement combat les chenilles du chou ?',
+          options: ['De l\'urée chimique', 'Le purin de Neem', 'De l\'eau saline', 'Couper la pépinière'],
+          correct: 1
+        }
+      ];
 
-    container.innerHTML = questions.map((q, index) => `
-      <div class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl space-y-3">
-        <p class="font-bold text-slate-800 dark:text-white text-sm">Question ${index + 1}: ${q.question}</p>
-        <div class="space-y-2">
-          ${q.options.map((option, optIndex) => `
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" name="quiz-${index}" value="${optIndex}" class="w-4 h-4" onchange="window.checkQuizAnswer(${index}, ${optIndex}, ${q.correct})">
-              <span class="text-xs text-slate-700 dark:text-slate-300">${option}</span>
-            </label>
-          `).join('')}
+      container.innerHTML = questions.map((q, index) => `
+        <div class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/15 rounded-2xl space-y-3">
+          <p class="font-bold text-slate-800 dark:text-white text-sm">Question ${index + 1}: ${q.question}</p>
+          <div class="space-y-2">
+            ${q.options.map((option, optIndex) => `
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="quiz-${index}" value="${optIndex}" class="w-4 h-4" onchange="window.checkQuizAnswer(${index}, ${optIndex}, ${q.correct})">
+                <span class="text-xs text-slate-700 dark:text-slate-300">${option}</span>
+              </label>
+            `).join('')}
+          </div>
         </div>
-      </div>
-    `).join('');
+      `).join('');
+    } catch (err) {
+      ErrorHandler.log(err, 'TrainingModule.loadQuiz');
+      ErrorHandler.showToast('Erreur lors du chargement du quiz.', 'error');
+    }
   },
 
   sendChatMessage() {
-    const input = document.getElementById('training-chat-input');
-    const container = document.getElementById('training-chat-container');
-    
-    if (!input || !input.value || !container) return;
+    try {
+      const input = document.getElementById('training-chat-input');
+      const container = document.getElementById('training-chat-container');
+      
+      if (!input || !input.value || !container) return;
 
-    const message = input.value;
+      const message = input.value;
 
-    // Add user message
-    const userMsg = document.createElement('div');
-    userMsg.className = 'flex justify-end text-right';
-    userMsg.innerHTML = `
-      <div class="p-3 bg-emerald-600 text-white rounded-2xl rounded-tr-none max-w-[85%]">
-        <p class="text-xs leading-relaxed">${message}</p>
-      </div>
-    `;
-    container.appendChild(userMsg);
-
-    // Add loading indicator
-    const loader = document.createElement('div');
-    loader.className = 'flex gap-3 items-start';
-    loader.id = 'mentor-loader';
-    loader.innerHTML = `
-      <div class="h-6 w-6 bg-cyan-600 rounded-md flex items-center justify-center flex-shrink-0 text-white font-extrabold text-[10px]">AI</div>
-      <div class="bg-slate-50 dark:bg-[#061109]/70 border border-emerald-950/20 p-3 rounded-2xl rounded-tl-none max-w-[85%]">
-        <div class="flex items-center gap-1">
-          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce"></span>
-          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: 0.2s"></span>
-          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: 0.4s"></span>
-        </div>
-      </div>
-    `;
-    container.appendChild(loader);
-    container.scrollTop = container.scrollHeight;
-
-    input.value = '';
-
-    // Simulate AI response
-    setTimeout(() => {
-      loader.remove();
-
-      const aiMsg = document.createElement('div');
-      aiMsg.className = 'flex gap-3 items-start';
-      aiMsg.innerHTML = `
-        <div class="h-6 w-6 bg-cyan-600 rounded-md flex items-center justify-center flex-shrink-0 text-white font-extrabold text-[10px]">AI</div>
-        <div class="bg-slate-50 dark:bg-[#061109]/70 border border-emerald-950/20 p-3 rounded-2xl rounded-tl-none max-w-[85%]">
-          <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">Merci pour votre question ! C'est une excellente question sur le maraîchage sénégalais. Basé sur mes connaissances, je vous recommande de consulter les fiches techniques ci-dessus pour des détails spécifiques à votre situation.</p>
+      // Add user message
+      const userMsg = document.createElement('div');
+      userMsg.className = 'flex justify-end text-right';
+      userMsg.innerHTML = `
+        <div class="p-3 bg-emerald-600 text-white rounded-2xl rounded-tr-none max-w-[85%]">
+          <p class="text-xs leading-relaxed">${message}</p>
         </div>
       `;
-      container.appendChild(aiMsg);
+      container.appendChild(userMsg);
+
+      // Add loading indicator
+      const loader = document.createElement('div');
+      loader.className = 'flex gap-3 items-start';
+      loader.id = 'mentor-loader';
+      loader.innerHTML = `
+        <div class="h-6 w-6 bg-cyan-600 rounded-md flex items-center justify-center flex-shrink-0 text-white font-extrabold text-[10px]">AI</div>
+        <div class="bg-slate-50 dark:bg-[#061109]/70 border border-emerald-950/20 p-3 rounded-2xl rounded-tl-none max-w-[85%]">
+          <div class="flex items-center gap-1">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: 0.2s"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: 0.4s"></span>
+          </div>
+        </div>
+      `;
+      container.appendChild(loader);
       container.scrollTop = container.scrollHeight;
-    }, 1500);
-  }
+
+      input.value = '';
+
+      // Simulate AI response
+      setTimeout(() => {
+        try {
+          loader.remove();
+
+          const aiMsg = document.createElement('div');
+          aiMsg.className = 'flex gap-3 items-start';
+          aiMsg.innerHTML = `
+            <div class="h-6 w-6 bg-cyan-600 rounded-md flex items-center justify-center flex-shrink-0 text-white font-extrabold text-[10px]">AI</div>
+            <div class="bg-slate-50 dark:bg-[#061109]/70 border border-emerald-950/20 p-3 rounded-2xl rounded-tl-none max-w-[85%]">
+              <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">Merci pour votre question ! C'est une excellente question sur le maraîchage sénégalais. Basé sur mes connaissances, je vous recommande de consulter les fiches techniques ci-dessus pour des détails spécifiques à votre situation.</p>
+            </div>
+          `;
+          container.appendChild(aiMsg);
+          container.scrollTop = container.scrollHeight;
+        } catch (err) {
+          ErrorHandler.log(err, 'TrainingModule.sendChatMessage.response');
+        }
+      }, 1500);
+    } catch (err) {
+      ErrorHandler.log(err, 'TrainingModule.sendChatMessage');
+      ErrorHandler.showToast('Erreur lors de l\'envoi du message.', 'error');
+    }
+  },
 };
 
 // Initialize
