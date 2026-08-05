@@ -5,8 +5,15 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/((?!api/|sw\\.js|manifest\\.json|icons/).*)",
-      "destination": "/index.html"
+      "source": "/((?!api/|sw\\.js|manifest\\.json|icons/).*)$",
+      "destination": "/index.html",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "text/html.*"
+        }
+      ]
     },
     {
       "source": "/api/(.*)",
