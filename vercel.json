@@ -5,20 +5,9 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/((?!api/|sw\\.js|manifest\\.json|icons/).*)$",
-      "destination": "/index.html",
-      "has": [
-        {
-          "type": "header",
-          "key": "accept",
-          "value": "text/html.*"
-        }
-      ]
-    },
-    {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
     }
   ],
-  "cleanUrls": false
+  "cleanUrls": true
 }

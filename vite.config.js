@@ -3,13 +3,29 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import {defineConfig} from 'vite';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'copy-about-page',
+        generateBundle() {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'pages/shared/about.html',
+            source: Buffer.from(
+              readFileSync(path.resolve(__dirname, 'pages/shared/about.html'), 'utf-8')
+            ),
+          });
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
