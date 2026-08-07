@@ -267,7 +267,7 @@ parcellesList.innerHTML = parcelles
     </div>
     <span class="text-xs font-bold text-[#7ec850]">${p.status}</span>
   </div>
-`,
+`
   )
   .join("");
 ```

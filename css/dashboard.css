@@ -1,57 +1,57 @@
 /* Focus visible global for dashboard */
 *:focus-visible {
-    outline: 2px solid #10B981;
-    outline-offset: 2px;
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
 }
 
 /* Improve dark mode input focus */
 .dark input:focus,
 .dark select:focus {
-    border-color: #10B981;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
 /* Empty state styling */
 .empty-state {
-    text-align: center;
-    padding: 2rem 1rem;
-    color: #64748b;
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #64748b;
 }
 
 .dark .empty-state {
-    color: #819888;
+  color: #819888;
 }
 
 .empty-state-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    opacity: 0.6;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
 }
 
 .empty-state-text {
-    font-size: 11px;
-    font-weight: 600;
-    font-style: italic;
+  font-size: 11px;
+  font-weight: 600;
+  font-style: italic;
 }
 
 /* Loading skeleton animation */
 @keyframes shimmer {
-    0% {
-        background-position: -200% 0;
-    }
+  0% {
+    background-position: -200% 0;
+  }
 
-    100% {
-        background-position: 200% 0;
-    }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton-loading {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
 .dark .skeleton-loading {
-    background: linear-gradient(90deg, #0B2112 25%, #143E23 50%, #0B2112 75%);
-    background-size: 200% 100%;
+  background: linear-gradient(90deg, #0b2112 25%, #143e23 50%, #0b2112 75%);
+  background-size: 200% 100%;
 }

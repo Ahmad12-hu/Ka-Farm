@@ -163,11 +163,11 @@ Quantité ≤ 20% du Maximum
 
 ## 📞 Contacts Utiles
 
-| Rôle                    | Nom       | Téléphone    | Email            |
-| ----------------------- | --------- | ------------ | ---------------- |
-| **Admin**               | Amadou KA | 77 123 45 67 | admin@kafarm.sn  |
+| Rôle                    | Nom                 | Téléphone    | Email              |
+| ----------------------- | ------------------- | ------------ | ------------------ |
+| **Admin**               | Amadou KA           | 77 123 45 67 | admin@kafarm.sn    |
 | **Responsable Terrain** | Responsable terrain | 76 987 65 43 | terrain@ka-farm.sn |
-| **Responsable Bureau**  | Employé | 70 112 23 34 | employe@ka-farm.sn    |
+| **Responsable Bureau**  | Employé             | 70 112 23 34 | employe@ka-farm.sn |
 
 ---
 

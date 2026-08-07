@@ -39,7 +39,7 @@ export const Cache = {
 
     cache.set(key, {
       value,
-      expiry: Date.now() + ttl
+      expiry: Date.now() + ttl,
     });
   },
 
@@ -76,7 +76,7 @@ export const Cache = {
   getStats() {
     return {
       size: cache.size,
-      keys: Array.from(cache.keys())
+      keys: Array.from(cache.keys()),
     };
   },
 
@@ -93,7 +93,7 @@ export const Cache = {
     const result = await fn();
     await this.set(key, result, ttl);
     return result;
-  }
+  },
 };
 
 export default Cache;

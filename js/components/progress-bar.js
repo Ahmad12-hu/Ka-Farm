@@ -21,16 +21,10 @@ class ProgressBarManager {
   create(container, options = {}) {
     if (!container) return null;
 
-    const {
-      total = 3,
-      current = 1,
-      size = 'md',
-      showLabels = true,
-      labels = []
-    } = options;
+    const { total = 3, current = 1, size = "md", showLabels = true, labels = [] } = options;
 
     const barId = `progress-bar-${Date.now()}`;
-    const progressBar = document.createElement('div');
+    const progressBar = document.createElement("div");
     progressBar.id = barId;
     progressBar.className = this.getContainerClasses(size);
 
@@ -50,24 +44,24 @@ class ProgressBarManager {
    */
   update(barId, current) {
     const barData = this.activeBars.get(barId);
-    
+
     if (!barData) return;
 
     const { element, total, labels, showLabels } = barData;
-    
+
     // Mettre à jour les étapes
-    const steps = element.querySelectorAll('.progress-step');
+    const steps = element.querySelectorAll(".progress-step");
     steps.forEach((step, index) => {
       const stepNumber = index + 1;
-      
+
       // Supprimer les classes existantes
-      step.classList.remove('active', 'completed');
-      
+      step.classList.remove("active", "completed");
+
       // Ajouter les nouvelles classes
       if (stepNumber < current) {
-        step.classList.add('completed');
+        step.classList.add("completed");
       } else if (stepNumber === current) {
-        step.classList.add('active');
+        step.classList.add("active");
       }
     });
 
@@ -81,7 +75,7 @@ class ProgressBarManager {
   next(barId) {
     const barData = this.activeBars.get(barId);
     if (!barData) return;
-    
+
     const { current, total } = barData;
     if (current < total) {
       this.update(barId, current + 1);
@@ -94,7 +88,7 @@ class ProgressBarManager {
   previous(barId) {
     const barData = this.activeBars.get(barId);
     if (!barData) return;
-    
+
     const { current } = barData;
     if (current > 1) {
       this.update(barId, current - 1);
@@ -106,7 +100,7 @@ class ProgressBarManager {
    */
   destroy(barId) {
     const barData = this.activeBars.get(barId);
-    
+
     if (!barData) return;
 
     if (barData.element && barData.element.parentNode) {
@@ -121,9 +115,9 @@ class ProgressBarManager {
    */
   getContainerClasses(size) {
     const sizeClasses = {
-      sm: 'p-2',
-      md: 'p-4',
-      lg: 'p-6'
+      sm: "p-2",
+      md: "p-4",
+      lg: "p-6",
     };
 
     return `w-full ${sizeClasses[size]}`;
@@ -134,40 +128,52 @@ class ProgressBarManager {
    */
   generateSteps(total, current, showLabels, labels) {
     let html = '<div class="flex items-center justify-between">';
-    
+
     for (let i = 1; i <= total; i++) {
       const isCompleted = i < current;
       const isActive = i === current;
       const label = labels[i - 1] || `Étape ${i}`;
-      
+
       html += `
-        <div class="progress-step flex flex-col items-center flex-1 ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}">
+        <div class="progress-step flex flex-col items-center flex-1 ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}">
           <div class="relative flex items-center justify-center">
             <div class="progress-circle w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300
-              ${isCompleted ? 'bg-emerald-500 text-white' : isActive ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}">
-              ${isCompleted ? `
+              ${isCompleted ? "bg-emerald-500 text-white" : isActive ? "bg-emerald-500 text-white" : "bg-slate-700 text-slate-400"}">
+              ${
+                isCompleted
+                  ? `
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-              ` : i}
+              `
+                  : i
+              }
             </div>
-            ${i < total ? `
+            ${
+              i < total
+                ? `
               <div class="progress-line absolute left-10 top-1/2 w-full h-0.5 -translate-y-1/2 -z-10 transition-all duration-300
-                ${isCompleted ? 'bg-emerald-500' : 'bg-slate-700'}"></div>
-            ` : ''}
+                ${isCompleted ? "bg-emerald-500" : "bg-slate-700"}"></div>
+            `
+                : ""
+            }
           </div>
-          ${showLabels ? `
+          ${
+            showLabels
+              ? `
             <p class="mt-2 text-xs font-semibold transition-colors duration-300
-              ${isActive ? 'text-emerald-400' : isCompleted ? 'text-emerald-400' : 'text-slate-500'}">
+              ${isActive ? "text-emerald-400" : isCompleted ? "text-emerald-400" : "text-slate-500"}">
               ${label}
             </p>
-          ` : ''}
+          `
+              : ""
+          }
         </div>
       `;
     }
-    
-    html += '</div>';
-    
+
+    html += "</div>";
+
     // Ajouter la barre de progression linéaire
     html += `
       <div class="mt-4 w-full bg-slate-700 rounded-full h-2 overflow-hidden">
@@ -175,7 +181,7 @@ class ProgressBarManager {
              style="width: ${((current - 1) / (total - 1)) * 100}%"></div>
       </div>
     `;
-    
+
     return html;
   }
 

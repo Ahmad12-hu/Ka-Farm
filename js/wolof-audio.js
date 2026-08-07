@@ -15,20 +15,20 @@ function playRadioBeep(onComplete) {
     const ctx = new AudioCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    
-    osc.type = 'sine';
+
+    osc.type = "sine";
     osc.frequency.setValueAtTime(950, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.08);
-    
+
     gain.gain.setValueAtTime(0.08, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-    
+
     osc.connect(gain);
     gain.connect(ctx.destination);
-    
+
     osc.start();
     osc.stop(ctx.currentTime + 0.12);
-    
+
     setTimeout(() => {
       ctx.close();
       if (onComplete) onComplete();
@@ -46,60 +46,77 @@ const WOLOF_TRANSLATIONS = {
     title: "Conseil d'irrigation standard",
     french: "Climat standard. Maintenez le temps d'arrosage habituel de 20 minutes par vanne.",
     wolofText: "Arrosage normal na : niar fukki minutes par vanne ni nguen ko baaxe.",
-    phonetic: "Clima bi, normal na. Arrossé lène, niar fouki minutes par vanne, ni nguène ko baakhé."
+    phonetic:
+      "Clima bi, normal na. Arrossé lène, niar fouki minutes par vanne, ni nguène ko baakhé.",
   },
   irrigation_drought: {
     title: "Conseil forte chaleur",
     french: "Forte chaleur détectée. Augmentez l'irrigation à 30 minutes par vanne.",
     wolofText: "Tangay bi rëy na lool : yokkuleen arrosage bi ba fanwéer minutes par vanne.",
-    phonetic: "Tangaye bi reuye na lool. Yokou lène, arrossage bi, ba fanwère minutes par vanne, nguir ratakhal souf si."
+    phonetic:
+      "Tangaye bi reuye na lool. Yokou lène, arrossage bi, ba fanwère minutes par vanne, nguir ratakhal souf si.",
   },
   irrigation_rain: {
     title: "Conseil pluie détectée",
     french: "Pluie ou humidité élevée. Réduisez ou suspendez l'arrosage.",
     wolofText: "Taw na walla tooy na lool : waññileen walla taxawaleen arrosage bi.",
-    phonetic: "Taw na, wala nguelaw li dafa toye lool. Wagnilène, wala deudjelène, arrossage bi."
+    phonetic: "Taw na, wala nguelaw li dafa toye lool. Wagnilène, wala deudjelène, arrossage bi.",
   },
 
   // --- Sanitary Alerts / Diseases ---
   alert_tuta_absoluta: {
     title: "Alerte Mineuse de la Tomate",
-    french: "Feuilles flétries avec galeries foliaires argentées... suspicion de Mineuse de la Tomate.",
-    wolofText: "Feuilles yi dafa sew té tooy te xat-xat nekk si biir. Dina mën doon Tuta Absoluta. Teetleen xob yaaxu yi te arrossé leen ak neem.",
-    phonetic: "Attention! Khob yi, dafa sew té toye, té khate-khate nek si biir. Dina meun doon, Touta Absolouta. Teet lène khob yaakhou yi, té arrossé lène ak neem."
+    french:
+      "Feuilles flétries avec galeries foliaires argentées... suspicion de Mineuse de la Tomate.",
+    wolofText:
+      "Feuilles yi dafa sew té tooy te xat-xat nekk si biir. Dina mën doon Tuta Absoluta. Teetleen xob yaaxu yi te arrossé leen ak neem.",
+    phonetic:
+      "Attention! Khob yi, dafa sew té toye, té khate-khate nek si biir. Dina meun doon, Touta Absolouta. Teet lène khob yaakhou yi, té arrossé lène ak neem.",
   },
   alert_mildiou: {
     title: "Alerte Humidité & Mildiou",
-    french: "Éviter d'arroser les feuilles en fin de journée. Favoriser l'arrosage au pied par goutte-à-goutte pour maintenir le feuillage sec.",
-    wolofText: "Buleen arrossé xob yi si ngoon. Yokkuleen goutte-à-goutte bi ngir xob yi wow té aéré.",
-    phonetic: "Bou lène arrossé khob yi si ngoon. Yokouleun goutte à goutte bi, nguir khob yi wow, té aéré."
+    french:
+      "Éviter d'arroser les feuilles en fin de journée. Favoriser l'arrosage au pied par goutte-à-goutte pour maintenir le feuillage sec.",
+    wolofText:
+      "Buleen arrossé xob yi si ngoon. Yokkuleen goutte-à-goutte bi ngir xob yi wow té aéré.",
+    phonetic:
+      "Bou lène arrossé khob yi si ngoon. Yokouleun goutte à goutte bi, nguir khob yi wow, té aéré.",
   },
   alert_preventive_neem: {
     title: "Traitement préventif Neem",
-    french: "Pulvérisation préventive hebdomadaire de purin de Neem ou savon noir bio. Enlever et brûler immédiatement les feuilles attaquées.",
-    wolofText: "War ngënn di arrossé ak neem walla savon noir bën bën fann yu nekk. Day leen sàggi dëj jinn yi.",
-    phonetic: "War nguène di puss-pussé ak sabou niame wala neem, béne yone par sémane. Teet lène khob yaakhou yi té lakk lène ko sassi."
+    french:
+      "Pulvérisation préventive hebdomadaire de purin de Neem ou savon noir bio. Enlever et brûler immédiatement les feuilles attaquées.",
+    wolofText:
+      "War ngënn di arrossé ak neem walla savon noir bën bën fann yu nekk. Day leen sàggi dëj jinn yi.",
+    phonetic:
+      "War nguène di puss-pussé ak sabou niame wala neem, béne yone par sémane. Teet lène khob yaakhou yi té lakk lène ko sassi.",
   },
 
   // --- Biosecurity Guidelines ---
   biosecurity_entry: {
     title: "Protocole d'entrée",
-    french: "Désinfection systématique des mains et des outils de coupe avant d'entrer dans la serre ou la parcelle.",
+    french:
+      "Désinfection systématique des mains et des outils de coupe avant d'entrer dans la serre ou la parcelle.",
     wolofText: "Setal loxox yi ak tool yi avant ngéney dug si bir parcelle bi.",
-    phonetic: "Rakhass lène, té désemphecté, loxo yi ak outi yi, avant nguéney doug si biir serre bi, wala parcelle bi."
+    phonetic:
+      "Rakhass lène, té désemphecté, loxo yi ak outi yi, avant nguéney doug si biir serre bi, wala parcelle bi.",
   },
   biosecurity_quarantine: {
     title: "Zone de quarantaine",
-    french: "Isoler immédiatement tout plant suspect et signaler au chef de culture pour diagnostic.",
+    french:
+      "Isoler immédiatement tout plant suspect et signaler au chef de culture pour diagnostic.",
     wolofText: "Wétal plant bi yaaxu té wax ko chef de culture bi sassi.",
-    phonetic: "Wétalène, plant bou mën doon sick, té wakh ko chef de culture bi, sassi, nguir mou diokh léne ndiguël."
+    phonetic:
+      "Wétalène, plant bou mën doon sick, té wakh ko chef de culture bi, sassi, nguir mou diokh léne ndiguël.",
   },
   biosecurity_rotation: {
     title: "Rotation culturale",
-    french: "Ne jamais enchaîner deux cultures de la même famille sur la même parcelle pour casser le cycle des ravageurs.",
+    french:
+      "Ne jamais enchaîner deux cultures de la même famille sur la même parcelle pour casser le cycle des ravageurs.",
     wolofText: "Buleen sàkk niari culture yu bërr si béne parcelle ngir bën-bën yi.",
-    phonetic: "Bou lène doli niari culture you bok mbole si béne parcelle, nguir dakh khonkh-khonkh yi ak rabe yi."
-  }
+    phonetic:
+      "Bou lène doli niari culture you bok mbole si béne parcelle, nguir dakh khonkh-khonkh yi ak rabe yi.",
+  },
 };
 
 let activeUtterance = null;
@@ -121,22 +138,22 @@ export const WolofAudio = {
     playRadioBeep(() => {
       this.showPlayerWidget(data);
 
-      if (!('speechSynthesis' in window)) {
+      if (!("speechSynthesis" in window)) {
         console.warn("Speech synthesis not supported by this browser.");
         return;
       }
 
       const utterance = new SpeechSynthesisUtterance(data.phonetic);
-      
+
       // Select a warm, slower French voice to match standard phonetic reading in Senegal
       const voices = window.speechSynthesis.getVoices();
-      const frVoice = voices.find(v => v.lang.startsWith('fr')) || voices[0];
-      
+      const frVoice = voices.find((v) => v.lang.startsWith("fr")) || voices[0];
+
       if (frVoice) {
         utterance.voice = frVoice;
       }
-      
-      utterance.lang = 'fr-FR';
+
+      utterance.lang = "fr-FR";
       utterance.rate = 0.82; // slightly slower for high clarity
       utterance.pitch = 0.95; // warm, comfortable resonance
 
@@ -155,7 +172,7 @@ export const WolofAudio = {
   },
 
   stop() {
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
     activeUtterance = null;
@@ -166,10 +183,11 @@ export const WolofAudio = {
     // Remove existing if present
     this.hidePlayerWidget();
 
-    playerWidget = document.createElement('div');
-    playerWidget.className = "fixed bottom-24 md:bottom-6 right-6 left-6 md:left-auto md:w-96 bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl p-4 text-left z-50 animate-fade-in flex flex-col gap-3 backdrop-blur-md bg-opacity-95 text-white";
+    playerWidget = document.createElement("div");
+    playerWidget.className =
+      "fixed bottom-24 md:bottom-6 right-6 left-6 md:left-auto md:w-96 bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl p-4 text-left z-50 animate-fade-in flex flex-col gap-3 backdrop-blur-md bg-opacity-95 text-white";
     playerWidget.id = "wolof-audio-player";
-    
+
     playerWidget.innerHTML = `
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -213,9 +231,9 @@ export const WolofAudio = {
     document.body.appendChild(playerWidget);
 
     // Dynamic wave animation keyframes style tag injection if missing
-    if (!document.getElementById('wolof-wave-animations')) {
-      const style = document.createElement('style');
-      style.id = 'wolof-wave-animations';
+    if (!document.getElementById("wolof-wave-animations")) {
+      const style = document.createElement("style");
+      style.id = "wolof-wave-animations";
       style.textContent = `
         @keyframes audioBar {
           0%, 100% { height: 4px; }
@@ -236,7 +254,7 @@ export const WolofAudio = {
 
   hidePlayerWidget() {
     if (playerWidget) {
-      playerWidget.classList.add('animate-fade-out');
+      playerWidget.classList.add("animate-fade-out");
       setTimeout(() => {
         if (playerWidget && playerWidget.parentNode) {
           playerWidget.parentNode.removeChild(playerWidget);
@@ -244,7 +262,7 @@ export const WolofAudio = {
         playerWidget = null;
       }, 200);
     }
-  }
+  },
 };
 
 // Register globally so HTML elements can easily run onclick="window.playWolof('key')"
@@ -257,8 +275,8 @@ window.stopWolofAudio = () => {
 };
 
 // Listen for system/page unload to terminate any running audio
-window.addEventListener('beforeunload', () => {
-  if ('speechSynthesis' in window) {
+window.addEventListener("beforeunload", () => {
+  if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
   }
 });

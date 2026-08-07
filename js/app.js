@@ -1,11 +1,11 @@
 // KA Farm - Shared Core Application Layout Controller
-import { KAStorage } from './storage.js';
-import { UserManager } from './user-manager.js';
-import { WolofAudio } from './wolof-audio.js';
-import { ErrorHandler } from './modules/error-handler.js';
-import { MarketPricesModule } from './modules/market-prices.js';
-import { FeedbackModule } from './modules/feedback.js';
-import { BackupModule } from './modules/backup.js';
+import { KAStorage } from "./storage.js";
+import { UserManager } from "./user-manager.js";
+import { WolofAudio } from "./wolof-audio.js";
+import { ErrorHandler } from "./modules/error-handler.js";
+import { MarketPricesModule } from "./modules/market-prices.js";
+import { FeedbackModule } from "./modules/feedback.js";
+import { BackupModule } from "./modules/backup.js";
 
 // Global variables for other scripts to use
 window.KAStorage = KAStorage;
@@ -20,192 +20,194 @@ let isDarkMode = true;
 // Predefined Weather recommendations and presets for Senegal
 window.SENEGAL_WEATHER_PRESETS = {
   dakar: {
-    name: 'Dakar (Région de Dakar)',
+    name: "Dakar (Région de Dakar)",
     temp: 26,
     wind: 15,
     humidity: 82,
     sun: 8,
-    condition: 'Nuageux et brumeux',
-    desc: '🌊 Climat maritime humide. Idéal pour cultures maraîchères côtières.',
-    advice: 'Humidité élevée sur la côte de Dakar. Limitez l\'arrosage de fin de journée pour éviter le mildiou.',
+    condition: "Nuageux et brumeux",
+    desc: "🌊 Climat maritime humide. Idéal pour cultures maraîchères côtières.",
+    advice:
+      "Humidité élevée sur la côte de Dakar. Limitez l'arrosage de fin de journée pour éviter le mildiou.",
     lat: 14.7167,
     lon: -17.4677,
-    precipitation: 0.0
+    precipitation: 0.0,
   },
   diourbel: {
-    name: 'Diourbel (Bassin du Baol)',
+    name: "Diourbel (Bassin du Baol)",
     temp: 33,
     wind: 12,
     humidity: 58,
     sun: 10,
-    condition: 'Chaud et sec',
-    desc: '🌾 Climat chaud et sec du Baol. Sols sableux exigeant un bon paillage.',
-    advice: 'Sols sableux. Appliquez un paillage organique épais pour retenir l\'humidité.',
-    lat: 14.6500,
+    condition: "Chaud et sec",
+    desc: "🌾 Climat chaud et sec du Baol. Sols sableux exigeant un bon paillage.",
+    advice: "Sols sableux. Appliquez un paillage organique épais pour retenir l'humidité.",
+    lat: 14.65,
     lon: -16.2333,
-    precipitation: 0.0
+    precipitation: 0.0,
   },
   fatick: {
-    name: 'Fatick (Sine-Saloum)',
+    name: "Fatick (Sine-Saloum)",
     temp: 31,
     wind: 14,
     humidity: 72,
     sun: 9,
-    condition: 'Ensoleillé avec brise marine',
-    desc: '🌊 Estuaires du Sine-Saloum. Vigilance sur la salinité des sols maraîchers.',
-    advice: 'Vigilance sur la salinité de l\'eau (tannes). Idéal pour cultures tolérantes.',
+    condition: "Ensoleillé avec brise marine",
+    desc: "🌊 Estuaires du Sine-Saloum. Vigilance sur la salinité des sols maraîchers.",
+    advice: "Vigilance sur la salinité de l'eau (tannes). Idéal pour cultures tolérantes.",
     lat: 14.3333,
-    lon: -16.4000,
-    precipitation: 0.0
+    lon: -16.4,
+    precipitation: 0.0,
   },
   kaffrine: {
-    name: 'Kaffrine (Bassin Arachidier Est)',
+    name: "Kaffrine (Bassin Arachidier Est)",
     temp: 33,
     wind: 13,
     humidity: 60,
     sun: 10,
-    condition: 'Ensoleillé',
-    desc: '☀️ Zone agricole ensoleillée. Vents desséchants d\'Est (Harmattan léger).',
-    advice: 'Vents d\'Est desséchants. Aménagez des brise-vents autour de vos planches.',
+    condition: "Ensoleillé",
+    desc: "☀️ Zone agricole ensoleillée. Vents desséchants d'Est (Harmattan léger).",
+    advice: "Vents d'Est desséchants. Aménagez des brise-vents autour de vos planches.",
     lat: 14.1059,
     lon: -15.5508,
-    precipitation: 0.0
+    precipitation: 0.0,
   },
   kaolack: {
-    name: 'Kaolack (Bassin Arachidier)',
+    name: "Kaolack (Bassin Arachidier)",
     temp: 34,
     wind: 14,
     humidity: 55,
     sun: 10,
-    condition: 'Très chaud et ensoleillé',
-    desc: '☀ Climat soudano-sahélien chaud. Sols secs nécessitant une gestion fine de l\'arrosage.',
-    advice: 'Températures intenses. Priorisez l\'arrosage avant 8h du matin et paillez les sols.',
-    lat: 14.1500,
+    condition: "Très chaud et ensoleillé",
+    desc: "☀ Climat soudano-sahélien chaud. Sols secs nécessitant une gestion fine de l'arrosage.",
+    advice: "Températures intenses. Priorisez l'arrosage avant 8h du matin et paillez les sols.",
+    lat: 14.15,
     lon: -16.0833,
-    precipitation: 0.0
+    precipitation: 0.0,
   },
   kedougou: {
-    name: 'Kédougou (Sud-Est)',
+    name: "Kédougou (Sud-Est)",
     temp: 32,
     wind: 9,
     humidity: 80,
     sun: 7,
-    condition: 'Orages isolés',
-    desc: '⛰️ Climat soudanien humide. Forte pluviométrie, attention à l\'engorgement des sols.',
-    advice: 'Précipitations d\'hivernage importantes. Assurez des planches bien surélevées.',
+    condition: "Orages isolés",
+    desc: "⛰️ Climat soudanien humide. Forte pluviométrie, attention à l'engorgement des sols.",
+    advice: "Précipitations d'hivernage importantes. Assurez des planches bien surélevées.",
     lat: 12.5578,
     lon: -12.1744,
-    precipitation: 1.5
+    precipitation: 1.5,
   },
   kolda: {
-    name: 'Kolda (Haute Casamance)',
+    name: "Kolda (Haute Casamance)",
     temp: 32,
     wind: 10,
     humidity: 76,
     sun: 8,
-    condition: 'Chaud et humide',
-    desc: '🌳 Zone forestière chaude et humide. Excellentes conditions de sol horticole.',
-    advice: 'Humidité propice au maraîchage. Surveillez les attaques fongiques sur le gombo.',
+    condition: "Chaud et humide",
+    desc: "🌳 Zone forestière chaude et humide. Excellentes conditions de sol horticole.",
+    advice: "Humidité propice au maraîchage. Surveillez les attaques fongiques sur le gombo.",
     lat: 12.8833,
-    lon: -14.9500,
-    precipitation: 0.5
+    lon: -14.95,
+    precipitation: 0.5,
   },
   louga: {
-    name: 'Louga (Zone Sylvo-Pastorale)',
+    name: "Louga (Zone Sylvo-Pastorale)",
     temp: 33,
     wind: 17,
     humidity: 50,
     sun: 10,
-    condition: 'Sec et poussiéreux',
-    desc: '🏜️ Climat sahélien sec. Évaporations élevées, irrigation goutte-à-goutte prioritaire.',
-    advice: 'Climat sahélien strict. Favorisez l\'irrigation au goutte-à-goutte sous ombrage.',
+    condition: "Sec et poussiéreux",
+    desc: "🏜️ Climat sahélien sec. Évaporations élevées, irrigation goutte-à-goutte prioritaire.",
+    advice: "Climat sahélien strict. Favorisez l'irrigation au goutte-à-goutte sous ombrage.",
     lat: 15.6167,
     lon: -16.2167,
-    precipitation: 0.0
+    precipitation: 0.0,
   },
   matam: {
-    name: 'Matam (Moyenne Vallée)',
+    name: "Matam (Moyenne Vallée)",
     temp: 36,
     wind: 18,
     humidity: 45,
     sun: 11,
-    condition: 'Chaleur extrême',
-    desc: '🔥 Chaleur extrême du Ferlo. Évapotranspiration critique de fin de journée.',
-    advice: 'Températures extrêmes. Arrosage biquotidien et paillage épais indispensables.',
+    condition: "Chaleur extrême",
+    desc: "🔥 Chaleur extrême du Ferlo. Évapotranspiration critique de fin de journée.",
+    advice: "Températures extrêmes. Arrosage biquotidien et paillage épais indispensables.",
     lat: 15.6553,
     lon: -13.2554,
-    precipitation: 0.0
+    precipitation: 0.0,
   },
-  'saint-louis': {
-    name: 'Saint-Louis (Delta du Fleuve)',
+  "saint-louis": {
+    name: "Saint-Louis (Delta du Fleuve)",
     temp: 29,
     wind: 22,
     humidity: 70,
     sun: 10,
-    condition: 'Ensoleillé et venteux',
-    desc: '🌾 Alizés côtiers réguliers. Conditions optimales pour la culture maraîchère de contre-saison.',
-    advice: 'Vent sec présent (Harmattan léger). Surveillez l\'évaporation des pépinières.',
+    condition: "Ensoleillé et venteux",
+    desc: "🌾 Alizés côtiers réguliers. Conditions optimales pour la culture maraîchère de contre-saison.",
+    advice: "Vent sec présent (Harmattan léger). Surveillez l'évaporation des pépinières.",
     lat: 16.0167,
-    lon: -16.5000,
-    precipitation: 0.0
+    lon: -16.5,
+    precipitation: 0.0,
   },
   sedhiou: {
-    name: 'Sédhiou (Moyenne Casamance)',
+    name: "Sédhiou (Moyenne Casamance)",
     temp: 31,
     wind: 8,
     humidity: 82,
     sun: 8,
-    condition: 'Humide et orageux',
-    desc: '🌱 Climat guinéen très favorable aux cultures diversifiées et vergers.',
-    advice: 'Climat très favorable. Traitez préventivement contre les champignons foliaires.',
+    condition: "Humide et orageux",
+    desc: "🌱 Climat guinéen très favorable aux cultures diversifiées et vergers.",
+    advice: "Climat très favorable. Traitez préventivement contre les champignons foliaires.",
     lat: 12.7081,
     lon: -15.5569,
-    precipitation: 1.2
+    precipitation: 1.2,
   },
   tambacounda: {
-    name: 'Tambacounda (Sénégal Oriental)',
+    name: "Tambacounda (Sénégal Oriental)",
     temp: 35,
     wind: 11,
     humidity: 50,
     sun: 10,
-    condition: 'Ensoleillé et torride',
-    desc: '☀️ Zone semi-aride continentale. Températures diurnes élevées exigeant un ombrage.',
-    advice: 'Chaleur intense. Utilisez de l\'ombrage artificiel pour protéger les jeunes semis.',
-    lat: 13.7700,
-    lon: -13.6700,
-    precipitation: 0.0
+    condition: "Ensoleillé et torride",
+    desc: "☀️ Zone semi-aride continentale. Températures diurnes élevées exigeant un ombrage.",
+    advice: "Chaleur intense. Utilisez de l'ombrage artificiel pour protéger les jeunes semis.",
+    lat: 13.77,
+    lon: -13.67,
+    precipitation: 0.0,
   },
   thies: {
-    name: 'Thiès (Plateau / Mbour)',
+    name: "Thiès (Plateau / Mbour)",
     temp: 28,
     wind: 16,
     humidity: 75,
     sun: 9,
-    condition: 'Partiellement nuageux',
-    desc: '🌅 Zone horticole majeure (Thiès & Petite Côte). Excellente rentabilité.',
-    advice: 'Climat idéal maraîcher. Excellente période pour repiquer les plants de piments.',
+    condition: "Partiellement nuageux",
+    desc: "🌅 Zone horticole majeure (Thiès & Petite Côte). Excellente rentabilité.",
+    advice: "Climat idéal maraîcher. Excellente période pour repiquer les plants de piments.",
     lat: 14.7833,
     lon: -16.9167,
-    precipitation: 0.0
+    precipitation: 0.0,
   },
   ziguinchor: {
-    name: 'Ziguinchor (Casamance horticole)',
+    name: "Ziguinchor (Casamance horticole)",
     temp: 31,
     wind: 10,
     humidity: 78,
     sun: 8,
-    condition: 'Averses légères d\'hivernage',
-    desc: '🌴 Zone guinéenne humide. Évaporation modérée. Idéal pour l\'arboriculture.',
-    advice: 'Hivernage précoce. Assurez un bon drainage des planches de piments.',
+    condition: "Averses légères d'hivernage",
+    desc: "🌴 Zone guinéenne humide. Évaporation modérée. Idéal pour l'arboriculture.",
+    advice: "Hivernage précoce. Assurez un bon drainage des planches de piments.",
     lat: 12.5833,
     lon: -16.2667,
-    precipitation: 2.0
-  }
+    precipitation: 2.0,
+  },
 };
 
 window.WEATHER_RECOMMENDATIONS = {};
 Object.entries(window.SENEGAL_WEATHER_PRESETS).forEach(([key, preset]) => {
-  const displayKey = key === 'saint-louis' ? 'Saint-Louis' : (key.charAt(0).toUpperCase() + key.slice(1));
+  const displayKey =
+    key === "saint-louis" ? "Saint-Louis" : key.charAt(0).toUpperCase() + key.slice(1);
   window.WEATHER_RECOMMENDATIONS[displayKey] = {
     city: preset.name,
     temp: `${preset.temp}°C`,
@@ -214,29 +216,40 @@ Object.entries(window.SENEGAL_WEATHER_PRESETS).forEach(([key, preset]) => {
     condition: preset.condition,
     advice: preset.advice,
     lat: preset.lat,
-    lon: preset.lon
+    lon: preset.lon,
   };
 });
 
 // High-performance smooth cubic ease-out number animation utility
-window.animateValue = function(element, start, end, duration = 800) {
+window.animateValue = function (element, start, end, duration = 800) {
   if (!element) return;
   const startNum = Number(start) || 0;
   const endNum = Number(end) || 0;
   if (startNum === endNum) {
-    if (element.id.includes('revenu') || element.id.includes('depense') || element.id.includes('solde') || element.id.includes('cost') || element.id.includes('profit')) {
-      element.textContent = endNum.toLocaleString('fr-FR') + ' F';
-    } else if (element.id.includes('percent')) {
-      element.textContent = endNum + '%';
+    if (
+      element.id.includes("revenu") ||
+      element.id.includes("depense") ||
+      element.id.includes("solde") ||
+      element.id.includes("cost") ||
+      element.id.includes("profit")
+    ) {
+      element.textContent = endNum.toLocaleString("fr-FR") + " F";
+    } else if (element.id.includes("percent")) {
+      element.textContent = endNum + "%";
     } else {
-      element.textContent = endNum.toLocaleString('fr-FR');
+      element.textContent = endNum.toLocaleString("fr-FR");
     }
     return;
   }
-  
+
   let startTimestamp = null;
-  const isCurrency = element.id.includes('revenu') || element.id.includes('depense') || element.id.includes('solde') || element.id.includes('cost') || element.id.includes('profit');
-  const isPercent = element.id.includes('percent');
+  const isCurrency =
+    element.id.includes("revenu") ||
+    element.id.includes("depense") ||
+    element.id.includes("solde") ||
+    element.id.includes("cost") ||
+    element.id.includes("profit");
+  const isPercent = element.id.includes("percent");
 
   const step = (timestamp) => {
     if (!startTimestamp) startTimestamp = timestamp;
@@ -245,22 +258,22 @@ window.animateValue = function(element, start, end, duration = 800) {
     const value = Math.floor(easeProgress * (endNum - startNum) + startNum);
 
     if (isCurrency) {
-      element.textContent = value.toLocaleString('fr-FR') + ' F';
+      element.textContent = value.toLocaleString("fr-FR") + " F";
     } else if (isPercent) {
-      element.textContent = value + '%';
+      element.textContent = value + "%";
     } else {
-      element.textContent = value.toLocaleString('fr-FR');
+      element.textContent = value.toLocaleString("fr-FR");
     }
 
     if (progress < 1) {
       window.requestAnimationFrame(step);
     } else {
       if (isCurrency) {
-        element.textContent = endNum.toLocaleString('fr-FR') + ' F';
+        element.textContent = endNum.toLocaleString("fr-FR") + " F";
       } else if (isPercent) {
-        element.textContent = endNum + '%';
+        element.textContent = endNum + "%";
       } else {
-        element.textContent = endNum.toLocaleString('fr-FR');
+        element.textContent = endNum.toLocaleString("fr-FR");
       }
     }
   };
@@ -269,59 +282,70 @@ window.animateValue = function(element, start, end, duration = 800) {
 
 export const App = {
   init() {
-    console.info('[App] init started');
+    console.info("[App] init started");
     // FORCER l'authentification D'ABORD pour éviter le race condition avec router.js
     UserManager.requireAuth();
     currentUser = UserManager.getCurrentUser();
-    
+
     // Enregistrer le Service Worker pour le mode hors ligne
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(err => 
-        console.error('SW registration failed:', err)
-      );
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .catch((err) => console.error("SW registration failed:", err));
     }
-    
+
     // Initialiser le stockage hors ligne
     if (window.offlineStorage) {
       window.offlineStorage.init();
     }
-    
+
     // Initialiser le gestionnaire de synchronisation
     if (window.syncManager) {
       window.syncManager.init();
     }
-    
+
     // Ensure storage is initialized and cloud sync on-snapshots are active on all pages
     KAStorage.init();
 
     // Auto-load demo data on first launch if no data exists
     const hasAnyData = () => {
-      const keys = ['ka_farm_crops','ka_farm_parcelles','ka_farm_tasks','ka_farm_finances','ka_farm_employees','ka_farm_cheptel','ka_farm_seeds','ka_farm_products'];
-      return keys.some(key => localStorage.getItem(KAStorage.getScopedKey(key)));
+      const keys = [
+        "ka_farm_crops",
+        "ka_farm_parcelles",
+        "ka_farm_tasks",
+        "ka_farm_finances",
+        "ka_farm_employees",
+        "ka_farm_cheptel",
+        "ka_farm_seeds",
+        "ka_farm_products",
+      ];
+      return keys.some((key) => localStorage.getItem(KAStorage.getScopedKey(key)));
     };
 
     if (!hasAnyData()) {
-      import('/js/modules/demo-data.js').then(m => m.loadDemoData(KAStorage)).catch(e => console.error('Demo data load failed', e));
+      import("/js/modules/demo-data.js")
+        .then((m) => m.loadDemoData(KAStorage))
+        .catch((e) => console.error("Demo data load failed", e));
     }
 
     // Detect system theme preference (matchMedia)
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const systemPrefersDark = mediaQuery.matches;
 
     // Use stored preference if available, otherwise fallback to system preference
-    isDarkMode = KAStorage.get('ka_farm_dark_mode', systemPrefersDark);
-    
+    isDarkMode = KAStorage.get("ka_farm_dark_mode", systemPrefersDark);
+
     this.applyTheme(isDarkMode);
 
     // Automatically switch the theme when system preferences change
     const handleSystemThemeChange = (e) => {
       isDarkMode = e.matches;
-      KAStorage.set('ka_farm_dark_mode', isDarkMode);
+      KAStorage.set("ka_farm_dark_mode", isDarkMode);
       this.applyTheme(isDarkMode);
     };
 
     try {
-      mediaQuery.addEventListener('change', handleSystemThemeChange);
+      mediaQuery.addEventListener("change", handleSystemThemeChange);
     } catch (err) {
       // Fallback support for older browser/headless environments
       mediaQuery.addListener(handleSystemThemeChange);
@@ -332,18 +356,18 @@ export const App = {
     this.injectFooter();
     this.setupGlobalListeners();
     this.updateBadges();
-    
+
     // Initialize MarketPricesModule if on market-prices page
-    if (window.location.pathname.includes('market-prices.html')) {
+    if (window.location.pathname.includes("market-prices.html")) {
       MarketPricesModule.init();
     }
-    
+
     // Initialize FeedbackModule if on shared pages (not auth/admin)
     const pathname = window.location.pathname;
-    console.log('Current pathname:', pathname);
+    console.log("Current pathname:", pathname);
 
-    if (!pathname.includes('/pages/auth/') && !pathname.includes('/pages/admin/')) {
-      console.log('Initializing FeedbackModule on shared page...');
+    if (!pathname.includes("/pages/auth/") && !pathname.includes("/pages/admin/")) {
+      console.log("Initializing FeedbackModule on shared page...");
 
       // Initialize feedback with Supabase credentials from Vite env if available
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || null;
@@ -358,16 +382,16 @@ export const App = {
 
       // Force inject the button directly if not present after 3 seconds
       setTimeout(() => {
-        console.log('Checking for feedback button...');
-        if (!document.getElementById('feedback-fab')) {
-          console.log('Feedback button NOT found, forcing injection...');
+        console.log("Checking for feedback button...");
+        if (!document.getElementById("feedback-fab")) {
+          console.log("Feedback button NOT found, forcing injection...");
           FeedbackModule.injectFloatingButton();
         } else {
-          console.log('Feedback button already exists');
+          console.log("Feedback button already exists");
         }
       }, 3000);
     } else {
-      console.log('Skipping FeedbackModule on auth/admin page');
+      console.log("Skipping FeedbackModule on auth/admin page");
     }
 
     // Initialize BackupModule on all pages
@@ -376,94 +400,101 @@ export const App = {
 
   applyTheme(dark) {
     if (dark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
     } else {
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
     }
-    
-    const circle = document.getElementById('dark-toggle-circle');
-    const toggle = document.getElementById('dark-toggle-btn');
+
+    const circle = document.getElementById("dark-toggle-circle");
+    const toggle = document.getElementById("dark-toggle-btn");
     if (circle && toggle) {
       if (dark) {
-        toggle.classList.add('bg-emerald-600');
-        toggle.classList.remove('bg-slate-300');
-        circle.classList.add('translate-x-5');
+        toggle.classList.add("bg-emerald-600");
+        toggle.classList.remove("bg-slate-300");
+        circle.classList.add("translate-x-5");
       } else {
-        toggle.classList.add('bg-slate-300');
-        toggle.classList.remove('bg-emerald-600');
-        circle.classList.remove('translate-x-5');
+        toggle.classList.add("bg-slate-300");
+        toggle.classList.remove("bg-emerald-600");
+        circle.classList.remove("translate-x-5");
       }
     }
 
-    const btnDesktop = document.getElementById('btn-theme-desktop');
-    const btnMobile = document.getElementById('btn-theme-mobile');
+    const btnDesktop = document.getElementById("btn-theme-desktop");
+    const btnMobile = document.getElementById("btn-theme-mobile");
     if (btnDesktop) {
-      btnDesktop.innerHTML = `<i data-lucide="${dark ? 'sun' : 'moon'}" class="h-4 w-4"></i>`;
+      btnDesktop.innerHTML = `<i data-lucide="${dark ? "sun" : "moon"}" class="h-4 w-4"></i>`;
     }
     if (btnMobile) {
-      btnMobile.innerHTML = `<i data-lucide="${dark ? 'sun' : 'moon'}" class="h-4.5 w-4.5"></i>`;
+      btnMobile.innerHTML = `<i data-lucide="${dark ? "sun" : "moon"}" class="h-4.5 w-4.5"></i>`;
     }
     if (window.lucide) {
       window.lucide.createIcons();
     }
-    
-    if (typeof window.onThemeChanged === 'function') {
+
+    if (typeof window.onThemeChanged === "function") {
       window.onThemeChanged(dark);
     }
   },
 
   toggleTheme() {
     isDarkMode = !isDarkMode;
-    KAStorage.set('ka_farm_dark_mode', isDarkMode);
-    
+    KAStorage.set("ka_farm_dark_mode", isDarkMode);
+
     // Activer la transition fluide temporaire pour le changement de thème
-    document.documentElement.classList.add('theme-transition');
-    
+    document.documentElement.classList.add("theme-transition");
+
     // Animate theme toggle icons (desktop + mobile)
-    const btnDesktop = document.getElementById('btn-theme-desktop');
-    const btnMobile = document.getElementById('btn-theme-mobile');
-    
+    const btnDesktop = document.getElementById("btn-theme-desktop");
+    const btnMobile = document.getElementById("btn-theme-mobile");
+
     if (btnDesktop) {
-      const iconDesktop = btnDesktop.querySelector('[data-lucide]');
+      const iconDesktop = btnDesktop.querySelector("[data-lucide]");
       if (iconDesktop) {
-        iconDesktop.classList.remove('theme-icon-animate');
+        iconDesktop.classList.remove("theme-icon-animate");
         void iconDesktop.offsetWidth;
-        iconDesktop.classList.add('theme-icon-animate');
-        setTimeout(() => iconDesktop.classList.remove('theme-icon-animate'), 450);
+        iconDesktop.classList.add("theme-icon-animate");
+        setTimeout(() => iconDesktop.classList.remove("theme-icon-animate"), 450);
       }
     }
-    
+
     if (btnMobile) {
-      const iconMobile = btnMobile.querySelector('[data-lucide]');
+      const iconMobile = btnMobile.querySelector("[data-lucide]");
       if (iconMobile) {
-        iconMobile.classList.remove('theme-icon-animate');
+        iconMobile.classList.remove("theme-icon-animate");
         void iconMobile.offsetWidth;
-        iconMobile.classList.add('theme-icon-animate');
-        setTimeout(() => iconMobile.classList.remove('theme-icon-animate'), 450);
+        iconMobile.classList.add("theme-icon-animate");
+        setTimeout(() => iconMobile.classList.remove("theme-icon-animate"), 450);
       }
     }
-    
+
     this.applyTheme(isDarkMode);
-    
+
     // Nettoyer après l'animation pour ne pas perturber les hover normaux
     setTimeout(() => {
-      document.documentElement.classList.remove('theme-transition');
+      document.documentElement.classList.remove("theme-transition");
     }, 450);
   },
 
   injectSidebar() {
-    const placeholder = document.getElementById('sidebar-placeholder');
+    const placeholder = document.getElementById("sidebar-placeholder");
     if (!placeholder) return;
 
     placeholder.className = "lg:w-64 lg:flex-shrink-0";
 
-    const userInitials = currentUser ? currentUser.name.split(' ').map(n => n[0]).join('') : 'KA';
-    const userName = currentUser ? currentUser.name : 'Utilisateur';
-    const userRole = currentUser ? currentUser.role : 'Visiteur';
-    const enterpriseName = currentUser && currentUser.enterpriseName ? currentUser.enterpriseName : 'KA Farm';
-    const enterpriseCode = currentUser && currentUser.enterpriseCode ? currentUser.enterpriseCode : 'KA-FARM';
+    const userInitials = currentUser
+      ? currentUser.name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+      : "KA";
+    const userName = currentUser ? currentUser.name : "Utilisateur";
+    const userRole = currentUser ? currentUser.role : "Visiteur";
+    const enterpriseName =
+      currentUser && currentUser.enterpriseName ? currentUser.enterpriseName : "KA Farm";
+    const enterpriseCode =
+      currentUser && currentUser.enterpriseCode ? currentUser.enterpriseCode : "KA-FARM";
 
     const sidebarHTML = `
       <aside id="sidebar" class="w-64 flex-shrink-0 bg-[#06130B] dark:bg-[#06130B] text-slate-300 flex flex-col border-r border-[#143E23] z-[60] lg:sticky lg:top-0 lg:h-screen transition-all duration-300 fixed inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 lg:transform-none">
@@ -500,7 +531,7 @@ export const App = {
           <div class="flex items-center gap-1.5">
             <!-- Theme Toggle Button -->
             <button onclick="window.toggleAppTheme()" id="btn-theme-desktop" class="p-1.5 text-slate-400 hover:text-white hover:bg-[#0E2F19] rounded-lg transition-all cursor-pointer" title="Basculer le thème">
-              <i data-lucide="${isDarkMode ? 'sun' : 'moon'}" class="h-4 w-4"></i>
+              <i data-lucide="${isDarkMode ? "sun" : "moon"}" class="h-4 w-4"></i>
             </button>
             <button onclick="window.toggleMobileSidebar()" class="lg:hidden p-1 text-slate-400 hover:text-white">
               <i data-lucide="x" class="h-5 w-5"></i>
@@ -658,8 +689,8 @@ export const App = {
           
           <div class="flex items-center justify-between text-[11px] font-bold text-[#819888] px-1 pt-1 border-t border-[#143E23]/40">
             <span class="flex items-center gap-1"><i data-lucide="moon" class="h-3.5 w-3.5 text-emerald-500"></i> Sombre</span>
-            <button onclick="window.toggleAppTheme()" id="dark-toggle-btn" class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ease-in-out ${isDarkMode ? 'bg-emerald-600' : 'bg-slate-300'}">
-              <span id="dark-toggle-circle" class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${isDarkMode ? 'translate-x-5' : ''}"></span>
+            <button onclick="window.toggleAppTheme()" id="dark-toggle-btn" class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ease-in-out ${isDarkMode ? "bg-emerald-600" : "bg-slate-300"}">
+              <span id="dark-toggle-circle" class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300 ease-in-out ${isDarkMode ? "translate-x-5" : ""}"></span>
             </button>
           </div>
         </div>
@@ -667,13 +698,13 @@ export const App = {
     `;
 
     placeholder.innerHTML = sidebarHTML;
-    
+
     // Dispatch an event to notify that the sidebar has been loaded
-    document.dispatchEvent(new Event('sidebarInjected'));
+    document.dispatchEvent(new Event("sidebarInjected"));
   },
 
   injectMobileHeader() {
-    const placeholder = document.getElementById('mobile-header-placeholder');
+    const placeholder = document.getElementById("mobile-header-placeholder");
     if (!placeholder) return;
 
     placeholder.innerHTML = `
@@ -709,11 +740,11 @@ export const App = {
           <!-- Status profile pill -->
           <span class="inline-flex items-center gap-1 py-0.5 px-2 rounded-full bg-emerald-500/10 text-[9px] font-extrabold text-emerald-400 border border-emerald-500/20">
             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            ${currentUser ? currentUser.name.split(' ')[0] : 'Amadou'}
+            ${currentUser ? currentUser.name.split(" ")[0] : "Amadou"}
           </span>
           <!-- Theme Toggle Button -->
           <button onclick="window.toggleAppTheme()" id="btn-theme-mobile" class="p-1.5 text-slate-300 hover:text-white hover:bg-[#0E2F19] rounded-lg transition-all cursor-pointer" title="Basculer le thème">
-            <i data-lucide="${isDarkMode ? 'sun' : 'moon'}" class="h-4.5 w-4.5"></i>
+            <i data-lucide="${isDarkMode ? "sun" : "moon"}" class="h-4.5 w-4.5"></i>
           </button>
         </div>
       </div>
@@ -721,12 +752,13 @@ export const App = {
   },
 
   injectMobileBottomNav() {
-    if (document.getElementById('mobile-bottom-nav')) return;
+    if (document.getElementById("mobile-bottom-nav")) return;
 
-    const bottomNav = document.createElement('nav');
-    bottomNav.id = 'mobile-bottom-nav';
-    bottomNav.className = 'fixed bottom-0 left-0 right-0 h-16 bg-[#06130B]/95 dark:bg-[#06130B]/95 backdrop-blur-md border-t border-[#143E23] flex items-center justify-around px-2 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.45)]';
-    
+    const bottomNav = document.createElement("nav");
+    bottomNav.id = "mobile-bottom-nav";
+    bottomNav.className =
+      "fixed bottom-0 left-0 right-0 h-16 bg-[#06130B]/95 dark:bg-[#06130B]/95 backdrop-blur-md border-t border-[#143E23] flex items-center justify-around px-2 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.45)]";
+
     bottomNav.innerHTML = `
       <a href="/pages/shared/dashboard.html" data-tab="dashboard" class="mobile-nav-btn flex flex-col items-center justify-center flex-1 py-1 text-slate-400 dark:text-[#819888] hover:text-emerald-400 dark:hover:text-emerald-400 transition-all duration-200">
         <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
@@ -760,19 +792,20 @@ export const App = {
     if (window.lucide) {
       window.lucide.createIcons();
     }
-    
+
     // Dispatch the sidebarInjected event to let Router highlight bottom navigation buttons
     setTimeout(() => {
-      document.dispatchEvent(new Event('sidebarInjected'));
+      document.dispatchEvent(new Event("sidebarInjected"));
     }, 50);
   },
 
   injectFooter() {
-    const mainEl = document.querySelector('main');
-    if (mainEl && !document.getElementById('app-global-footer')) {
-      const footer = document.createElement('footer');
-      footer.id = 'app-global-footer';
-      footer.className = 'mt-12 py-6 border-t border-slate-150 dark:border-[#143E23]/15 text-center text-[11px] text-slate-400 dark:text-[#5F8369] font-medium w-full';
+    const mainEl = document.querySelector("main");
+    if (mainEl && !document.getElementById("app-global-footer")) {
+      const footer = document.createElement("footer");
+      footer.id = "app-global-footer";
+      footer.className =
+        "mt-12 py-6 border-t border-slate-150 dark:border-[#143E23]/15 text-center text-[11px] text-slate-400 dark:text-[#5F8369] font-medium w-full";
       footer.innerHTML = `
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-7xl mx-auto px-6">
           <div class="flex items-center gap-1.5">
@@ -791,45 +824,44 @@ export const App = {
     }
   },
 
-
-
   setupGlobalListeners() {
     window.toggleMobileSidebar = () => {
-      const sidebar = document.getElementById('sidebar');
+      const sidebar = document.getElementById("sidebar");
       if (sidebar) {
-        const isCurrentlyActive = sidebar.classList.contains('active');
-        
+        const isCurrentlyActive = sidebar.classList.contains("active");
+
         if (isCurrentlyActive) {
           // Close sidebar
-          sidebar.classList.add('-translate-x-full');
-          sidebar.classList.remove('active');
-          
+          sidebar.classList.add("-translate-x-full");
+          sidebar.classList.remove("active");
+
           // Remove backdrop overlay if exists
-          const backdrop = document.getElementById('sidebar-backdrop');
+          const backdrop = document.getElementById("sidebar-backdrop");
           if (backdrop) {
-            backdrop.classList.remove('opacity-100');
-            backdrop.classList.add('opacity-0');
+            backdrop.classList.remove("opacity-100");
+            backdrop.classList.add("opacity-0");
             setTimeout(() => {
               backdrop.remove();
             }, 300);
           }
         } else {
           // Open sidebar
-          sidebar.classList.remove('-translate-x-full');
-          sidebar.classList.add('active');
-          
+          sidebar.classList.remove("-translate-x-full");
+          sidebar.classList.add("active");
+
           // Create and insert backdrop overlay
-          let backdrop = document.getElementById('sidebar-backdrop');
+          let backdrop = document.getElementById("sidebar-backdrop");
           if (!backdrop) {
-            backdrop = document.createElement('div');
-            backdrop.id = 'sidebar-backdrop';
-            backdrop.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden transition-opacity duration-300 opacity-0';
+            backdrop = document.createElement("div");
+            backdrop.id = "sidebar-backdrop";
+            backdrop.className =
+              "fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden transition-opacity duration-300 opacity-0";
             backdrop.onclick = window.toggleMobileSidebar;
             document.body.appendChild(backdrop);
             // Trigger transition
             setTimeout(() => {
-              backdrop.classList.remove('opacity-0');
-              backdrop.classList.add('opacity-100');
+              backdrop.classList.remove("opacity-0");
+              backdrop.classList.add("opacity-100");
             }, 10);
           }
         }
@@ -841,51 +873,57 @@ export const App = {
     };
 
     window.handleLogout = () => {
-      if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+      if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
         KAStorage.setCurrentUser(null);
-        window.location.href = '/pages/auth/login.html';
+        window.location.href = "/pages/auth/login.html";
       }
     };
-
 
     // Auto load lucide icons
     if (window.lucide) {
       window.lucide.createIcons();
     }
-    
-    document.addEventListener('sidebarInjected', () => {
+
+    document.addEventListener("sidebarInjected", () => {
       if (window.lucide) {
         window.lucide.createIcons();
       }
     });
 
     // Global micro-interaction: springy scale-up pop when an icon or icon button is clicked
-    document.addEventListener('click', (e) => {
+    document.addEventListener("click", (e) => {
       const target = e.target;
       if (!target) return;
 
       let icon = null;
       // 1. If we clicked the icon itself (or SVG)
-      if (target.hasAttribute('data-lucide') || target.tagName === 'SVG' || target.closest('[data-lucide]')) {
-        icon = target.hasAttribute('data-lucide') || target.tagName === 'SVG' ? target : target.closest('[data-lucide]');
+      if (
+        target.hasAttribute("data-lucide") ||
+        target.tagName === "SVG" ||
+        target.closest("[data-lucide]")
+      ) {
+        icon =
+          target.hasAttribute("data-lucide") || target.tagName === "SVG"
+            ? target
+            : target.closest("[data-lucide]");
       } else {
         // 2. If we clicked a button, anchor, or custom active tab containing an icon
         const parentBtn = target.closest('button, a, .nav-btn, [role="button"], .tab-btn');
         if (parentBtn) {
-          icon = parentBtn.querySelector('[data-lucide], svg');
+          icon = parentBtn.querySelector("[data-lucide], svg");
         }
       }
 
       if (icon) {
         // Trigger the pop animation smoothly
-        icon.classList.remove('animate-icon-pop');
+        icon.classList.remove("animate-icon-pop");
         // Force reflow/repaint to restart CSS animation
         void icon.offsetWidth;
-        icon.classList.add('animate-icon-pop');
-        
+        icon.classList.add("animate-icon-pop");
+
         // Remove class after animation finishes (320ms matches CSS keyframes)
         setTimeout(() => {
-          icon.classList.remove('animate-icon-pop');
+          icon.classList.remove("animate-icon-pop");
         }, 350);
       }
     });
@@ -894,71 +932,77 @@ export const App = {
   updateBadges() {
     // Update crops badge count
     const crops = KAStorage.getCrops();
-    const cropsBadge = document.getElementById('crops-badge');
+    const cropsBadge = document.getElementById("crops-badge");
     if (cropsBadge) {
       cropsBadge.textContent = crops.length;
     }
 
     // Update parcelles badge count
     const parcelles = KAStorage.getParcelles();
-    const parcellesBadge = document.getElementById('parcelles-badge');
+    const parcellesBadge = document.getElementById("parcelles-badge");
     if (parcellesBadge) {
       parcellesBadge.textContent = parcelles.length;
     }
 
     // Update employees badge count
     const employees = KAStorage.getEmployees ? KAStorage.getEmployees() : [];
-    const employeesBadge = document.getElementById('employees-badge');
+    const employeesBadge = document.getElementById("employees-badge");
     if (employeesBadge) {
       employeesBadge.textContent = employees.length;
     }
 
     // Update incomplete tasks badge count
     const tasks = KAStorage.getTasks();
-    const pendingTasks = tasks.filter(t => !t.completed).length;
-    const tasksBadge = document.getElementById('tasks-badge');
+    const pendingTasks = tasks.filter((t) => !t.completed).length;
+    const tasksBadge = document.getElementById("tasks-badge");
     if (tasksBadge) {
       if (pendingTasks > 0) {
         tasksBadge.textContent = pendingTasks;
-        tasksBadge.classList.remove('hidden');
+        tasksBadge.classList.remove("hidden");
       } else {
-        tasksBadge.classList.add('hidden');
+        tasksBadge.classList.add("hidden");
       }
     }
 
     // Update stocks badge count showing count of low items
     const stocks = KAStorage.getStocks();
-    const lowStocksCount = stocks.filter(s => s.quantity <= (s.maxQuantity * 0.2)).length;
-    const stocksBadge = document.getElementById('stocks-badge');
+    const lowStocksCount = stocks.filter((s) => s.quantity <= s.maxQuantity * 0.2).length;
+    const stocksBadge = document.getElementById("stocks-badge");
     if (stocksBadge) {
       if (lowStocksCount > 0) {
         stocksBadge.textContent = `${lowStocksCount} Bas`;
-        stocksBadge.className = 'text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.2 rounded-full font-bold';
+        stocksBadge.className =
+          "text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.2 rounded-full font-bold";
       } else {
         stocksBadge.textContent = stocks.length;
-        stocksBadge.className = 'text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded-full font-bold';
+        stocksBadge.className =
+          "text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded-full font-bold";
       }
     }
 
     // Update elevage badge count showing active livestock alerts or total count
     const cheptel = KAStorage.getCheptel ? KAStorage.getCheptel() : [];
-    const alertAnimalsCount = cheptel.filter(c => c.status === 'Surveiller' || c.status === 'Malade' || c.status === 'Alerte').length;
-    const elevageBadge = document.getElementById('elevage-badge');
+    const alertAnimalsCount = cheptel.filter(
+      (c) => c.status === "Surveiller" || c.status === "Malade" || c.status === "Alerte"
+    ).length;
+    const elevageBadge = document.getElementById("elevage-badge");
     if (elevageBadge) {
       if (alertAnimalsCount > 0) {
         elevageBadge.textContent = `${alertAnimalsCount} Alerte`;
-        elevageBadge.className = 'text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded-full font-bold';
+        elevageBadge.className =
+          "text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded-full font-bold";
       } else {
         elevageBadge.textContent = cheptel.length;
-        elevageBadge.className = 'text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded-full font-bold';
+        elevageBadge.className =
+          "text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded-full font-bold";
       }
     }
-  }
+  },
 };
 
 // Start application framework
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
     App.init();
   });
 } else {

@@ -1,29 +1,37 @@
 // KA Farm - Tests pour le module Finances
-import { FinancesModule } from '../js/modules/finances.js';
+import { FinancesModule } from "../js/modules/finances.js";
 
 // Mock localStorage
 const localStorageMock = (() => {
   let store = {};
   return {
     getItem: (key) => store[key] || null,
-    setItem: (key, value) => { store[key] = value.toString(); },
-    removeItem: (key) => { delete store[key]; },
-    clear: () => { store = {}; }
+    setItem: (key, value) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+Object.defineProperty(window, "localStorage", { value: localStorageMock });
 
 // Mock KAStorage
 const mockKAStorage = {
   getFinances: () => [],
-  saveFinances: (finances) => { localStorage.setItem('ka_farm_finances', JSON.stringify(finances)); },
+  saveFinances: (finances) => {
+    localStorage.setItem("ka_farm_finances", JSON.stringify(finances));
+  },
   getFinanceStats: () => ({ totalRevenu: 0, totalDepense: 0, solde: 0 }),
   getScopedKey: (key) => key,
-  init: () => {}
+  init: () => {},
 };
 
-Object.defineProperty(window, 'KAStorage', { value: mockKAStorage });
+Object.defineProperty(window, "KAStorage", { value: mockKAStorage });
 
 // Mock window.confirm
 window.confirm = jest.fn(() => true);
@@ -34,16 +42,16 @@ window.lucide = { createIcons: () => {} };
 // Mock fetch
 global.fetch = () => Promise.resolve({});
 
-describe('FinancesModule', () => {
+describe("FinancesModule", () => {
   beforeEach(() => {
     localStorage.clear();
     // Prevent demo data loading
-    localStorage.setItem('ka_farm_finances', JSON.stringify([]));
+    localStorage.setItem("ka_farm_finances", JSON.stringify([]));
     // Reset confirm mock
     window.confirm = jest.fn(() => true);
   });
 
-  test('devrait initialiser le module sans erreur', () => {
+  test("devrait initialiser le module sans erreur", () => {
     // Mock the required DOM elements for init
     document.body.innerHTML = `
       <tbody id="finances-table-body"></tbody>
@@ -60,7 +68,7 @@ describe('FinancesModule', () => {
     expect(() => FinancesModule.init()).not.toThrow();
   });
 
-  test('devrait calculer le ratio de compost', () => {
+  test("devrait calculer le ratio de compost", () => {
     document.body.innerHTML = `
       <input id="compost-carbon-input" value="10">
       <input id="compost-nitrogen-input" value="2">
@@ -71,12 +79,12 @@ describe('FinancesModule', () => {
     `;
 
     FinancesModule.calculateCompost();
-    
-    const ratioText = document.getElementById('compost-ratio-text').textContent;
-    expect(ratioText).toContain('C/N');
+
+    const ratioText = document.getElementById("compost-ratio-text").textContent;
+    expect(ratioText).toContain("C/N");
   });
 
-  test('devrait identifier un excès de carbone', () => {
+  test("devrait identifier un excès de carbone", () => {
     document.body.innerHTML = `
       <input id="compost-carbon-input" value="20">
       <input id="compost-nitrogen-input" value="1">
@@ -87,12 +95,12 @@ describe('FinancesModule', () => {
     `;
 
     FinancesModule.calculateCompost();
-    
-    const statusLabel = document.getElementById('compost-status-label').textContent;
-    expect(statusLabel).toContain('EXCES DE CARBONE');
+
+    const statusLabel = document.getElementById("compost-status-label").textContent;
+    expect(statusLabel).toContain("EXCES DE CARBONE");
   });
 
-  test('devrait identifier un excès d\'azote', () => {
+  test("devrait identifier un excès d'azote", () => {
     document.body.innerHTML = `
       <input id="compost-carbon-input" value="2">
       <input id="compost-nitrogen-input" value="10">
@@ -103,12 +111,12 @@ describe('FinancesModule', () => {
     `;
 
     FinancesModule.calculateCompost();
-    
-    const statusLabel = document.getElementById('compost-status-label').textContent;
-    expect(statusLabel).toContain('EXCES D\'AZOTE');
+
+    const statusLabel = document.getElementById("compost-status-label").textContent;
+    expect(statusLabel).toContain("EXCES D'AZOTE");
   });
 
-  test('devrait identifier un ratio équilibré', () => {
+  test("devrait identifier un ratio équilibré", () => {
     document.body.innerHTML = `
       <input id="compost-carbon-input" value="12">
       <input id="compost-nitrogen-input" value="3">
@@ -119,14 +127,14 @@ describe('FinancesModule', () => {
     `;
 
     FinancesModule.calculateCompost();
-    
-    const statusLabel = document.getElementById('compost-status-label').textContent;
-    expect(statusLabel).toContain('EQUILIBRE');
+
+    const statusLabel = document.getElementById("compost-status-label").textContent;
+    expect(statusLabel).toContain("EQUILIBRE");
   });
 
-  test('devrait gérer les finances vides', () => {
+  test("devrait gérer les finances vides", () => {
     mockKAStorage.getFinances = () => [];
-    
+
     document.body.innerHTML = `
       <tbody id="finances-table-body"></tbody>
       <span id="finances-total-revenu"></span>
@@ -135,12 +143,12 @@ describe('FinancesModule', () => {
     `;
 
     FinancesModule.renderFinances();
-    
-    const tbody = document.getElementById('finances-table-body');
-    expect(tbody.innerHTML).toContain('Aucun flux financier');
+
+    const tbody = document.getElementById("finances-table-body");
+    expect(tbody.innerHTML).toContain("Aucun flux financier");
   });
 
-  test('devrait ajouter une transaction financière', () => {
+  test("devrait ajouter une transaction financière", () => {
     const finances = [];
     mockKAStorage.saveFinances(finances);
 
@@ -155,22 +163,29 @@ describe('FinancesModule', () => {
       </form>
     `;
 
-    const form = document.getElementById('shared-finance-form');
-    form.dispatchEvent(new Event('submit'));
+    const form = document.getElementById("shared-finance-form");
+    form.dispatchEvent(new Event("submit"));
 
-    const savedFinances = JSON.parse(localStorage.getItem('ka_farm_finances'));
+    const savedFinances = JSON.parse(localStorage.getItem("ka_farm_finances"));
     expect(savedFinances.length).toBe(1);
-    expect(savedFinances[0].description).toBe('Vente tomates');
+    expect(savedFinances[0].description).toBe("Vente tomates");
     expect(savedFinances[0].amount).toBe(50000);
-    
+
     // Reset date field
-    const dateField = document.getElementById('form-fin-date');
-    if (dateField) dateField.value = '2026-06-26';
+    const dateField = document.getElementById("form-fin-date");
+    if (dateField) dateField.value = "2026-06-26";
   });
 
-  test('devrait supprimer une transaction', () => {
+  test("devrait supprimer une transaction", () => {
     const finances = [
-      { id: 'F-123', description: 'Test', type: 'Revenu', category: 'Vente', amount: 1000, date: '2026-06-15' }
+      {
+        id: "F-123",
+        description: "Test",
+        type: "Revenu",
+        category: "Vente",
+        amount: 1000,
+        date: "2026-06-15",
+      },
     ];
     mockKAStorage.saveFinances(finances);
 
@@ -179,17 +194,31 @@ describe('FinancesModule', () => {
     `;
 
     window.confirm = jest.fn(() => true);
-    window.deleteFinance('F-123');
+    window.deleteFinance("F-123");
 
-    const savedFinances = JSON.parse(localStorage.getItem('ka_farm_finances'));
+    const savedFinances = JSON.parse(localStorage.getItem("ka_farm_finances"));
     expect(savedFinances.length).toBe(0);
     expect(window.confirm).toHaveBeenCalled();
   });
 
-  test('devrait calculer les marges par parcelle', () => {
+  test("devrait calculer les marges par parcelle", () => {
     const finances = [
-      { id: 'F-1', description: 'Vente Parcelle Nord', type: 'Revenu', amount: 100000, parcelId: 'P-001', cropName: 'Tomate' },
-      { id: 'F-2', description: 'Dépense Parcelle Nord', type: 'Dépense', amount: 50000, parcelId: 'P-001', cropName: 'Tomate' }
+      {
+        id: "F-1",
+        description: "Vente Parcelle Nord",
+        type: "Revenu",
+        amount: 100000,
+        parcelId: "P-001",
+        cropName: "Tomate",
+      },
+      {
+        id: "F-2",
+        description: "Dépense Parcelle Nord",
+        type: "Dépense",
+        amount: 50000,
+        parcelId: "P-001",
+        cropName: "Tomate",
+      },
     ];
     mockKAStorage.saveFinances(finances);
 
@@ -201,15 +230,27 @@ describe('FinancesModule', () => {
 
     FinancesModule.renderCharts();
 
-    const tbody = document.getElementById('parcel-margins-table-body');
-    expect(tbody.innerHTML).toContain('Parcelle Nord');
-    expect(tbody.innerHTML).toContain('50 000'); // Marge nette
+    const tbody = document.getElementById("parcel-margins-table-body");
+    expect(tbody.innerHTML).toContain("Parcelle Nord");
+    expect(tbody.innerHTML).toContain("50 000"); // Marge nette
   });
 
-  test('devrait calculer les marges par culture', () => {
+  test("devrait calculer les marges par culture", () => {
     const finances = [
-      { id: 'F-1', description: 'Vente tomates', type: 'Revenu', amount: 200000, cropName: 'Tomate Mongal F1' },
-      { id: 'F-2', description: 'Achat semences tomates', type: 'Dépense', amount: 80000, cropName: 'Tomate Mongal F1' }
+      {
+        id: "F-1",
+        description: "Vente tomates",
+        type: "Revenu",
+        amount: 200000,
+        cropName: "Tomate Mongal F1",
+      },
+      {
+        id: "F-2",
+        description: "Achat semences tomates",
+        type: "Dépense",
+        amount: 80000,
+        cropName: "Tomate Mongal F1",
+      },
     ];
     mockKAStorage.saveFinances(finances);
 
@@ -221,12 +262,12 @@ describe('FinancesModule', () => {
 
     FinancesModule.renderCharts();
 
-    const tbody = document.getElementById('crop-margins-table-body');
-    expect(tbody.innerHTML).toContain('Tomate Mongal F1');
-    expect(tbody.innerHTML).toContain('120 000'); // Marge nette
+    const tbody = document.getElementById("crop-margins-table-body");
+    expect(tbody.innerHTML).toContain("Tomate Mongal F1");
+    expect(tbody.innerHTML).toContain("120 000"); // Marge nette
   });
 
-  test('devrait mettre à jour le simulateur de marché', () => {
+  test("devrait mettre à jour le simulateur de marché", () => {
     document.body.innerHTML = `
       <input id="cost-seeds" value="10000">
       <input id="cost-fertilizers" value="5000">
@@ -246,11 +287,11 @@ describe('FinancesModule', () => {
 
     FinancesModule.updateMarketCalculations();
 
-    const totalCost = document.getElementById('calc-total-cost').textContent;
-    expect(totalCost).toContain('40 000');
+    const totalCost = document.getElementById("calc-total-cost").textContent;
+    expect(totalCost).toContain("40 000");
   });
 
-  test('devrait calculer le ROI positif', () => {
+  test("devrait calculer le ROI positif", () => {
     document.body.innerHTML = `
       <input id="cost-seeds" value="10000">
       <input id="cost-fertilizers" value="5000">
@@ -267,11 +308,11 @@ describe('FinancesModule', () => {
 
     FinancesModule.updateMarketCalculations();
 
-    const roi = document.getElementById('calc-roi').textContent;
-    expect(roi).toContain('+'); // ROI positif
+    const roi = document.getElementById("calc-roi").textContent;
+    expect(roi).toContain("+"); // ROI positif
   });
 
-  test('devrait calculer le ROI négatif', () => {
+  test("devrait calculer le ROI négatif", () => {
     document.body.innerHTML = `
       <input id="cost-seeds" value="100000">
       <input id="cost-fertilizers" value="50000">
@@ -288,11 +329,11 @@ describe('FinancesModule', () => {
 
     FinancesModule.updateMarketCalculations();
 
-    const roi = document.getElementById('calc-roi').textContent;
-    expect(roi).toContain('-'); // ROI négatif
+    const roi = document.getElementById("calc-roi").textContent;
+    expect(roi).toContain("-"); // ROI négatif
   });
 
-  test('devrait afficher les marchés disponibles', () => {
+  test("devrait afficher les marchés disponibles", () => {
     document.body.innerHTML = `
       <select id="market-crop-select"><option value="tomate" selected></option></select>
       <div id="markets-comparison-grid"></div>
@@ -300,17 +341,17 @@ describe('FinancesModule', () => {
 
     FinancesModule.renderMarkets();
 
-    const grid = document.getElementById('markets-comparison-grid');
-    expect(grid.innerHTML).toContain('Sandiara');
-    expect(grid.innerHTML).toContain('Mbour');
-    expect(grid.innerHTML).toContain('Dakar');
+    const grid = document.getElementById("markets-comparison-grid");
+    expect(grid.innerHTML).toContain("Sandiara");
+    expect(grid.innerHTML).toContain("Mbour");
+    expect(grid.innerHTML).toContain("Dakar");
   });
 
-  test('devrait changer le marché sélectionné', () => {
-    FinancesModule.selectedMarket = 'mbour';
-    
-    FinancesModule.setSimSelectedMarket('dakar');
-    
-    expect(FinancesModule.selectedMarket).toBe('dakar');
+  test("devrait changer le marché sélectionné", () => {
+    FinancesModule.selectedMarket = "mbour";
+
+    FinancesModule.setSimSelectedMarket("dakar");
+
+    expect(FinancesModule.selectedMarket).toBe("dakar");
   });
 });

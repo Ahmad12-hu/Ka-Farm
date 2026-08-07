@@ -1,6 +1,6 @@
 // KA Farm - Carnet Phytosanitaire & DAR Module
-import { KAStorage } from '../storage.js';
-import { ErrorHandler } from './error-handler.js';
+import { KAStorage } from "../storage.js";
+import { ErrorHandler } from "./error-handler.js";
 
 let treatments = [];
 let parcelles = [];
@@ -8,82 +8,82 @@ let crops = [];
 
 // Default DAR values by treatment category (in days)
 const DAR_STANDARDS = {
-  'bio-phytosanitaire': 3,    // Bio pesticides: 3 days
-  'chimique-phytosanitaire': 7, // Chemical pesticides: 7-14 days
-  'bio-engrais': 0,          // Organic fertilizer: no DAR
-  'chimique-engrais': 0       // Mineral fertilizer: no DAR
+  "bio-phytosanitaire": 3, // Bio pesticides: 3 days
+  "chimique-phytosanitaire": 7, // Chemical pesticides: 7-14 days
+  "bio-engrais": 0, // Organic fertilizer: no DAR
+  "chimique-engrais": 0, // Mineral fertilizer: no DAR
 };
 
 // Default treatment data
 const DEFAULT_TREATMENTS = [
   {
-    id: 'TR-001',
-    parcelId: 'P-001',
-    parcelName: 'Parcelle Nord - Planche 2',
-    cropId: 'C-101',
-    cropName: 'Tomate Mongal F1',
-    category: 'bio-phytosanitaire',
-    productName: 'Purin de Neem',
-    dateApplied: '2026-06-20',
+    id: "TR-001",
+    parcelId: "P-001",
+    parcelName: "Parcelle Nord - Planche 2",
+    cropId: "C-101",
+    cropName: "Tomate Mongal F1",
+    category: "bio-phytosanitaire",
+    productName: "Purin de Neem",
+    dateApplied: "2026-06-20",
     dar: 3,
-    target: 'Chenilles et pucerons',
-    notes: 'Traitement préventif appliqué le matin. Respecter le DAR de 3 jours.',
+    target: "Chenilles et pucerons",
+    notes: "Traitement préventif appliqué le matin. Respecter le DAR de 3 jours.",
     harvestReady: true,
-    enterprise_id: 'ka_farm'
+    enterprise_id: "ka_farm",
   },
   {
-    id: 'TR-002',
-    parcelId: 'P-002',
-    parcelName: 'Parcelle Est - Grand Champ',
-    cropId: 'C-102',
-    cropName: 'Oignon Rouge de Galmi',
-    category: 'chimique-phytosanitaire',
-    productName: 'Décis (Insecticide chimique)',
-    dateApplied: '2026-06-23',
+    id: "TR-002",
+    parcelId: "P-002",
+    parcelName: "Parcelle Est - Grand Champ",
+    cropId: "C-102",
+    cropName: "Oignon Rouge de Galmi",
+    category: "chimique-phytosanitaire",
+    productName: "Décis (Insecticide chimique)",
+    dateApplied: "2026-06-23",
     dar: 7,
-    target: 'Tuta Absoluta',
-    notes: 'Traitement curatif suite à l\'alerte sur les chenilles.',
+    target: "Tuta Absoluta",
+    notes: "Traitement curatif suite à l'alerte sur les chenilles.",
     harvestReady: false,
-    enterprise_id: 'ka_farm'
+    enterprise_id: "ka_farm",
   },
   {
-    id: 'TR-003',
-    parcelId: 'P-001',
-    parcelName: 'Parcelle Nord - Planche 2',
-    cropId: 'C-101',
-    cropName: 'Tomate Mongal F1',
-    category: 'bio-engrais',
-    productName: 'Compost Organique Bio',
-    dateApplied: '2026-06-15',
+    id: "TR-003",
+    parcelId: "P-001",
+    parcelName: "Parcelle Nord - Planche 2",
+    cropId: "C-101",
+    cropName: "Tomate Mongal F1",
+    category: "bio-engrais",
+    productName: "Compost Organique Bio",
+    dateApplied: "2026-06-15",
     dar: 0,
-    target: 'Amendement du sol',
-    notes: 'Application en fond pour améliorer la fertilité.',
+    target: "Amendement du sol",
+    notes: "Application en fond pour améliorer la fertilité.",
     harvestReady: true,
-    enterprise_id: 'ka_farm'
+    enterprise_id: "ka_farm",
   },
   {
-    id: 'TR-004',
-    parcelId: 'P-003',
-    parcelName: 'Parcelle Sud - Planche 1',
-    cropId: '',
-    cropName: 'Chou Cabus',
-    category: 'chimique-phytosanitaire',
-    productName: 'Ridomil Gold',
-    dateApplied: '2026-06-22',
+    id: "TR-004",
+    parcelId: "P-003",
+    parcelName: "Parcelle Sud - Planche 1",
+    cropId: "",
+    cropName: "Chou Cabus",
+    category: "chimique-phytosanitaire",
+    productName: "Ridomil Gold",
+    dateApplied: "2026-06-22",
     dar: 14,
-    target: 'Mildiou',
-    notes: 'Traitement fongicide préventif.',
+    target: "Mildiou",
+    notes: "Traitement fongicide préventif.",
     harvestReady: false,
-    enterprise_id: 'ka_farm'
-  }
+    enterprise_id: "ka_farm",
+  },
 ];
 
 // Treatment category labels for display
 const CATEGORY_LABELS = {
-  'bio-phytosanitaire': { name: '🌿 Phytosanitaire Bio', color: 'emerald' },
-  'chimique-phytosanitaire': { name: '⚠️ Chimique (Pesticide)', color: 'rose' },
-  'bio-engrais': { name: '🟤 Amendement Organique', color: 'amber' },
-  'chimique-engrais': { name: '🧪 Engrais Minéral', color: 'blue' }
+  "bio-phytosanitaire": { name: "🌿 Phytosanitaire Bio", color: "emerald" },
+  "chimique-phytosanitaire": { name: "⚠️ Chimique (Pesticide)", color: "rose" },
+  "bio-engrais": { name: "🟤 Amendement Organique", color: "amber" },
+  "chimique-engrais": { name: "🧪 Engrais Minéral", color: "blue" },
 };
 
 export const TreatmentsModule = {
@@ -92,34 +92,34 @@ export const TreatmentsModule = {
       treatments = KAStorage.getTreatments();
       parcelles = KAStorage.getParcelles();
       crops = KAStorage.getCrops();
-      
+
       this.render();
       this.setupListeners();
       this.loadParcelsAndCrops();
     } catch (err) {
-      ErrorHandler.log(err, 'TreatmentsModule.init');
+      ErrorHandler.log(err, "TreatmentsModule.init");
     }
   },
 
   loadParcelsAndCrops() {
     // Update select dropdowns with current parcels and crops
-    const parcelSelect = document.getElementById('form-treat-parcel');
-    const cropSelect = document.getElementById('form-treat-crop');
-    
+    const parcelSelect = document.getElementById("form-treat-parcel");
+    const cropSelect = document.getElementById("form-treat-crop");
+
     if (parcelSelect) {
       parcelSelect.innerHTML = '<option value="">-- Sélectionner une parcelle --</option>';
-      parcelles.forEach(p => {
-        const option = document.createElement('option');
+      parcelles.forEach((p) => {
+        const option = document.createElement("option");
         option.value = p.id;
         option.textContent = p.name;
         parcelSelect.appendChild(option);
       });
     }
-    
+
     if (cropSelect) {
       cropSelect.innerHTML = '<option value="">-- Sélectionner une culture --</option>';
-      crops.forEach(c => {
-        const option = document.createElement('option');
+      crops.forEach((c) => {
+        const option = document.createElement("option");
         option.value = c.id;
         option.textContent = c.name;
         cropSelect.appendChild(option);
@@ -135,110 +135,122 @@ export const TreatmentsModule = {
 
   renderStats() {
     const totalCount = treatments.length;
-    const bioCount = treatments.filter(t => t.category === 'bio-phytosanitaire' || t.category === 'bio-engrais').length;
-    const darActiveCount = treatments.filter(t => !t.harvestReady).length;
-    const darClearedCount = treatments.filter(t => t.harvestReady).length;
-    
+    const bioCount = treatments.filter(
+      (t) => t.category === "bio-phytosanitaire" || t.category === "bio-engrais"
+    ).length;
+    const darActiveCount = treatments.filter((t) => !t.harvestReady).length;
+    const darClearedCount = treatments.filter((t) => t.harvestReady).length;
+
     // Count products usage
     const productCounts = {};
-    treatments.forEach(t => {
+    treatments.forEach((t) => {
       productCounts[t.productName] = (productCounts[t.productName] || 0) + 1;
     });
     const topProduct = Object.entries(productCounts).sort((a, b) => b[1] - a[1])[0];
-    
+
     // Update DOM
-    const elDarActive = document.getElementById('stat-dar-active');
-    const elDarCleared = document.getElementById('stat-dar-cleared');
-    const elBioCount = document.getElementById('stat-bio-count');
-    const elTotalCount = document.getElementById('stat-total-count');
-    const elTopProduct = document.getElementById('stat-top-product');
-    const elTopProductCount = document.getElementById('stat-top-product-count');
-    
+    const elDarActive = document.getElementById("stat-dar-active");
+    const elDarCleared = document.getElementById("stat-dar-cleared");
+    const elBioCount = document.getElementById("stat-bio-count");
+    const elTotalCount = document.getElementById("stat-total-count");
+    const elTopProduct = document.getElementById("stat-top-product");
+    const elTopProductCount = document.getElementById("stat-top-product-count");
+
     if (elDarActive) elDarActive.textContent = darActiveCount;
     if (elDarCleared) elDarCleared.textContent = darClearedCount;
     if (elBioCount) elBioCount.textContent = bioCount;
     if (elTotalCount) elTotalCount.textContent = totalCount;
-    if (elTopProduct) elTopProduct.textContent = topProduct ? topProduct[0] : 'Aucun';
-    if (elTopProductCount) elTopProductCount.textContent = topProduct ? `${topProduct[1]} application${topProduct[1] > 1 ? 's' : ''}` : '0 applications';
+    if (elTopProduct) elTopProduct.textContent = topProduct ? topProduct[0] : "Aucun";
+    if (elTopProductCount)
+      elTopProductCount.textContent = topProduct
+        ? `${topProduct[1]} application${topProduct[1] > 1 ? "s" : ""}`
+        : "0 applications";
   },
 
   renderAlertPanels() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // DAR Active List (Harvest NOT Ready)
-    const darAlertList = document.getElementById('dar-alert-list');
+    const darAlertList = document.getElementById("dar-alert-list");
     if (darAlertList) {
-      const activeTreatments = treatments.filter(t => !t.harvestReady);
-      
+      const activeTreatments = treatments.filter((t) => !t.harvestReady);
+
       if (activeTreatments.length === 0) {
-        darAlertList.innerHTML = '<p class="text-[11px] text-rose-400/70 italic text-center py-2">✅ Aucune alerte DAR active actuellement.</p>';
+        darAlertList.innerHTML =
+          '<p class="text-[11px] text-rose-400/70 italic text-center py-2">✅ Aucune alerte DAR active actuellement.</p>';
       } else {
-        darAlertList.innerHTML = activeTreatments.map(t => {
-          const applied = new Date(t.dateApplied);
-          applied.setHours(0, 0, 0, 0);
-          const diffTime = today.getTime() - applied.getTime();
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          const daysRemaining = Math.max(0, t.dar - diffDays);
-          
-          return `
+        darAlertList.innerHTML = activeTreatments
+          .map((t) => {
+            const applied = new Date(t.dateApplied);
+            applied.setHours(0, 0, 0, 0);
+            const diffTime = today.getTime() - applied.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const daysRemaining = Math.max(0, t.dar - diffDays);
+
+            return `
             <div class="p-3 bg-white dark:bg-[#061109]/30 rounded-xl border border-rose-500/20">
               <div class="flex justify-between items-start gap-2">
                 <div>
                   <p class="text-xs font-black text-slate-800 dark:text-white truncate">${t.productName}</p>
-                  <p class="text-[10px] text-[#819888] mt-0.5">🌱 ${t.cropName || 'Culture non spécifiée'} | ${t.parcelName || 'Parcelle non spécifiée'}</p>
+                  <p class="text-[10px] text-[#819888] mt-0.5">🌱 ${t.cropName || "Culture non spécifiée"} | ${t.parcelName || "Parcelle non spécifiée"}</p>
                 </div>
                 <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20">${daysRemaining}j restant</span>
               </div>
               <p class="text-[10px] text-rose-500 font-bold mt-1">🚫 RÉCOLTE INTERDITE</p>
             </div>
           `;
-        }).join('');
+          })
+          .join("");
       }
     }
-    
+
     // DAR Cleared List (Harvest Ready)
-    const darClearedList = document.getElementById('dar-cleared-list');
+    const darClearedList = document.getElementById("dar-cleared-list");
     if (darClearedList) {
-      const clearedTreatments = treatments.filter(t => t.harvestReady);
-      
+      const clearedTreatments = treatments.filter((t) => t.harvestReady);
+
       if (clearedTreatments.length === 0) {
-        darClearedList.innerHTML = '<p class="text-[11px] text-emerald-400/70 italic text-center py-2">Aucune culture prête pour l\'instant.</p>';
+        darClearedList.innerHTML =
+          '<p class="text-[11px] text-emerald-400/70 italic text-center py-2">Aucune culture prête pour l\'instant.</p>';
       } else {
-        darClearedList.innerHTML = clearedTreatments.slice(0, 5).map(t => {
-          const applied = new Date(t.dateApplied);
-          applied.setHours(0, 0, 0, 0);
-          const diffTime = today.getTime() - applied.getTime();
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          
-          return `
+        darClearedList.innerHTML = clearedTreatments
+          .slice(0, 5)
+          .map((t) => {
+            const applied = new Date(t.dateApplied);
+            applied.setHours(0, 0, 0, 0);
+            const diffTime = today.getTime() - applied.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+            return `
             <div class="p-3 bg-white dark:bg-[#061109]/30 rounded-xl border border-emerald-500/20">
               <div class="flex justify-between items-start gap-2">
                 <div>
                   <p class="text-xs font-black text-slate-800 dark:text-white truncate">${t.productName}</p>
-                  <p class="text-[10px] text-[#819888] mt-0.5">🌱 ${t.cropName || 'Culture non spécifiée'} | ${t.parcelName || 'Parcelle non spécifiée'}</p>
+                  <p class="text-[10px] text-[#819888] mt-0.5">🌱 ${t.cropName || "Culture non spécifiée"} | ${t.parcelName || "Parcelle non spécifiée"}</p>
                 </div>
                 <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">DAR terminé</span>
               </div>
               <p class="text-[10px] text-emerald-500 font-bold mt-1">✅ PRÊT POUR LE MARCHÉ 🇸🇳</p>
             </div>
           `;
-        }).join('');
+          })
+          .join("");
       }
     }
-    
+
     if (window.lucide) {
       window.lucide.createIcons();
     }
   },
 
   renderTable() {
-    const tableBody = document.getElementById('treatments-table-body');
+    const tableBody = document.getElementById("treatments-table-body");
     if (!tableBody) return;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     if (treatments.length === 0) {
       tableBody.innerHTML = `
         <tr>
@@ -250,45 +262,46 @@ export const TreatmentsModule = {
       `;
       return;
     }
-    
+
     // Sort by date (most recent first)
     const sortedTreatments = [...treatments].sort((a, b) => {
       const dateA = new Date(a.dateApplied);
       const dateB = new Date(b.dateApplied);
       return dateB - dateA;
     });
-    
-    tableBody.innerHTML = sortedTreatments.map(t => {
-      const applied = new Date(t.dateApplied);
-      applied.setHours(0, 0, 0, 0);
-      const diffTime = today.getTime() - applied.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      const daysRemaining = Math.max(0, t.dar - diffDays);
-      
-      const categoryInfo = CATEGORY_LABELS[t.category] || { name: t.category, color: 'slate' };
-      const isHarvestReady = daysRemaining <= 0 || t.harvestReady;
-      
-      // Status badge color
-      const statusColor = isHarvestReady ? 'emerald' : 'rose';
-      const statusText = isHarvestReady ? '✅ Autorisée' : '🚫 Interdite';
-      const statusClass = isHarvestReady 
-        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-        : 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-      
-      // Days remaining display
-      const daysDisplay = isHarvestReady ? '0' : `${daysRemaining}`;
-      const daysText = daysRemaining <= 0 ? 'Terminé' : `${daysRemaining}j restant`;
-      
-      return `
+
+    tableBody.innerHTML = sortedTreatments
+      .map((t) => {
+        const applied = new Date(t.dateApplied);
+        applied.setHours(0, 0, 0, 0);
+        const diffTime = today.getTime() - applied.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const daysRemaining = Math.max(0, t.dar - diffDays);
+
+        const categoryInfo = CATEGORY_LABELS[t.category] || { name: t.category, color: "slate" };
+        const isHarvestReady = daysRemaining <= 0 || t.harvestReady;
+
+        // Status badge color
+        const statusColor = isHarvestReady ? "emerald" : "rose";
+        const statusText = isHarvestReady ? "✅ Autorisée" : "🚫 Interdite";
+        const statusClass = isHarvestReady
+          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+          : "bg-rose-500/10 text-rose-500 border-rose-500/20";
+
+        // Days remaining display
+        const daysDisplay = isHarvestReady ? "0" : `${daysRemaining}`;
+        const daysText = daysRemaining <= 0 ? "Terminé" : `${daysRemaining}j restant`;
+
+        return `
         <tr class="cursor-pointer hover:bg-slate-50 dark:hover:bg-[#0D2615]/25 transition-all" onclick="window.showTreatmentDetail('${t.id}')">
           <td class="px-4 py-3.5 font-mono text-slate-400 dark:text-[#819888] font-bold">${t.id}</td>
           <td class="px-4 py-3.5 font-bold text-slate-800 dark:text-slate-200">
-            <span class="block">${t.cropName || 'N/A'}</span>
-            <span class="text-[9px] text-[#819888] font-medium">${t.parcelName || 'N/A'}</span>
+            <span class="block">${t.cropName || "N/A"}</span>
+            <span class="text-[9px] text-[#819888] font-medium">${t.parcelName || "N/A"}</span>
           </td>
           <td class="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-300">${t.productName}</td>
           <td class="px-4 py-3.5">
-            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${categoryInfo.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : categoryInfo.color === 'rose' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : categoryInfo.color === 'amber' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}">
+            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${categoryInfo.color === "emerald" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : categoryInfo.color === "rose" ? "bg-rose-500/10 text-rose-500 border border-rose-500/20" : categoryInfo.color === "amber" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" : "bg-blue-500/10 text-blue-500 border border-blue-500/20"}">
               ${categoryInfo.name}
             </span>
           </td>
@@ -297,7 +310,7 @@ export const TreatmentsModule = {
           <td class="px-4 py-3.5 text-center">
             <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${statusClass}">${statusText}</span>
           </td>
-          <td class="px-4 py-3.5 font-mono ${daysRemaining <= 3 ? 'text-rose-500 font-bold' : 'text-slate-600'}">
+          <td class="px-4 py-3.5 font-mono ${daysRemaining <= 3 ? "text-rose-500 font-bold" : "text-slate-600"}">
             ${daysText}
           </td>
           <td class="px-4 py-3.5 text-center">
@@ -315,8 +328,9 @@ export const TreatmentsModule = {
           </td>
         </tr>
       `;
-    }).join('');
-    
+      })
+      .join("");
+
     if (window.lucide) {
       window.lucide.createIcons();
     }
@@ -324,9 +338,9 @@ export const TreatmentsModule = {
 
   setupListeners() {
     // Search
-    const searchInput = document.getElementById('treatments-search');
+    const searchInput = document.getElementById("treatments-search");
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
+      searchInput.addEventListener("input", (e) => {
         this.filterTreatments(e.target.value);
       });
     }
@@ -334,134 +348,150 @@ export const TreatmentsModule = {
 
   filterTreatments(query) {
     // This will be implemented if needed
-  }
+  },
 };
 
 // Window functions for modal management
 window.openAddTreatmentModal = () => {
-  const modal = document.getElementById('add-treatment-modal');
+  const modal = document.getElementById("add-treatment-modal");
   if (modal) {
-    modal.classList.remove('hidden');
-    
+    modal.classList.remove("hidden");
+
     // Set default date to today
-    const todayStr = new Date().toISOString().split('T')[0];
-    document.getElementById('form-treat-date').value = todayStr;
-    
+    const todayStr = new Date().toISOString().split("T")[0];
+    document.getElementById("form-treat-date").value = todayStr;
+
     // Reset form
-    document.getElementById('add-treatment-form').reset();
-    document.getElementById('dar-suggest-label').textContent = 'Sélectionnez un type';
-    
+    document.getElementById("add-treatment-form").reset();
+    document.getElementById("dar-suggest-label").textContent = "Sélectionnez un type";
+
     // Load parcels and crops
     TreatmentsModule.loadParcelsAndCrops();
   }
 };
 
 window.closeAddTreatmentModal = () => {
-  const modal = document.getElementById('add-treatment-modal');
-  if (modal) modal.classList.add('hidden');
+  const modal = document.getElementById("add-treatment-modal");
+  if (modal) modal.classList.add("hidden");
 };
 
 window.onTreatmentCategoryChange = (category) => {
-  const darInput = document.getElementById('form-treat-dar');
-  const suggestLabel = document.getElementById('dar-suggest-label');
-  
+  const darInput = document.getElementById("form-treat-dar");
+  const suggestLabel = document.getElementById("dar-suggest-label");
+
   if (darInput && suggestLabel) {
     const suggestedDar = DAR_STANDARDS[category];
     if (suggestedDar !== undefined) {
       darInput.value = suggestedDar;
       suggestLabel.textContent = `DAR suggéré: ${suggestedDar}j`;
     } else {
-      suggestLabel.textContent = 'Sélectionnez un type';
+      suggestLabel.textContent = "Sélectionnez un type";
     }
   }
 };
 
 window.submitAddTreatment = (e) => {
   e.preventDefault();
-  
-  const parcelSelect = document.getElementById('form-treat-parcel');
-  const cropSelect = document.getElementById('form-treat-crop');
-  const categorySelect = document.getElementById('form-treat-category');
-  const productInput = document.getElementById('form-treat-product');
-  const dateInput = document.getElementById('form-treat-date');
-  const darInput = document.getElementById('form-treat-dar');
-  const targetInput = document.getElementById('form-treat-target');
-  const notesInput = document.getElementById('form-treat-notes');
-  const quantityInput = document.getElementById('form-treat-quantity');
-  const unitInput = document.getElementById('form-treat-unit');
-  
-  if (!parcelSelect || !productInput || !dateInput || !darInput || !quantityInput || !unitInput) return;
-  
+
+  const parcelSelect = document.getElementById("form-treat-parcel");
+  const cropSelect = document.getElementById("form-treat-crop");
+  const categorySelect = document.getElementById("form-treat-category");
+  const productInput = document.getElementById("form-treat-product");
+  const dateInput = document.getElementById("form-treat-date");
+  const darInput = document.getElementById("form-treat-dar");
+  const targetInput = document.getElementById("form-treat-target");
+  const notesInput = document.getElementById("form-treat-notes");
+  const quantityInput = document.getElementById("form-treat-quantity");
+  const unitInput = document.getElementById("form-treat-unit");
+
+  if (!parcelSelect || !productInput || !dateInput || !darInput || !quantityInput || !unitInput)
+    return;
+
   const parcelId = parcelSelect.value;
-  const cropId = cropSelect ? cropSelect.value : '';
-  const category = categorySelect ? categorySelect.value : '';
+  const cropId = cropSelect ? cropSelect.value : "";
+  const category = categorySelect ? categorySelect.value : "";
   const productName = productInput.value;
   const dateApplied = dateInput.value;
   const dar = parseInt(darInput.value) || 0;
-  const target = targetInput ? targetInput.value : '';
-  const notes = notesInput ? notesInput.value : '';
+  const target = targetInput ? targetInput.value : "";
+  const notes = notesInput ? notesInput.value : "";
   const quantityUsed = parseFloat(quantityInput.value);
   const unit = unitInput.value;
-  
-    if (!parcelId || !productName || !dateApplied || !quantityUsed || quantityUsed <= 0) {
-      ErrorHandler.showToast('Veuillez remplir les champs obligatoires: Parcelle, Produit, Quantité et Date.', 'error');
-      return;
-    }
-  
+
+  if (!parcelId || !productName || !dateApplied || !quantityUsed || quantityUsed <= 0) {
+    ErrorHandler.showToast(
+      "Veuillez remplir les champs obligatoires: Parcelle, Produit, Quantité et Date.",
+      "error"
+    );
+    return;
+  }
+
   // --- Stock Deduction Logic ---
   const stocks = KAStorage.getStocks();
-  const stockItemIndex = stocks.findIndex(s => s.name.toLowerCase() === productName.toLowerCase());
+  const stockItemIndex = stocks.findIndex(
+    (s) => s.name.toLowerCase() === productName.toLowerCase()
+  );
 
-    if (stockItemIndex !== -1) {
-      const stockItem = stocks[stockItemIndex];
-      // Basic unit conversion for simplicity (g->kg, ml->L)
-      let quantityToDeduct = quantityUsed;
-      if (stockItem.unit.toLowerCase() === 'kg' && unit.toLowerCase() === 'g') quantityToDeduct /= 1000;
-      if (stockItem.unit.toLowerCase() === 'l' && unit.toLowerCase() === 'ml') quantityToDeduct /= 1000;
+  if (stockItemIndex !== -1) {
+    const stockItem = stocks[stockItemIndex];
+    // Basic unit conversion for simplicity (g->kg, ml->L)
+    let quantityToDeduct = quantityUsed;
+    if (stockItem.unit.toLowerCase() === "kg" && unit.toLowerCase() === "g")
+      quantityToDeduct /= 1000;
+    if (stockItem.unit.toLowerCase() === "l" && unit.toLowerCase() === "ml")
+      quantityToDeduct /= 1000;
 
-      if (stockItem.quantity < quantityToDeduct) {
-        ErrorHandler.showToast(`Stock insuffisant pour "${productName}". Disponible: ${stockItem.quantity} ${stockItem.unit}`, 'error');
-        return;
-      }
-      stocks[stockItemIndex].quantity -= quantityToDeduct;
-      KAStorage.saveStocks(stocks);
-    } else {
-      // If product not in stock, ask user if they want to proceed
-      if (!confirm(`Le produit "${productName}" n'a pas été trouvé dans vos stocks. Voulez-vous quand même enregistrer ce traitement ?`)) {
-        return;
-      }
+    if (stockItem.quantity < quantityToDeduct) {
+      ErrorHandler.showToast(
+        `Stock insuffisant pour "${productName}". Disponible: ${stockItem.quantity} ${stockItem.unit}`,
+        "error"
+      );
+      return;
     }
+    stocks[stockItemIndex].quantity -= quantityToDeduct;
+    KAStorage.saveStocks(stocks);
+  } else {
+    // If product not in stock, ask user if they want to proceed
+    if (
+      !confirm(
+        `Le produit "${productName}" n'a pas été trouvé dans vos stocks. Voulez-vous quand même enregistrer ce traitement ?`
+      )
+    ) {
+      return;
+    }
+  }
   // --- End of Stock Deduction ---
 
   // Get parcel and crop names
-  const parcel = parcelles.find(p => p.id === parcelId);
-  const crop = crops.find(c => c.id === cropId);
-  
+  const parcel = parcelles.find((p) => p.id === parcelId);
+  const crop = crops.find((c) => c.id === cropId);
+
   // Generate ID
-  const nextNum = treatments.reduce((max, t) => {
-    const num = parseInt(t.id.split('-')[1]);
-    return num > max ? num : max;
-  }, 0) + 1;
-  const id = `TR-${String(nextNum).padStart(3, '0')}`;
-  
+  const nextNum =
+    treatments.reduce((max, t) => {
+      const num = parseInt(t.id.split("-")[1]);
+      return num > max ? num : max;
+    }, 0) + 1;
+  const id = `TR-${String(nextNum).padStart(3, "0")}`;
+
   const newTreatment = {
     id,
     parcelId,
-    parcelName: parcel ? parcel.name : 'Parcelle inconnue',
-    cropId: cropId || '',
-    cropName: crop ? crop.name : '',
+    parcelName: parcel ? parcel.name : "Parcelle inconnue",
+    cropId: cropId || "",
+    cropName: crop ? crop.name : "",
     category,
     productName,
     dateApplied,
     dar,
     target,
     notes,
-    quantityUsed: quantityUsed,
-    unit: unit,
+    quantityUsed,
+    unit,
     harvestReady: false, // Will be calculated based on DAR
-    enterprise_id: 'ka_farm'
+    enterprise_id: "ka_farm",
   };
-  
+
   // Check if DAR has already passed
   const appliedDate = new Date(dateApplied);
   appliedDate.setHours(0, 0, 0, 0);
@@ -470,63 +500,71 @@ window.submitAddTreatment = (e) => {
   const diffTime = today.getTime() - appliedDate.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   newTreatment.harvestReady = diffDays >= dar;
-  
+
   treatments.push(newTreatment);
-  KAStorage.set('ka_farm_treatments', treatments);
-  
+  KAStorage.set("ka_farm_treatments", treatments);
+
   TreatmentsModule.render();
   window.closeAddTreatmentModal();
-  
-  ErrorHandler.showToast('Traitement phytosanitaire enregistré avec succès ! Le DAR est maintenant suivi.', 'success');
+
+  ErrorHandler.showToast(
+    "Traitement phytosanitaire enregistré avec succès ! Le DAR est maintenant suivi.",
+    "success"
+  );
 };
 
 window.editTreatment = (id) => {
-  const treatment = treatments.find(t => t.id === id);
+  const treatment = treatments.find((t) => t.id === id);
   if (!treatment) return;
-  
+
   // Store treatment ID for edit
-  document.getElementById('form-treat-id').value = id;
-  
+  document.getElementById("form-treat-id").value = id;
+
   // Pre-fill form
-  const parcelSelect = document.getElementById('form-treat-parcel');
-  const cropSelect = document.getElementById('form-treat-crop');
-  
+  const parcelSelect = document.getElementById("form-treat-parcel");
+  const cropSelect = document.getElementById("form-treat-crop");
+
   if (parcelSelect) {
     parcelSelect.value = treatment.parcelId;
   }
   if (cropSelect) {
-    cropSelect.value = treatment.cropId || '';
+    cropSelect.value = treatment.cropId || "";
   }
-  document.getElementById('form-treat-category').value = treatment.category || '';
-  document.getElementById('form-treat-product').value = treatment.productName;
-  document.getElementById('form-treat-date').value = treatment.dateApplied;
-  document.getElementById('form-treat-dar').value = treatment.dar;
-  document.getElementById('form-treat-target').value = treatment.target || '';
-  document.getElementById('form-treat-notes').value = treatment.notes || '';
-  
+  document.getElementById("form-treat-category").value = treatment.category || "";
+  document.getElementById("form-treat-product").value = treatment.productName;
+  document.getElementById("form-treat-date").value = treatment.dateApplied;
+  document.getElementById("form-treat-dar").value = treatment.dar;
+  document.getElementById("form-treat-target").value = treatment.target || "";
+  document.getElementById("form-treat-notes").value = treatment.notes || "";
+
   // Update DAR suggestion label
   window.onTreatmentCategoryChange(treatment.category);
-  
+
   // Show modal
-  const modal = document.getElementById('add-treatment-modal');
-  if (modal) modal.classList.remove('hidden');
+  const modal = document.getElementById("add-treatment-modal");
+  if (modal) modal.classList.remove("hidden");
 };
 
 window.deleteTreatment = (id) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer ce traitement ? Cette action ne peut pas être annulée.')) return;
-  
-  ErrorHandler.showToast('Traitement supprimé avec succès', 'success');
-  
-  treatments = treatments.filter(t => t.id !== id);
-  KAStorage.set('ka_farm_treatments', treatments);
-  
+  if (
+    !confirm(
+      "Êtes-vous sûr de vouloir supprimer ce traitement ? Cette action ne peut pas être annulée."
+    )
+  )
+    return;
+
+  ErrorHandler.showToast("Traitement supprimé avec succès", "success");
+
+  treatments = treatments.filter((t) => t.id !== id);
+  KAStorage.set("ka_farm_treatments", treatments);
+
   TreatmentsModule.render();
 };
 
 window.showTreatmentDetail = (id) => {
-  const treatment = treatments.find(t => t.id === id);
+  const treatment = treatments.find((t) => t.id === id);
   if (!treatment) return;
-  
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const applied = new Date(treatment.dateApplied);
@@ -535,10 +573,13 @@ window.showTreatmentDetail = (id) => {
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   const daysRemaining = Math.max(0, treatment.dar - diffDays);
   const isHarvestReady = daysRemaining <= 0 || treatment.harvestReady;
-  
-  const categoryInfo = CATEGORY_LABELS[treatment.category] || { name: treatment.category, color: 'slate' };
-  
-  const content = document.getElementById('treatment-detail-content');
+
+  const categoryInfo = CATEGORY_LABELS[treatment.category] || {
+    name: treatment.category,
+    color: "slate",
+  };
+
+  const content = document.getElementById("treatment-detail-content");
   if (content) {
     content.innerHTML = `
       <div class="space-y-4">
@@ -547,7 +588,7 @@ window.showTreatmentDetail = (id) => {
             <i data-lucide="shield-alert" class="h-3 w-3"></i> Traitement #${treatment.id}
           </p>
           <h3 class="text-lg font-black text-slate-800 dark:text-white mt-2">${treatment.productName}</h3>
-          <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${categoryInfo.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : categoryInfo.color === 'rose' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : categoryInfo.color === 'amber' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}">
+          <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${categoryInfo.color === "emerald" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : categoryInfo.color === "rose" ? "bg-rose-500/10 text-rose-500 border border-rose-500/20" : categoryInfo.color === "amber" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" : "bg-blue-500/10 text-blue-500 border border-blue-500/20"}">
             ${categoryInfo.name}
           </span>
         </div>
@@ -560,11 +601,11 @@ window.showTreatmentDetail = (id) => {
             </div>
             <div class="flex justify-between">
               <span class="text-slate-400">Culture:</span>
-              <span class="text-slate-700 dark:text-slate-300">${treatment.cropName || 'Non spécifiée'}</span>
+              <span class="text-slate-700 dark:text-slate-300">${treatment.cropName || "Non spécifiée"}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-slate-400">Cible:</span>
-              <span class="text-slate-700 dark:text-slate-300">${treatment.target || 'Non spécifiée'}</span>
+              <span class="text-slate-700 dark:text-slate-300">${treatment.target || "Non spécifiée"}</span>
             </div>
           </div>
           <div class="space-y-2">
@@ -583,21 +624,25 @@ window.showTreatmentDetail = (id) => {
           </div>
         </div>
         
-        <div class="p-3 ${isHarvestReady ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-rose-500/5 border border-rose-500/20'} rounded-xl">
-          <p class="text-[10px] font-bold ${isHarvestReady ? 'text-emerald-500' : 'text-rose-500'} uppercase tracking-wider flex items-center gap-1">
-            <i data-lucide="${isHarvestReady ? 'check-circle' : 'alert-triangle'}" class="h-3 w-3"></i> Statut Récolte
+        <div class="p-3 ${isHarvestReady ? "bg-emerald-500/5 border border-emerald-500/20" : "bg-rose-500/5 border border-rose-500/20"} rounded-xl">
+          <p class="text-[10px] font-bold ${isHarvestReady ? "text-emerald-500" : "text-rose-500"} uppercase tracking-wider flex items-center gap-1">
+            <i data-lucide="${isHarvestReady ? "check-circle" : "alert-triangle"}" class="h-3 w-3"></i> Statut Récolte
           </p>
           <p class="text-sm font-black text-slate-800 dark:text-white mt-1">
-            ${isHarvestReady ? '✅ RÉCOLTE AUTORISÉE - PRÊT POUR LE MARCHÉ' : `🚫 RÉCOLTE INTERDITE - ${daysRemaining}j de DAR restant`}
+            ${isHarvestReady ? "✅ RÉCOLTE AUTORISÉE - PRÊT POUR LE MARCHÉ" : `🚫 RÉCOLTE INTERDITE - ${daysRemaining}j de DAR restant`}
           </p>
         </div>
         
-        ${treatment.notes ? `
+        ${
+          treatment.notes
+            ? `
           <div class="space-y-1">
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notes:</p>
             <p class="text-xs text-slate-700 dark:text-slate-300 p-3 bg-slate-50 dark:bg-[#0D2615]/20 rounded-xl">${treatment.notes}</p>
           </div>
-        ` : ''}
+        `
+            : ""
+        }
         
         <div class="flex justify-end gap-2 pt-2">
           <button onclick="window.closeTreatmentDetailModal(); window.editTreatment('${treatment.id}')" class="px-4 py-2 bg-slate-100 dark:bg-[#0D2615] hover:bg-slate-200 dark:hover:bg-[#143E23] border border-slate-200 dark:border-[#143E23] text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1">
@@ -610,28 +655,28 @@ window.showTreatmentDetail = (id) => {
       </div>
     `;
   }
-  
-  const modal = document.getElementById('treatment-detail-modal');
-  if (modal) modal.classList.remove('hidden');
-  
+
+  const modal = document.getElementById("treatment-detail-modal");
+  if (modal) modal.classList.remove("hidden");
+
   if (window.lucide) {
     window.lucide.createIcons();
   }
 };
 
 window.closeTreatmentDetailModal = () => {
-  const modal = document.getElementById('treatment-detail-modal');
-  if (modal) modal.classList.add('hidden');
+  const modal = document.getElementById("treatment-detail-modal");
+  if (modal) modal.classList.add("hidden");
 };
 
 window.exportTreatments = () => {
   const dataStr = JSON.stringify(treatments, null, 2);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const dataBlob = new Blob([dataStr], { type: "application/json" });
   const url = URL.createObjectURL(dataBlob);
-  
-  const link = document.createElement('a');
+
+  const link = document.createElement("a");
   link.href = url;
-  link.download = `kafarm-traitements-${new Date().toISOString().split('T')[0]}.json`;
+  link.download = `kafarm-traitements-${new Date().toISOString().split("T")[0]}.json`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -639,8 +684,8 @@ window.exportTreatments = () => {
 };
 
 // Start module when DOM is loaded
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
     TreatmentsModule.init();
   });
 } else {
@@ -648,6 +693,6 @@ if (document.readyState === 'loading') {
 }
 
 // Live update listener
-document.addEventListener('ka_data_updated', () => {
+document.addEventListener("ka_data_updated", () => {
   TreatmentsModule.init();
 });

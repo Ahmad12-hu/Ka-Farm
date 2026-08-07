@@ -14,10 +14,10 @@ export const FeedbackModule = {
   init(url, key) {
     this.supabaseUrl = url;
     this.supabaseKey = key;
-    
+
     // Créer le bouton flottant
     this.injectFloatingButton();
-    
+
     // Charger les APIs Supabase si pas déjà fait
     if (!window.supabase) {
       this.loadSupabase();
@@ -30,8 +30,8 @@ export const FeedbackModule = {
    * Charge la librairie Supabase dynamiquement
    */
   loadSupabase() {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
     script.async = true;
     script.onload = () => {
       this.supabaseClient = window.supabase.createClient(this.supabaseUrl, this.supabaseKey);
@@ -44,53 +44,54 @@ export const FeedbackModule = {
    */
   injectFloatingButton() {
     // Éviter les doublons
-    if (document.getElementById('feedback-fab')) {
-      console.log('Feedback button already exists, skipping injection');
+    if (document.getElementById("feedback-fab")) {
+      console.log("Feedback button already exists, skipping injection");
       return;
     }
 
     // Si le body n'est pas encore chargé, utiliser un MutationObserver
     if (!document.body) {
-      console.log('Body not ready, setting up observer...');
+      console.log("Body not ready, setting up observer...");
       const observer = new MutationObserver((mutations, obs) => {
         if (document.body) {
-          console.log('Body detected, injecting button...');
+          console.log("Body detected, injecting button...");
           this.createButton();
           obs.disconnect();
         }
       });
-      
+
       observer.observe(document.documentElement, { childList: true, subtree: true });
-      
+
       // Fallback après 5 secondes
       setTimeout(() => {
-        if (!document.getElementById('feedback-fab') && document.body) {
-          console.log('Fallback: forcing button injection...');
+        if (!document.getElementById("feedback-fab") && document.body) {
+          console.log("Fallback: forcing button injection...");
           this.createButton();
         }
       }, 5000);
     } else {
-      console.log('Body ready, injecting button immediately...');
+      console.log("Body ready, injecting button immediately...");
       this.createButton();
     }
   },
-  
+
   /**
    * Crée et injecte le bouton (helper method)
    */
   createButton() {
-    if (document.getElementById('feedback-fab')) {
-      console.log('Button already exists');
+    if (document.getElementById("feedback-fab")) {
+      console.log("Button already exists");
       return;
     }
 
-    const fab = document.createElement('button');
-    fab.id = 'feedback-fab';
-    fab.className = 'fixed bottom-28 right-6 z-[9999] bg-emerald-600 hover:bg-emerald-500 text-white p-6 rounded-full shadow-2xl hover:shadow-emerald-500/70 transition-all duration-300 hover:scale-125 cursor-pointer border-4 border-white/20 backdrop-blur-sm';
-    fab.title = 'Donner mon avis';
-    fab.setAttribute('aria-label', 'Donner mon avis sur l\'application');
+    const fab = document.createElement("button");
+    fab.id = "feedback-fab";
+    fab.className =
+      "fixed bottom-28 right-6 z-[9999] bg-emerald-600 hover:bg-emerald-500 text-white p-6 rounded-full shadow-2xl hover:shadow-emerald-500/70 transition-all duration-300 hover:scale-125 cursor-pointer border-4 border-white/20 backdrop-blur-sm";
+    fab.title = "Donner mon avis";
+    fab.setAttribute("aria-label", "Donner mon avis sur l'application");
     fab.onclick = () => this.openModal();
-    
+
     fab.innerHTML = `
       <svg class="w-10 h-10 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
@@ -98,16 +99,16 @@ export const FeedbackModule = {
     `;
 
     document.body.appendChild(fab);
-    console.log('✅ Feedback button injected successfully at position bottom-28 right-6');
+    console.log("✅ Feedback button injected successfully at position bottom-28 right-6");
   },
 
   /**
    * Ouvre le modal de feedback
    */
   openModal() {
-    const modal = document.createElement('div');
-    modal.id = 'feedback-modal';
-    modal.className = 'fixed inset-0 z-50 hidden';
+    const modal = document.createElement("div");
+    modal.id = "feedback-modal";
+    modal.className = "fixed inset-0 z-50 hidden";
     modal.innerHTML = `
       <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="feedback-backdrop"></div>
       <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
@@ -175,15 +176,15 @@ export const FeedbackModule = {
 
     // Afficher avec animation
     requestAnimationFrame(() => {
-      modal.classList.remove('hidden');
-      const backdrop = document.getElementById('feedback-backdrop');
-      const content = document.getElementById('feedback-content');
-      
+      modal.classList.remove("hidden");
+      const backdrop = document.getElementById("feedback-backdrop");
+      const content = document.getElementById("feedback-content");
+
       setTimeout(() => {
-        backdrop.classList.remove('opacity-0');
-        backdrop.classList.add('opacity-100');
-        content.classList.remove('scale-95', 'opacity-0', 'pointer-events-none');
-        content.classList.add('scale-100', 'opacity-100');
+        backdrop.classList.remove("opacity-0");
+        backdrop.classList.add("opacity-100");
+        content.classList.remove("scale-95", "opacity-0", "pointer-events-none");
+        content.classList.add("scale-100", "opacity-100");
       }, 10);
     });
 
@@ -191,37 +192,39 @@ export const FeedbackModule = {
     this.setupRatingButtons();
 
     // Gestion de la soumission
-    document.getElementById('feedback-submit').addEventListener('click', () => this.submitFeedback());
+    document
+      .getElementById("feedback-submit")
+      .addEventListener("click", () => this.submitFeedback());
 
     // Fermer en cliquant sur le backdrop
-    document.getElementById('feedback-backdrop').addEventListener('click', () => this.closeModal());
+    document.getElementById("feedback-backdrop").addEventListener("click", () => this.closeModal());
 
     // Fermer avec Escape
     const handleEscape = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         this.closeModal();
-        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener("keydown", handleEscape);
       }
     };
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener("keydown", handleEscape);
   },
 
   /**
    * Configure les boutons de notation
    */
   setupRatingButtons() {
-    const buttons = document.querySelectorAll('.rating-btn');
-    const input = document.getElementById('feedback-rating');
-    
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
+    const buttons = document.querySelectorAll(".rating-btn");
+    const input = document.getElementById("feedback-rating");
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
         // Reset tous les boutons
-        buttons.forEach(b => {
-          b.classList.remove('scale-125', 'ring-2', 'ring-emerald-400', 'rounded-full');
+        buttons.forEach((b) => {
+          b.classList.remove("scale-125", "ring-2", "ring-emerald-400", "rounded-full");
         });
-        
+
         // Activer le bouton sélectionné
-        btn.classList.add('scale-125', 'ring-2', 'ring-emerald-400', 'rounded-full');
+        btn.classList.add("scale-125", "ring-2", "ring-emerald-400", "rounded-full");
         input.value = btn.dataset.rating;
       });
     });
@@ -231,17 +234,17 @@ export const FeedbackModule = {
    * Soumet le feedback
    */
   async submitFeedback() {
-    const rating = document.getElementById('feedback-rating').value;
-    const message = document.getElementById('feedback-message').value.trim();
+    const rating = document.getElementById("feedback-rating").value;
+    const message = document.getElementById("feedback-message").value.trim();
 
     if (!rating) {
-      alert('Veuillez sélectionner une note 😊');
+      alert("Veuillez sélectionner une note 😊");
       return;
     }
 
-    const submitBtn = document.getElementById('feedback-submit');
+    const submitBtn = document.getElementById("feedback-submit");
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Envoi en cours...';
+    submitBtn.textContent = "Envoi en cours...";
 
     // Récupérer l'utilisateur connecté si disponible
     let userId = null;
@@ -257,33 +260,31 @@ export const FeedbackModule = {
     const feedback = {
       date: new Date().toISOString(),
       note: parseInt(rating),
-      message: message || '',
-      user_id: userId
+      message: message || "",
+      user_id: userId,
     };
 
     try {
       if (this.supabaseClient) {
-        await this.supabaseClient
-          .from('feedback')
-          .insert([feedback]);
+        await this.supabaseClient.from("feedback").insert([feedback]);
       } else {
         // Fallback: stocker localement si Supabase n'est pas configuré
         this.storeLocally(feedback);
       }
 
       // Afficher confirmation
-      document.getElementById('feedback-success').classList.remove('hidden');
-      submitBtn.textContent = 'Envoyé !';
-      
+      document.getElementById("feedback-success").classList.remove("hidden");
+      submitBtn.textContent = "Envoyé !";
+
       // Fermer après 2 secondes
       setTimeout(() => {
         this.closeModal();
       }, 2000);
     } catch (error) {
-      console.error('Erreur lors de l\'envoi du feedback:', error);
-      alert('Désolé, une erreur est survenue. Veuillez réessayer.');
+      console.error("Erreur lors de l'envoi du feedback:", error);
+      alert("Désolé, une erreur est survenue. Veuillez réessayer.");
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Envoyer mon avis';
+      submitBtn.textContent = "Envoyer mon avis";
     }
   },
 
@@ -291,31 +292,31 @@ export const FeedbackModule = {
    * Stocke le feedback localement si Supabase n'est pas disponible
    */
   storeLocally(feedback) {
-    const feedbacks = JSON.parse(localStorage.getItem('ka_farm_feedbacks') || '[]');
+    const feedbacks = JSON.parse(localStorage.getItem("ka_farm_feedbacks") || "[]");
     feedbacks.push(feedback);
-    localStorage.setItem('ka_farm_feedbacks', JSON.stringify(feedbacks));
+    localStorage.setItem("ka_farm_feedbacks", JSON.stringify(feedbacks));
   },
 
   /**
    * Ferme le modal avec animation
    */
   closeModal() {
-    const modal = document.getElementById('feedback-modal');
+    const modal = document.getElementById("feedback-modal");
     if (!modal) return;
 
-    const backdrop = document.getElementById('feedback-backdrop');
-    const content = document.getElementById('feedback-content');
+    const backdrop = document.getElementById("feedback-backdrop");
+    const content = document.getElementById("feedback-content");
 
     // Animation de sortie
-    backdrop.classList.remove('opacity-100');
-    backdrop.classList.add('opacity-0');
-    content.classList.remove('scale-100', 'opacity-100');
-    content.classList.add('scale-95', 'opacity-0');
+    backdrop.classList.remove("opacity-100");
+    backdrop.classList.add("opacity-0");
+    content.classList.remove("scale-100", "opacity-100");
+    content.classList.add("scale-95", "opacity-0");
 
     setTimeout(() => {
       modal.remove();
     }, 300);
-  }
+  },
 };
 
 // Rendre disponible globalement

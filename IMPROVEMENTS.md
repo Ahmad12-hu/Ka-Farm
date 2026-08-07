@@ -86,7 +86,7 @@ ErrorHandler.showToast("Données sauvegardées !", "success");
 const data = await ErrorHandler.safeAsync(
   () => fetch("/api/finances").then((r) => r.json()),
   [],
-  "Finances.fetch",
+  "Finances.fetch"
 );
 ```
 

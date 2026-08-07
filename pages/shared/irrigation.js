@@ -1,61 +1,63 @@
-import { KAStorage } from '/js/storage.js';
+import { KAStorage } from "/js/storage.js";
 
 const defaultWatering = [
-  { id: 'W-1', crop: 'Tomate Galmi (Planche 1)', day: 'Lundi', time: 'Matin', done: true },
-  { id: 'W-2', crop: 'Tomate Galmi (Planche 1)', day: 'Lundi', time: 'Soir', done: false },
-  { id: 'W-3', crop: 'Carottes (Planche Ouest)', day: 'Lundi', time: 'Matin', done: true },
-  { id: 'W-4', crop: 'Pépinière Poivrons', day: 'Mardi', time: 'Matin', done: false },
-  { id: 'W-5', crop: 'Pépinière Poivrons', day: 'Mardi', time: 'Soir', done: false },
-  { id: 'W-6', crop: 'Choux Cabus', day: 'Mercredi', time: 'Matin', done: false },
+  { id: "W-1", crop: "Tomate Galmi (Planche 1)", day: "Lundi", time: "Matin", done: true },
+  { id: "W-2", crop: "Tomate Galmi (Planche 1)", day: "Lundi", time: "Soir", done: false },
+  { id: "W-3", crop: "Carottes (Planche Ouest)", day: "Lundi", time: "Matin", done: true },
+  { id: "W-4", crop: "Pépinière Poivrons", day: "Mardi", time: "Matin", done: false },
+  { id: "W-5", crop: "Pépinière Poivrons", day: "Mardi", time: "Soir", done: false },
+  { id: "W-6", crop: "Choux Cabus", day: "Mercredi", time: "Matin", done: false },
 ];
 
 function getWatering() {
-  const saved = localStorage.getItem('ka_farm_watering');
+  const saved = localStorage.getItem("ka_farm_watering");
   if (!saved) {
-    localStorage.setItem('ka_farm_watering', JSON.stringify(defaultWatering));
+    localStorage.setItem("ka_farm_watering", JSON.stringify(defaultWatering));
     return defaultWatering;
   }
   return JSON.parse(saved);
 }
 
 function saveWatering(data) {
-  localStorage.setItem('ka_farm_watering', JSON.stringify(data));
+  localStorage.setItem("ka_farm_watering", JSON.stringify(data));
 }
 
 function renderDaysHeader() {
-  const grid = document.getElementById('weekly-days-grid');
+  const grid = document.getElementById("weekly-days-grid");
   if (!grid) return;
 
-  const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-  const currentDayName = new Date().toLocaleDateString('fr-FR', { weekday: 'long' });
+  const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+  const currentDayName = new Date().toLocaleDateString("fr-FR", { weekday: "long" });
   const normalizedToday = currentDayName.charAt(0).toUpperCase() + currentDayName.slice(1);
 
   const items = getWatering();
 
-  grid.innerHTML = days.map(day => {
-    const dayItems = items.filter(it => it.day === day);
-    const doneCount = dayItems.filter(it => it.done).length;
-    const totalCount = dayItems.length;
+  grid.innerHTML = days
+    .map((day) => {
+      const dayItems = items.filter((it) => it.day === day);
+      const doneCount = dayItems.filter((it) => it.done).length;
+      const totalCount = dayItems.length;
 
-    let statusBg = 'bg-white dark:bg-[#0B2112]/40';
-    let ring = 'border-slate-100 dark:border-[#143E23]/20';
-    if (day.toLowerCase() === normalizedToday.toLowerCase()) {
-      statusBg = 'bg-sky-500/10 dark:bg-sky-500/5';
-      ring = 'border-sky-500/30';
-    }
+      let statusBg = "bg-white dark:bg-[#0B2112]/40";
+      let ring = "border-slate-100 dark:border-[#143E23]/20";
+      if (day.toLowerCase() === normalizedToday.toLowerCase()) {
+        statusBg = "bg-sky-500/10 dark:bg-sky-500/5";
+        ring = "border-sky-500/30";
+      }
 
-    return `
+      return `
       <div class="p-3 ${statusBg} border ${ring} rounded-2xl text-center space-y-1">
         <p class="text-[10px] font-black text-slate-450 dark:text-slate-400 uppercase tracking-wider">${day.slice(0, 3)}</p>
         <p class="text-xs font-black text-slate-800 dark:text-white">${day}</p>
         <p class="text-[9px] text-sky-400 font-bold">${doneCount}/${totalCount} fait</p>
       </div>
     `;
-  }).join('');
+    })
+    .join("");
 }
 
 function renderWateringTasks() {
-  const container = document.getElementById('watering-tasks-container');
+  const container = document.getElementById("watering-tasks-container");
   if (!container) return;
 
   const items = getWatering();
@@ -69,14 +71,17 @@ function renderWateringTasks() {
     return;
   }
 
-  container.innerHTML = items.map(it => {
-    const textClass = it.done ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-200';
-    const icon = it.time === 'Matin' ? '🌅 Matin' : '🌇 Soir';
+  container.innerHTML = items
+    .map((it) => {
+      const textClass = it.done
+        ? "line-through text-slate-400"
+        : "text-slate-800 dark:text-slate-200";
+      const icon = it.time === "Matin" ? "🌅 Matin" : "🌇 Soir";
 
-    return `
+      return `
       <div class="p-4 bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/25 rounded-2xl flex items-center justify-between gap-4">
         <div class="flex items-center gap-3 text-left">
-          <input type="checkbox" ${it.done ? 'checked' : ''}
+          <input type="checkbox" ${it.done ? "checked" : ""}
                  onclick="window.toggleWateringDone('${it.id}')"
                  class="accent-sky-500 h-5 w-5 rounded-lg border-slate-300 dark:border-emerald-950 bg-slate-50 cursor-pointer">
           <div>
@@ -94,7 +99,8 @@ function renderWateringTasks() {
         </button>
       </div>
     `;
-  }).join('');
+    })
+    .join("");
 
   if (window.lucide) {
     window.lucide.createIcons();
@@ -103,7 +109,7 @@ function renderWateringTasks() {
 
 window.toggleWateringDone = (id) => {
   const items = getWatering();
-  const idx = items.findIndex(it => it.id === id);
+  const idx = items.findIndex((it) => it.id === id);
   if (idx !== -1) {
     items[idx].done = !items[idx].done;
     saveWatering(items);
@@ -113,18 +119,18 @@ window.toggleWateringDone = (id) => {
 };
 
 window.deleteWatering = (id) => {
-  if (!confirm('Retirer ce tour d\'eau ?')) return;
-  const items = getWatering().filter(it => it.id !== id);
+  if (!confirm("Retirer ce tour d'eau ?")) return;
+  const items = getWatering().filter((it) => it.id !== id);
   saveWatering(items);
   renderWateringTasks();
   renderDaysHeader();
 };
 
-document.getElementById('watering-form').addEventListener('submit', (e) => {
+document.getElementById("watering-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  const crop = document.getElementById('water-crop').value;
-  const day = document.getElementById('water-day').value;
-  const time = document.getElementById('water-time').value;
+  const crop = document.getElementById("water-crop").value;
+  const day = document.getElementById("water-day").value;
+  const time = document.getElementById("water-time").value;
 
   if (!crop) return;
 
@@ -134,43 +140,141 @@ document.getElementById('watering-form').addEventListener('submit', (e) => {
     crop,
     day,
     time,
-    done: false
+    done: false,
   });
 
   saveWatering(items);
-  document.getElementById('watering-form').reset();
+  document.getElementById("watering-form").reset();
   renderWateringTasks();
   renderDaysHeader();
   if (window.ErrorHandler) {
-    window.ErrorHandler.showToast('Tour d\'irrigation programmé !', 'success');
+    window.ErrorHandler.showToast("Tour d'irrigation programmé !", "success");
   }
 });
 
 // City and Weather Presets for Senegal - obtained from centralized source in app.js
 const CITY_PRESETS = window.SENEGAL_WEATHER_PRESETS || {
-  dakar: { name: 'Dakar (Région de Dakar)', temp: 26, wind: 15, humidity: 82, sun: 8, desc: '🌊 Climat maritime humide. Idéal pour cultures maraîchères côtières.' },
-  diourbel: { name: 'Diourbel (Bassin du Baol)', temp: 33, wind: 12, humidity: 58, sun: 10, desc: '🌾 Climat chaud et sec du Baol. Sols sableux exigeant un bon paillage.' },
-  fatick: { name: 'Fatick (Sine-Saloum)', temp: 31, wind: 14, humidity: 72, sun: 9, desc: '🌊 Estuaires du Sine-Saloum. Vigilance sur la salinité des sols maraîchers.' },
-  kaffrine: { name: 'Kaffrine (Bassin Arachidier Est)', temp: 33, wind: 13, humidity: 60, sun: 10, desc: '☀️ Zone agricole ensoleillée. Vents desséchants d\'Est (Harmattan léger).' },
-  kaolack: { name: 'Kaolack (Bassin Arachidier)', temp: 36, wind: 14, humidity: 35, sun: 10, desc: '☀ Climat soudano-sahélien chaud. Sols secs nécessitant une gestion fine de l\'arrosage.' },
-  kedougou: { name: 'Kédougou (Sud-Est)', temp: 32, wind: 9, humidity: 80, sun: 7, desc: '⛰️ Climat soudanien humide. Forte pluviométrie, attention à l\'engorgement des sols.' },
-  kolda: { name: 'Kolda (Haute Casamance)', temp: 32, wind: 10, humidity: 76, sun: 8, desc: '🌳 Zone forestière chaude et humide. Excellentes conditions de sol horticole.' },
-  louga: { name: 'Louga (Zone Sylvo-Pastorale)', temp: 33, wind: 17, humidity: 50, sun: 10, desc: '🏜️ Climat sahélien sec. Évaporations élevées, irrigation goutte-à-goutte prioritaire.' },
-  matam: { name: 'Matam (Moyenne Vallée)', temp: 39, wind: 18, humidity: 20, sun: 11, desc: '🔥 Chaleur extrême du Ferlo. Évapotranspiration critique de fin de journée.' },
-  'saint-louis': { name: 'Saint-Louis (Vallée)', temp: 32, wind: 22, humidity: 50, sun: 10, desc: '🌾 Alizés côtiers réguliers. Conditions optimales pour la culture maraîchère de contre-saison.' },
-  sedhiou: { name: 'Sédhiou (Moyenne Casamance)', temp: 31, wind: 8, humidity: 82, sun: 8, desc: '🌱 Climat guinéen très favorable aux cultures diversifiées et vergers.' },
-  tambacounda: { name: 'Tambacounda (Sénégal Oriental)', temp: 35, wind: 11, humidity: 50, sun: 10, desc: '☀️ Zone semi-aride continentale. Températures diurnes élevées exigeant un ombrage.' },
-  thies: { name: 'Thiès (Plateau / Mbour)', temp: 29, wind: 16, humidity: 55, sun: 9, desc: '🌅 Zone horticole majeure (Thiès & Petite Côte). Excellente rentabilité.' },
-  ziguinchor: { name: 'Ziguinchor (Casamance)', temp: 28, wind: 10, humidity: 75, sun: 8, desc: '🌴 Zone guinéenne humide. Évaporation modérée. Idéal pour l\'arboriculture.' }
+  dakar: {
+    name: "Dakar (Région de Dakar)",
+    temp: 26,
+    wind: 15,
+    humidity: 82,
+    sun: 8,
+    desc: "🌊 Climat maritime humide. Idéal pour cultures maraîchères côtières.",
+  },
+  diourbel: {
+    name: "Diourbel (Bassin du Baol)",
+    temp: 33,
+    wind: 12,
+    humidity: 58,
+    sun: 10,
+    desc: "🌾 Climat chaud et sec du Baol. Sols sableux exigeant un bon paillage.",
+  },
+  fatick: {
+    name: "Fatick (Sine-Saloum)",
+    temp: 31,
+    wind: 14,
+    humidity: 72,
+    sun: 9,
+    desc: "🌊 Estuaires du Sine-Saloum. Vigilance sur la salinité des sols maraîchers.",
+  },
+  kaffrine: {
+    name: "Kaffrine (Bassin Arachidier Est)",
+    temp: 33,
+    wind: 13,
+    humidity: 60,
+    sun: 10,
+    desc: "☀️ Zone agricole ensoleillée. Vents desséchants d'Est (Harmattan léger).",
+  },
+  kaolack: {
+    name: "Kaolack (Bassin Arachidier)",
+    temp: 36,
+    wind: 14,
+    humidity: 35,
+    sun: 10,
+    desc: "☀ Climat soudano-sahélien chaud. Sols secs nécessitant une gestion fine de l'arrosage.",
+  },
+  kedougou: {
+    name: "Kédougou (Sud-Est)",
+    temp: 32,
+    wind: 9,
+    humidity: 80,
+    sun: 7,
+    desc: "⛰️ Climat soudanien humide. Forte pluviométrie, attention à l'engorgement des sols.",
+  },
+  kolda: {
+    name: "Kolda (Haute Casamance)",
+    temp: 32,
+    wind: 10,
+    humidity: 76,
+    sun: 8,
+    desc: "🌳 Zone forestière chaude et humide. Excellentes conditions de sol horticole.",
+  },
+  louga: {
+    name: "Louga (Zone Sylvo-Pastorale)",
+    temp: 33,
+    wind: 17,
+    humidity: 50,
+    sun: 10,
+    desc: "🏜️ Climat sahélien sec. Évaporations élevées, irrigation goutte-à-goutte prioritaire.",
+  },
+  matam: {
+    name: "Matam (Moyenne Vallée)",
+    temp: 39,
+    wind: 18,
+    humidity: 20,
+    sun: 11,
+    desc: "🔥 Chaleur extrême du Ferlo. Évapotranspiration critique de fin de journée.",
+  },
+  "saint-louis": {
+    name: "Saint-Louis (Vallée)",
+    temp: 32,
+    wind: 22,
+    humidity: 50,
+    sun: 10,
+    desc: "🌾 Alizés côtiers réguliers. Conditions optimales pour la culture maraîchère de contre-saison.",
+  },
+  sedhiou: {
+    name: "Sédhiou (Moyenne Casamance)",
+    temp: 31,
+    wind: 8,
+    humidity: 82,
+    sun: 8,
+    desc: "🌱 Climat guinéen très favorable aux cultures diversifiées et vergers.",
+  },
+  tambacounda: {
+    name: "Tambacounda (Sénégal Oriental)",
+    temp: 35,
+    wind: 11,
+    humidity: 50,
+    sun: 10,
+    desc: "☀️ Zone semi-aride continentale. Températures diurnes élevées exigeant un ombrage.",
+  },
+  thies: {
+    name: "Thiès (Plateau / Mbour)",
+    temp: 29,
+    wind: 16,
+    humidity: 55,
+    sun: 9,
+    desc: "🌅 Zone horticole majeure (Thiès & Petite Côte). Excellente rentabilité.",
+  },
+  ziguinchor: {
+    name: "Ziguinchor (Casamance)",
+    temp: 28,
+    wind: 10,
+    humidity: 75,
+    sun: 8,
+    desc: "🌴 Zone guinéenne humide. Évaporation modérée. Idéal pour l'arboriculture.",
+  },
 };
 
 const CROP_COEFFICIENTS = {
-  tomate: { name: 'Tomate', kc: 1.15 },
-  carotte: { name: 'Carotte', kc: 1.00 },
-  oignon: { name: 'Oignon', kc: 1.05 },
-  poivron: { name: 'Poivron', kc: 1.05 },
-  chou: { name: 'Chou', kc: 1.05 },
-  gombo: { name: 'Gombo', kc: 0.95 }
+  tomate: { name: "Tomate", kc: 1.15 },
+  carotte: { name: "Carotte", kc: 1.0 },
+  oignon: { name: "Oignon", kc: 1.05 },
+  poivron: { name: "Poivron", kc: 1.05 },
+  chou: { name: "Chou", kc: 1.05 },
+  gombo: { name: "Gombo", kc: 0.95 },
 };
 
 function calculateET0(temp, wind, humidity, sun) {
@@ -185,82 +289,88 @@ function calculateET0(temp, wind, humidity, sun) {
 }
 
 window.updateET0Calculations = () => {
-  const temp = parseInt(document.getElementById('param-temp').value);
-  const wind = parseInt(document.getElementById('param-wind').value);
-  const humidity = parseInt(document.getElementById('param-humidity').value);
-  const sun = parseInt(document.getElementById('param-sun').value);
-  const cropKey = document.getElementById('param-crop').value;
-  const solKey = document.getElementById('param-sol').value;
-  const surface = parseInt(document.getElementById('param-surface').value);
+  const temp = parseInt(document.getElementById("param-temp").value);
+  const wind = parseInt(document.getElementById("param-wind").value);
+  const humidity = parseInt(document.getElementById("param-humidity").value);
+  const sun = parseInt(document.getElementById("param-sun").value);
+  const cropKey = document.getElementById("param-crop").value;
+  const solKey = document.getElementById("param-sol").value;
+  const surface = parseInt(document.getElementById("param-surface").value);
 
   // Update Slider value displays
-  document.getElementById('temp-val').textContent = `${temp} °C`;
-  document.getElementById('wind-val').textContent = `${wind} km/h`;
-  document.getElementById('humidity-val').textContent = `${humidity} %`;
-  document.getElementById('sun-val').textContent = `${sun} h/j`;
+  document.getElementById("temp-val").textContent = `${temp} °C`;
+  document.getElementById("wind-val").textContent = `${wind} km/h`;
+  document.getElementById("humidity-val").textContent = `${humidity} %`;
+  document.getElementById("sun-val").textContent = `${sun} h/j`;
 
   const solNames = {
-    sableux: 'Sableux (Dakar)',
-    argileux: 'Argileux (Fleuve)',
-    limoneux: 'Argilo-limoneux'
+    sableux: "Sableux (Dakar)",
+    argileux: "Argileux (Fleuve)",
+    limoneux: "Argilo-limoneux",
   };
-  document.getElementById('sol-val').textContent = solNames[solKey] || 'Sableux';
-  document.getElementById('surface-val').textContent = `${surface} m²`;
+  document.getElementById("sol-val").textContent = solNames[solKey] || "Sableux";
+  document.getElementById("surface-val").textContent = `${surface} m²`;
 
   // Calculate reference ET0
   const et0 = calculateET0(temp, wind, humidity, sun);
 
   // Calculate crop-specific ETc
-  const crop = CROP_COEFFICIENTS[cropKey] || { name: 'Culture', kc: 1.0 };
+  const crop = CROP_COEFFICIENTS[cropKey] || { name: "Culture", kc: 1.0 };
   const etc = parseFloat((et0 * crop.kc).toFixed(1));
 
-  document.getElementById('kc-val').textContent = `Kc: ${crop.kc}`;
-  document.getElementById('et0-value').textContent = et0;
-  document.getElementById('etc-value').textContent = etc;
+  document.getElementById("kc-val").textContent = `Kc: ${crop.kc}`;
+  document.getElementById("et0-value").textContent = et0;
+  document.getElementById("etc-value").textContent = etc;
 
   // Get badges and advice
-  const badge = document.getElementById('et0-badge');
-  const advice = document.getElementById('watering-advice-text');
-  const suggest = document.getElementById('watering-time-suggest');
-  const volumeSuggest = document.getElementById('watering-volume-suggest');
-  const splitBadge = document.getElementById('cycle-split-badge');
+  const badge = document.getElementById("et0-badge");
+  const advice = document.getElementById("watering-advice-text");
+  const suggest = document.getElementById("watering-time-suggest");
+  const volumeSuggest = document.getElementById("watering-volume-suggest");
+  const splitBadge = document.getElementById("cycle-split-badge");
 
-  badge.className = "inline-block px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-full ";
+  badge.className =
+    "inline-block px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-full ";
 
   // Calculate recommended minutes
   let recMinutes = Math.round(20 * (etc / 4.2));
 
   // Adjust minutes based on Soil Type
   let soilAdvice = "";
-  if (solKey === 'sableux') {
+  if (solKey === "sableux") {
     recMinutes = Math.round(recMinutes * 1.15);
     recMinutes = Math.max(12, Math.min(50, recMinutes));
     const halfMinutes = Math.round(recMinutes / 2);
     suggest.textContent = `${halfMinutes} min matin / ${halfMinutes} min soir`;
     splitBadge.textContent = "2 cycles (Sable)";
-    splitBadge.className = "text-[9px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-md font-extrabold uppercase";
-    soilAdvice = " Sols sableux : arrosez en 2 sessions matin/soir pour réduire le lessivage des nutriments.";
-  } else if (solKey === 'argileux') {
+    splitBadge.className =
+      "text-[9px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-md font-extrabold uppercase";
+    soilAdvice =
+      " Sols sableux : arrosez en 2 sessions matin/soir pour réduire le lessivage des nutriments.";
+  } else if (solKey === "argileux") {
     recMinutes = Math.round(recMinutes * 0.9);
     recMinutes = Math.max(10, Math.min(40, recMinutes));
     suggest.textContent = `${recMinutes} minutes le matin`;
     splitBadge.textContent = "1 cycle (Argile)";
-    splitBadge.className = "text-[9px] px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded-md font-extrabold uppercase";
-    soilAdvice = " Sols argileux : un seul arrosage matinal profond suffit, la rétention est maximale.";
+    splitBadge.className =
+      "text-[9px] px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded-md font-extrabold uppercase";
+    soilAdvice =
+      " Sols argileux : un seul arrosage matinal profond suffit, la rétention est maximale.";
   } else {
     recMinutes = Math.max(10, Math.min(45, recMinutes));
     suggest.textContent = `${recMinutes} minutes le matin`;
     splitBadge.textContent = "1 cycle (Limon)";
-    splitBadge.className = "text-[9px] px-2 py-0.5 bg-emerald-500/20 text-emerald-350 rounded-md font-extrabold uppercase";
+    splitBadge.className =
+      "text-[9px] px-2 py-0.5 bg-emerald-500/20 text-emerald-350 rounded-md font-extrabold uppercase";
     soilAdvice = " Sols limoneux : structure idéale, arrosage régulier équilibré.";
   }
 
   // Calculate total volume needed in Litres: ETc * surface (since 1 mm = 1 L/m²)
   // Add safety margins for sandy soil
   let volumeLitres = etc * surface;
-  if (solKey === 'sableux') volumeLitres *= 1.15; // 15% leaching loss allowance
+  if (solKey === "sableux") volumeLitres *= 1.15; // 15% leaching loss allowance
   volumeLitres = Math.round(volumeLitres);
-  volumeSuggest.textContent = `${volumeLitres.toLocaleString('fr-FR')} Litres`;
+  volumeSuggest.textContent = `${volumeLitres.toLocaleString("fr-FR")} Litres`;
 
   if (et0 < 3.0) {
     badge.textContent = "ET₀ Faible";
@@ -282,9 +392,9 @@ window.updateET0Calculations = () => {
 };
 
 window.onCityChange = (cityKey) => {
-  const display = document.getElementById('weather-quick-display');
+  const display = document.getElementById("weather-quick-display");
 
-  if (cityKey === 'custom') {
+  if (cityKey === "custom") {
     display.innerHTML = `
       <div class="p-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20">
         <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
@@ -301,10 +411,10 @@ window.onCityChange = (cityKey) => {
   if (!preset) return;
 
   // Update inputs
-  document.getElementById('param-temp').value = preset.temp;
-  document.getElementById('param-wind').value = preset.wind;
-  document.getElementById('param-humidity').value = preset.humidity;
-  document.getElementById('param-sun').value = preset.sun;
+  document.getElementById("param-temp").value = preset.temp;
+  document.getElementById("param-wind").value = preset.wind;
+  document.getElementById("param-humidity").value = preset.humidity;
+  document.getElementById("param-sun").value = preset.sun;
 
   // Show quick weather info card
   display.innerHTML = `
@@ -329,22 +439,25 @@ window.onCityChange = (cityKey) => {
 // Start
 renderDaysHeader();
 renderWateringTasks();
-window.onCityChange('thies');
+window.onCityChange("thies");
 
 // ==================== INTEGRATION CALCULATEUR D'IRRIGATION ====================
 window.updateCalcDisplay = () => {
-  if (window.IrrigationModule && typeof window.IrrigationModule.calculateAndDisplay === 'function') {
+  if (
+    window.IrrigationModule &&
+    typeof window.IrrigationModule.calculateAndDisplay === "function"
+  ) {
     window.IrrigationModule.calculateAndDisplay();
   }
 };
 
 // Afficher/masquer les résultats
-const calcBtn = document.getElementById('btn-calculate-irrigation');
+const calcBtn = document.getElementById("btn-calculate-irrigation");
 if (calcBtn) {
-  calcBtn.addEventListener('click', () => {
-    const results = document.getElementById('calc-results');
+  calcBtn.addEventListener("click", () => {
+    const results = document.getElementById("calc-results");
     if (results) {
-      results.classList.remove('hidden');
+      results.classList.remove("hidden");
     }
     window.updateCalcDisplay();
   });

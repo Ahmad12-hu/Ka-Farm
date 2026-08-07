@@ -186,7 +186,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Client admin (pour opérations serveur uniquement)
 export const supabaseAdmin = createClient(
   supabaseUrl,
-  import.meta.env.SUPABASE_SERVICE_ROLE_KEY || "votre-service-role-key",
+  import.meta.env.SUPABASE_SERVICE_ROLE_KEY || "votre-service-role-key"
 );
 
 // ==================== INSCRIPTION ====================
@@ -380,15 +380,11 @@ export function requireAuth(request, response, next) {
       </div>
 
       <!-- Formulaire d'inscription -->
-      <div
-        class="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20"
-      >
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20">
         <form id="signup-form" class="space-y-6">
           <!-- Nom complet -->
           <div>
-            <label class="block text-sm font-medium text-white mb-2">
-              Nom complet *
-            </label>
+            <label class="block text-sm font-medium text-white mb-2"> Nom complet * </label>
             <input
               type="text"
               id="name"
@@ -400,9 +396,7 @@ export function requireAuth(request, response, next) {
 
           <!-- Email -->
           <div>
-            <label class="block text-sm font-medium text-white mb-2">
-              Email *
-            </label>
+            <label class="block text-sm font-medium text-white mb-2"> Email * </label>
             <input
               type="email"
               id="email"
@@ -414,9 +408,7 @@ export function requireAuth(request, response, next) {
 
           <!-- Mot de passe -->
           <div>
-            <label class="block text-sm font-medium text-white mb-2">
-              Mot de passe *
-            </label>
+            <label class="block text-sm font-medium text-white mb-2"> Mot de passe * </label>
             <input
               type="password"
               id="password"
@@ -467,12 +459,7 @@ export function requireAuth(request, response, next) {
             class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
           >
             <span>Créer mon compte</span>
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -591,8 +578,7 @@ if (loginForm) {
 
         // Redirection
         const redirectTo =
-          localStorage.getItem("redirect_after_login") ||
-          "/pages/shared/dashboard.html";
+          localStorage.getItem("redirect_after_login") || "/pages/shared/dashboard.html";
         window.location.href = redirectTo;
       } else {
         showError(result.error || "Email ou mot de passe incorrect");
@@ -626,13 +612,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!token || !user) {
     // Utilisateur non connecté - rediriger vers login si sur page protégée
-    const protectedPages = [
-      "/pages/shared/dashboard.html",
-      "/pages/shared/harvest.html",
-    ];
-    if (
-      protectedPages.some((page) => window.location.pathname.includes(page))
-    ) {
+    const protectedPages = ["/pages/shared/dashboard.html", "/pages/shared/harvest.html"];
+    if (protectedPages.some((page) => window.location.pathname.includes(page))) {
       window.location.href = "/pages/auth/login.html";
     }
   }
@@ -663,15 +644,11 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
 
       <!-- Formulaire de connexion -->
-      <div
-        class="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20"
-      >
+      <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20">
         <form id="login-form" class="space-y-6">
           <!-- Email -->
           <div>
-            <label class="block text-sm font-medium text-white mb-2">
-              Email
-            </label>
+            <label class="block text-sm font-medium text-white mb-2"> Email </label>
             <input
               type="email"
               id="email"
@@ -683,9 +660,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <!-- Mot de passe -->
           <div>
-            <label class="block text-sm font-medium text-white mb-2">
-              Mot de passe
-            </label>
+            <label class="block text-sm font-medium text-white mb-2"> Mot de passe </label>
             <input
               type="password"
               id="password"
@@ -707,12 +682,7 @@ document.addEventListener("DOMContentLoaded", () => {
             class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
           >
             <span>Se connecter</span>
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -739,10 +709,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <!-- Footer -->
       <div class="text-center mt-6">
-        <a
-          href="/index.html"
-          class="text-emerald-300/80 text-sm hover:text-emerald-200"
-        >
+        <a href="/index.html" class="text-emerald-300/80 text-sm hover:text-emerald-200">
           ← Retour à l'accueil
         </a>
       </div>

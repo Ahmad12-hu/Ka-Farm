@@ -5,10 +5,10 @@
 
 class OfflineStorage {
   constructor() {
-    this.dbName = 'ka-farm-offline';
+    this.dbName = "ka-farm-offline";
     this.version = 1;
     this.db = null;
-    this.dbName = 'ka-farm-offline';
+    this.dbName = "ka-farm-offline";
     this.version = 1;
     this.db = null;
   }
@@ -27,48 +27,51 @@ class OfflineStorage {
         const db = event.target.result;
 
         // Collection des cultures
-        if (!db.objectStoreNames.contains('crops')) {
-          const cropsStore = db.createObjectStore('crops', { keyPath: 'id' });
-          cropsStore.createIndex('enterpriseId', 'enterpriseId', { unique: false });
-          cropsStore.createIndex('synced', 'synced', { unique: false });
+        if (!db.objectStoreNames.contains("crops")) {
+          const cropsStore = db.createObjectStore("crops", { keyPath: "id" });
+          cropsStore.createIndex("enterpriseId", "enterpriseId", { unique: false });
+          cropsStore.createIndex("synced", "synced", { unique: false });
         }
 
         // Collection des parcelles
-        if (!db.objectStoreNames.contains('parcelles')) {
-          const parcellesStore = db.createObjectStore('parcelles', { keyPath: 'id' });
-          parcellesStore.createIndex('enterpriseId', 'enterpriseId', { unique: false });
-          parcellesStore.createIndex('synced', 'synced', { unique: false });
+        if (!db.objectStoreNames.contains("parcelles")) {
+          const parcellesStore = db.createObjectStore("parcelles", { keyPath: "id" });
+          parcellesStore.createIndex("enterpriseId", "enterpriseId", { unique: false });
+          parcellesStore.createIndex("synced", "synced", { unique: false });
         }
 
         // Collection des stocks
-        if (!db.objectStoreNames.contains('stocks')) {
-          const stocksStore = db.createObjectStore('stocks', { keyPath: 'id' });
-          stocksStore.createIndex('synced', 'synced', { unique: false });
+        if (!db.objectStoreNames.contains("stocks")) {
+          const stocksStore = db.createObjectStore("stocks", { keyPath: "id" });
+          stocksStore.createIndex("synced", "synced", { unique: false });
         }
 
         // Collection des finances
-        if (!db.objectStoreNames.contains('finances')) {
-          const financesStore = db.createObjectStore('finances', { keyPath: 'id' });
-          financesStore.createIndex('synced', 'synced', { unique: false });
+        if (!db.objectStoreNames.contains("finances")) {
+          const financesStore = db.createObjectStore("finances", { keyPath: "id" });
+          financesStore.createIndex("synced", "synced", { unique: false });
         }
 
         // Collection des tâches
-        if (!db.objectStoreNames.contains('tasks')) {
-          const tasksStore = db.createObjectStore('tasks', { keyPath: 'id' });
-          tasksStore.createIndex('synced', 'synced', { unique: false });
+        if (!db.objectStoreNames.contains("tasks")) {
+          const tasksStore = db.createObjectStore("tasks", { keyPath: "id" });
+          tasksStore.createIndex("synced", "synced", { unique: false });
         }
 
         // Collection des notifications
-        if (!db.objectStoreNames.contains('notifications')) {
-          const notificationsStore = db.createObjectStore('notifications', { keyPath: 'id' });
-          notificationsStore.createIndex('synced', 'synced', { unique: false });
+        if (!db.objectStoreNames.contains("notifications")) {
+          const notificationsStore = db.createObjectStore("notifications", { keyPath: "id" });
+          notificationsStore.createIndex("synced", "synced", { unique: false });
         }
 
         // File d'attente de synchronisation
-        if (!db.objectStoreNames.contains('syncQueue')) {
-          const syncQueueStore = db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
-          syncQueueStore.createIndex('type', 'type', { unique: false });
-          syncQueueStore.createIndex('timestamp', 'timestamp', { unique: false });
+        if (!db.objectStoreNames.contains("syncQueue")) {
+          const syncQueueStore = db.createObjectStore("syncQueue", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+          syncQueueStore.createIndex("type", "type", { unique: false });
+          syncQueueStore.createIndex("timestamp", "timestamp", { unique: false });
         }
       };
     });
@@ -79,25 +82,25 @@ class OfflineStorage {
       type: operation.type, // 'CREATE', 'UPDATE', 'DELETE'
       collection: operation.collection,
       data: operation.data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
-    return this.add('syncQueue', queueItem);
+    return this.add("syncQueue", queueItem);
   }
 
   async getSyncQueue() {
-    return this.getAll('syncQueue');
+    return this.getAll("syncQueue");
   }
 
   async clearSyncQueue() {
-    return this.clear('syncQueue');
+    return this.clear("syncQueue");
   }
 
   async add(collection, data) {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([collection], 'readwrite');
+      const transaction = this.db.transaction([collection], "readwrite");
       const store = transaction.objectStore(collection);
       const request = store.add(data);
 
@@ -110,7 +113,7 @@ class OfflineStorage {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([collection], 'readwrite');
+      const transaction = this.db.transaction([collection], "readwrite");
       const store = transaction.objectStore(collection);
       const request = store.put(data);
 
@@ -123,7 +126,7 @@ class OfflineStorage {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([collection], 'readonly');
+      const transaction = this.db.transaction([collection], "readonly");
       const store = transaction.objectStore(collection);
       const request = store.get(id);
 
@@ -136,7 +139,7 @@ class OfflineStorage {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([collection], 'readonly');
+      const transaction = this.db.transaction([collection], "readonly");
       const store = transaction.objectStore(collection);
       const request = store.getAll();
 
@@ -149,7 +152,7 @@ class OfflineStorage {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([collection], 'readwrite');
+      const transaction = this.db.transaction([collection], "readwrite");
       const store = transaction.objectStore(collection);
       const request = store.delete(id);
 
@@ -162,7 +165,7 @@ class OfflineStorage {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([collection], 'readwrite');
+      const transaction = this.db.transaction([collection], "readwrite");
       const store = transaction.objectStore(collection);
       const request = store.clear();
 
@@ -174,11 +177,17 @@ class OfflineStorage {
   async clearAll() {
     if (!this.db) await this.init();
 
-    const collections = ['crops', 'parcelles', 'stocks', 'finances', 'tasks', 'notifications', 'syncQueue'];
-    
-    return Promise.all(
-      collections.map(collection => this.clear(collection))
-    );
+    const collections = [
+      "crops",
+      "parcelles",
+      "stocks",
+      "finances",
+      "tasks",
+      "notifications",
+      "syncQueue",
+    ];
+
+    return Promise.all(collections.map((collection) => this.clear(collection)));
   }
 }
 
@@ -186,8 +195,8 @@ class OfflineStorage {
 window.offlineStorage = new OfflineStorage();
 
 // Initialiser au chargement de la page
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => window.offlineStorage.init());
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => window.offlineStorage.init());
 } else {
   window.offlineStorage.init();
 }

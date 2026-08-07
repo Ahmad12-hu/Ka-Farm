@@ -13,16 +13,19 @@ Ce guide explique comment transformer KA Farm en application multi-utilisateurs,
 **Accès** : `/pages/admin/login.html`
 
 **Qui peut y accéder** :
+
 - Toi (le propriétaire)
 - Ton frère (si tu l'ajoutes dans `admin_users`)
 
 **Ce qu'il permet** :
+
 - ✅ Voir TOUTES les données de tous les utilisateurs
 - ✅ Modifier les données de n'importe qui
 - ✅ Gérer les comptes utilisateurs
 - ✅ Accéder aux statistiques globales
 
 **Comment ça marche** :
+
 - Utilise l'authentification locale (`js/auth.js`)
 - Email admin vérifié dans la table `admin_users`
 - RLS policies : `is_admin()` retourne true → accès total
@@ -34,15 +37,18 @@ Ce guide explique comment transformer KA Farm en application multi-utilisateurs,
 **Accès** : `/pages/auth/login.html` → Mode "Utilisateur Public"
 
 **Qui peut y accéder** :
+
 - N'importe qui qui s'inscrit via Supabase Auth
 
 **Ce qu'il permet** :
+
 - ✅ Voir SEULEMENT ses propres données
 - ✅ Modifier SEULEMENT ses propres données
 - ✅ Gérer sa ferme indépendamment
 - ❌ Ne peut pas voir les données des autres utilisateurs
 
 **Comment ça marche** :
+
 - Utilise Supabase Auth (`js/auth-public.js`)
 - Chaque utilisateur a un `user_id` unique (UUID de Supabase)
 - RLS policies : `user_id = auth.uid()` → isolation des données
@@ -95,6 +101,7 @@ ALTER TABLE harvests ADD COLUMN user_id UUID REFERENCES auth.users(id);
 ```
 
 **Signification** :
+
 - `user_id` = UUID de l'utilisateur Supabase Auth
 - `NULL` = Données de l'admin (visibles par l'admin uniquement)
 - `user_id = auth.uid()` = Données de l'utilisateur connecté
@@ -137,6 +144,7 @@ CREATE POLICY "Users can insert own data"
 Ouvrir Supabase → SQL Editor → Exécuter `db/multi-tenancy-migration.sql`
 
 **Ce que ça fait** :
+
 - Ajoute `user_id` à toutes les tables
 - Crée les index pour la performance
 - Crée les RLS policies pour l'isolation
@@ -147,6 +155,7 @@ Ouvrir Supabase → SQL Editor → Exécuter `db/multi-tenancy-migration.sql`
 Exécuter `db/onboarding-trigger.sql`
 
 **Ce que ça fait** :
+
 - Crée un trigger qui initialise automatiquement les données pour les nouveaux utilisateurs
 - Crée une parcelle, une culture, un stock et une tâche par défaut
 
@@ -159,6 +168,7 @@ Exécuter `db/onboarding-trigger.sql`
 ### 4. Mettre à jour les Variables d'Environnement
 
 Dans `.env` et Vercel :
+
 ```env
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
@@ -205,10 +215,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ### 1. Données Existantes
 
 Les données existantes ont `user_id = NULL`. Elles seront :
+
 - ✅ Visibles par l'admin
 - ❌ Non visibles par les nouveaux utilisateurs
 
 **Pour migrer les données existantes vers un utilisateur** :
+
 ```sql
 UPDATE harvests SET user_id = 'uuid-de-l-utilisateur' WHERE user_id IS NULL;
 ```
@@ -218,12 +230,14 @@ UPDATE harvests SET user_id = 'uuid-de-l-utilisateur' WHERE user_id IS NULL;
 Les anciennes policies dans `db/policies.sql` (accès public) sont remplacées par les nouvelles policies multi-tenant.
 
 **Pour garder l'accès public pendant le développement** :
+
 - Ne pas exécuter `db/multi-tenancy-migration.sql`
 - Ou désactiver RLS temporairement
 
 ### 3. Espace Admin Non Affecté
 
 L'espace admin (`/pages/admin/*`) n'est PAS affecté par ces changements :
+
 - Il continue à utiliser l'auth locale
 - Il continue à fonctionner comme avant
 - Les RLS policies admin (`db/admin-rls-policies.sql`) sont séparées

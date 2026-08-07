@@ -1,9 +1,9 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react-swc';
-import path from 'path';
-import {defineConfig} from 'vite';
-import { fileURLToPath } from 'url';
-import { readFileSync } from 'fs';
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+import { defineConfig } from "vite";
+import { fileURLToPath } from "url";
+import { readFileSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,13 +14,13 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
       {
-        name: 'copy-about-page',
+        name: "copy-about-page",
         generateBundle() {
           this.emitFile({
-            type: 'asset',
-            fileName: 'pages/shared/about.html',
+            type: "asset",
+            fileName: "pages/shared/about.html",
             source: Buffer.from(
-              readFileSync(path.resolve(__dirname, 'pages/shared/about.html'), 'utf-8')
+              readFileSync(path.resolve(__dirname, "pages/shared/about.html"), "utf-8")
             ),
           });
         },
@@ -28,7 +28,7 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        "@": path.resolve(__dirname, "."),
       },
     },
     build: {
@@ -37,63 +37,65 @@ export default defineConfig(() => {
       chunkSizeWarningLimit: 700,
       rollupOptions: {
         input: {
-          main: path.resolve(__dirname, 'index.html'),
+          main: path.resolve(__dirname, "index.html"),
           // CSS entries for HTML pages
-          'css/styles': path.resolve(__dirname, 'css/styles.css'),
-          'css/auth': path.resolve(__dirname, 'css/auth.css'),
-          'css/dashboard': path.resolve(__dirname, 'css/dashboard.css'),
-          'css/personal': path.resolve(__dirname, 'css/personal.css'),
-          'css/responsive': path.resolve(__dirname, 'css/responsive.css'),
-          'css/index': path.resolve(__dirname, 'css/index.css'),
+          "css/styles": path.resolve(__dirname, "css/styles.css"),
+          "css/auth": path.resolve(__dirname, "css/auth.css"),
+          "css/dashboard": path.resolve(__dirname, "css/dashboard.css"),
+          "css/personal": path.resolve(__dirname, "css/personal.css"),
+          "css/responsive": path.resolve(__dirname, "css/responsive.css"),
+          "css/index": path.resolve(__dirname, "css/index.css"),
           // Pages auth
-          'pages/auth/login': path.resolve(__dirname, 'pages/auth/login.html'),
-          'pages/auth/login-js': path.resolve(__dirname, 'pages/auth/login.js'),
-          'pages/auth/signup': path.resolve(__dirname, 'pages/auth/signup.html'),
+          "pages/auth/login": path.resolve(__dirname, "pages/auth/login.html"),
+          "pages/auth/login-js": path.resolve(__dirname, "pages/auth/login.js"),
+          "pages/auth/signup": path.resolve(__dirname, "pages/auth/signup.html"),
           // Pages shared
-          'pages/shared/alerts': path.resolve(__dirname, 'pages/shared/alerts.html'),
-          'pages/shared/crops': path.resolve(__dirname, 'pages/shared/crops.html'),
-          'pages/shared/dashboard': path.resolve(__dirname, 'pages/shared/dashboard.html'),
-          'pages/shared/finances': path.resolve(__dirname, 'pages/shared/finances.html'),
-          'pages/shared/harvest': path.resolve(__dirname, 'pages/shared/harvest.html'),
-          'pages/shared/irrigation': path.resolve(__dirname, 'pages/shared/irrigation.html'),
-          'pages/shared/parcelles': path.resolve(__dirname, 'pages/shared/parcelles.html'),
-          'pages/shared/employees': path.resolve(__dirname, 'pages/shared/employees.html'),
-          'pages/shared/stocks': path.resolve(__dirname, 'pages/shared/stocks.html'),
-          'pages/shared/elevage': path.resolve(__dirname, 'pages/shared/elevage.html'),
-          'pages/shared/training': path.resolve(__dirname, 'pages/shared/training.html'),
-          'pages/shared/treatments': path.resolve(__dirname, 'pages/shared/treatments.html'),
-          'pages/shared/profitability': path.resolve(__dirname, 'pages/shared/profitability.html'),
-          'pages/shared/market-prices': path.resolve(__dirname, 'pages/shared/market-prices.html'),
-          'pages/shared/tools-sharing': path.resolve(__dirname, 'pages/shared/tools-sharing.html'),
-          'pages/shared/calendar': path.resolve(__dirname, 'pages/shared/calendar.html'),
+          "pages/shared/alerts": path.resolve(__dirname, "pages/shared/alerts.html"),
+          "pages/shared/crops": path.resolve(__dirname, "pages/shared/crops.html"),
+          "pages/shared/dashboard": path.resolve(__dirname, "pages/shared/dashboard.html"),
+          "pages/shared/finances": path.resolve(__dirname, "pages/shared/finances.html"),
+          "pages/shared/harvest": path.resolve(__dirname, "pages/shared/harvest.html"),
+          "pages/shared/irrigation": path.resolve(__dirname, "pages/shared/irrigation.html"),
+          "pages/shared/parcelles": path.resolve(__dirname, "pages/shared/parcelles.html"),
+          "pages/shared/employees": path.resolve(__dirname, "pages/shared/employees.html"),
+          "pages/shared/stocks": path.resolve(__dirname, "pages/shared/stocks.html"),
+          "pages/shared/elevage": path.resolve(__dirname, "pages/shared/elevage.html"),
+          "pages/shared/training": path.resolve(__dirname, "pages/shared/training.html"),
+          "pages/shared/treatments": path.resolve(__dirname, "pages/shared/treatments.html"),
+          "pages/shared/profitability": path.resolve(__dirname, "pages/shared/profitability.html"),
+          "pages/shared/market-prices": path.resolve(__dirname, "pages/shared/market-prices.html"),
+          "pages/shared/tools-sharing": path.resolve(__dirname, "pages/shared/tools-sharing.html"),
+          "pages/shared/calendar": path.resolve(__dirname, "pages/shared/calendar.html"),
           // Pages admin
-          'pages/admin/login': path.resolve(__dirname, 'pages/admin/login.html'),
-          'pages/admin/dashboard': path.resolve(__dirname, 'pages/admin/dashboard.html'),
+          "pages/admin/login": path.resolve(__dirname, "pages/admin/login.html"),
+          "pages/admin/dashboard": path.resolve(__dirname, "pages/admin/dashboard.html"),
           // Pages personal
-          'pages/personal/my-sales': path.resolve(__dirname, 'pages/personal/my-sales.html'),
-          'pages/personal/my-tasks': path.resolve(__dirname, 'pages/personal/my-tasks.html'),
-          'pages/personal/profile': path.resolve(__dirname, 'pages/personal/profile.html'),
-          'pages/personal/settings': path.resolve(__dirname, 'pages/personal/settings.html'),
-        }
+          "pages/personal/my-sales": path.resolve(__dirname, "pages/personal/my-sales.html"),
+          "pages/personal/my-tasks": path.resolve(__dirname, "pages/personal/my-tasks.html"),
+          "pages/personal/profile": path.resolve(__dirname, "pages/personal/profile.html"),
+          "pages/personal/settings": path.resolve(__dirname, "pages/personal/settings.html"),
+        },
       },
-      outDir: 'dist',
+      outDir: "dist",
       emptyOutDir: true,
     },
     // Optimize dependencies to avoid bundling server-side modules
     optimizeDeps: {
-      exclude: ['server.js', 'api/index.js']
+      exclude: ["server.js", "api/index.js"],
     },
 
     // Define environment variables for HTML pages
     define: {
-      'import.meta.env.VITE_ADMIN_EMAIL': JSON.stringify(process.env.VITE_ADMIN_EMAIL || 'admin@kafarm.sn')
+      "import.meta.env.VITE_ADMIN_EMAIL": JSON.stringify(
+        process.env.VITE_ADMIN_EMAIL || "admin@kafarm.sn"
+      ),
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
+      hmr: process.env.DISABLE_HMR !== "true",
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      watch: process.env.DISABLE_HMR === "true" ? null : {},
     },
   };
 });

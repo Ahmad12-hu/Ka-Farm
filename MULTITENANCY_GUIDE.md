@@ -223,9 +223,7 @@ Pour synchroniser les données entre appareils:
 ```javascript
 // Initialiser Firebase Sync
 KAFirebaseSync.initSync((key, data) => {
-  document.dispatchEvent(
-    new CustomEvent("ka_data_updated", { detail: { key, data } }),
-  );
+  document.dispatchEvent(new CustomEvent("ka_data_updated", { detail: { key, data } }));
 });
 ```
 

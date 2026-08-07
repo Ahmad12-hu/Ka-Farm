@@ -1,7 +1,7 @@
 // KA Farm - Sanitary Alerts & Gemini AI Advisor Module
-import { KAStorage } from '../storage.js';
-import { logger } from './logger.js';
-import { ErrorHandler } from './error-handler.js';
+import { KAStorage } from "../storage.js";
+import { logger } from "./logger.js";
+import { ErrorHandler } from "./error-handler.js";
 
 let chatHistory = [];
 
@@ -13,22 +13,22 @@ export const NotificationsModule = {
   },
 
   renderAlerts() {
-    const container = document.getElementById('alerts-container');
+    const container = document.getElementById("alerts-container");
     if (!container) return;
 
     const crops = KAStorage.getCrops();
     const alerts = [];
 
     // Extract all sanitary alerts from crop photos
-    crops.forEach(crop => {
+    crops.forEach((crop) => {
       const photos = crop.photos || [];
-      photos.forEach(photo => {
-        if (photo.status === 'Surveiller' || photo.status === 'Alerte') {
+      photos.forEach((photo) => {
+        if (photo.status === "Surveiller" || photo.status === "Alerte") {
           alerts.push({
             cropName: crop.name,
             cropField: crop.field,
             cropId: crop.id,
-            ...photo
+            ...photo,
           });
         }
       });
@@ -74,13 +74,16 @@ export const NotificationsModule = {
     // Sort by date (most recent first)
     alerts.sort((a, b) => b.id.localeCompare(a.id));
 
-    container.innerHTML = alerts.map(alert => {
-      const isRed = alert.status === 'Alerte';
-      const badgeColor = isRed ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-      const statusLabel = isRed ? 'Grave / Alerte' : 'À Surveiller';
-      const icon = isRed ? 'shield-x' : 'alert-circle';
-      
-      return `
+    container.innerHTML = alerts
+      .map((alert) => {
+        const isRed = alert.status === "Alerte";
+        const badgeColor = isRed
+          ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+          : "bg-amber-500/10 text-amber-500 border-amber-500/20";
+        const statusLabel = isRed ? "Grave / Alerte" : "À Surveiller";
+        const icon = isRed ? "shield-x" : "alert-circle";
+
+        return `
         <div class="p-5 bg-[#0B2112]/40 border border-[#143E23]/30 rounded-3xl flex flex-col sm:flex-row gap-4 text-left shadow-xl hover:border-emerald-500/20 transition-all duration-300 hover:scale-[1.01] animate-fadeIn">
           <!-- Alert Photo with hover lens icon effect -->
           <div class="relative group w-24 h-24 flex-shrink-0 mx-auto sm:mx-0">
@@ -94,7 +97,7 @@ export const NotificationsModule = {
             <div class="flex justify-between items-start gap-2 flex-wrap">
               <div>
                 <h4 class="text-sm font-black text-white flex items-center gap-1.5">
-                  <span class="h-2 w-2 rounded-full ${isRed ? 'bg-rose-500' : 'bg-amber-500'} animate-pulse"></span>
+                  <span class="h-2 w-2 rounded-full ${isRed ? "bg-rose-500" : "bg-amber-500"} animate-pulse"></span>
                   ${alert.cropName}
                 </h4>
                 <p class="text-[10px] text-[#819888] font-bold uppercase tracking-wider">${alert.cropField}</p>
@@ -117,7 +120,8 @@ export const NotificationsModule = {
           </div>
         </div>
       `;
-    }).join('');
+      })
+      .join("");
 
     if (window.lucide) {
       window.lucide.createIcons();
@@ -125,7 +129,7 @@ export const NotificationsModule = {
   },
 
   renderAdvisorChat() {
-    const container = document.getElementById('advisor-chat-container');
+    const container = document.getElementById("advisor-chat-container");
     if (!container) return;
 
     if (chatHistory.length === 0) {
@@ -167,17 +171,18 @@ export const NotificationsModule = {
       return;
     }
 
-    container.innerHTML = chatHistory.map(m => {
-      const isUser = m.role === 'user';
-      const bg = isUser 
-        ? 'bg-emerald-600 border border-emerald-500 text-white rounded-br-none ml-12' 
-        : 'bg-[#0B2112] border border-[#143E23]/40 text-slate-100 rounded-bl-none mr-12 shadow-md';
-      const align = isUser ? 'justify-end' : 'justify-start';
-      const label = isUser ? 'Vous' : 'KA-Advisor (IA)';
-      const labelColor = isUser ? 'text-emerald-300' : 'text-purple-300';
-      const icon = isUser ? 'user' : 'bot';
+    container.innerHTML = chatHistory
+      .map((m) => {
+        const isUser = m.role === "user";
+        const bg = isUser
+          ? "bg-emerald-600 border border-emerald-500 text-white rounded-br-none ml-12"
+          : "bg-[#0B2112] border border-[#143E23]/40 text-slate-100 rounded-bl-none mr-12 shadow-md";
+        const align = isUser ? "justify-end" : "justify-start";
+        const label = isUser ? "Vous" : "KA-Advisor (IA)";
+        const labelColor = isUser ? "text-emerald-300" : "text-purple-300";
+        const icon = isUser ? "user" : "bot";
 
-      return `
+        return `
         <div class="flex ${align} text-left animate-fadeIn">
           <div class="p-4 rounded-2xl ${bg} max-w-[85%] space-y-2">
             <div class="flex items-center gap-1.5 pb-1 border-b border-[#143E23]/15">
@@ -188,7 +193,8 @@ export const NotificationsModule = {
           </div>
         </div>
       `;
-    }).join('');
+      })
+      .join("");
 
     // Scroll chat to bottom
     container.scrollTop = container.scrollHeight;
@@ -201,16 +207,16 @@ export const NotificationsModule = {
   async sendToAdvisor(prompt) {
     if (!prompt.trim()) return;
 
-    chatHistory.push({ role: 'user', text: prompt });
+    chatHistory.push({ role: "user", text: prompt });
     this.renderAdvisorChat();
 
     // Show AI loading indicator
-    const chatContainer = document.getElementById('advisor-chat-container');
+    const chatContainer = document.getElementById("advisor-chat-container");
     const loadingId = `load-${Date.now()}`;
     if (chatContainer) {
-      const loader = document.createElement('div');
+      const loader = document.createElement("div");
       loader.id = loadingId;
-      loader.className = 'flex justify-start text-left';
+      loader.className = "flex justify-start text-left";
       loader.innerHTML = `
         <div class="p-3 bg-slate-50 dark:bg-[#061109]/70 border border-slate-100 dark:border-emerald-950/20 text-slate-500 rounded-2xl rounded-tl-none mr-12 flex items-center gap-2">
           <span class="text-[9px] font-black uppercase tracking-wider text-purple-400">🤖 Conseiller</span>
@@ -224,17 +230,17 @@ export const NotificationsModule = {
     }
 
     try {
-      const res = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: prompt,
-          history: chatHistory.slice(0, -1) // Excluding the latest prompt we just pushed
-        })
+          prompt,
+          history: chatHistory.slice(0, -1), // Excluding the latest prompt we just pushed
+        }),
       });
 
       const data = await res.json();
-      
+
       // Remove loading indicator
       const loaderEl = document.getElementById(loadingId);
       if (loaderEl) loaderEl.remove();
@@ -243,15 +249,15 @@ export const NotificationsModule = {
         throw new Error(data.error);
       }
 
-      chatHistory.push({ role: 'advisor', text: data.text });
+      chatHistory.push({ role: "advisor", text: data.text });
     } catch (err) {
-      logger.error('Notifications: Error sending to advisor', { error: err.message });
+      logger.error("Notifications: Error sending to advisor", { error: err.message });
       const loaderEl = document.getElementById(loadingId);
       if (loaderEl) loaderEl.remove();
 
       chatHistory.push({
-        role: 'advisor',
-        text: `⚠️ Désolé, une erreur technique est survenue lors de la communication avec l'IA horticole : ${err.message || 'Serveur indisponible'}.`
+        role: "advisor",
+        text: `⚠️ Désolé, une erreur technique est survenue lors de la communication avec l'IA horticole : ${err.message || "Serveur indisponible"}.`,
       });
     }
 
@@ -259,15 +265,15 @@ export const NotificationsModule = {
   },
 
   setupListeners() {
-    const form = document.getElementById('advisor-chat-form');
+    const form = document.getElementById("advisor-chat-form");
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener("submit", (e) => {
         e.preventDefault();
-        const input = document.getElementById('advisor-chat-input');
+        const input = document.getElementById("advisor-chat-input");
         if (!input) return;
 
         const val = input.value;
-        input.value = '';
+        input.value = "";
         this.sendToAdvisor(val);
       });
     }
@@ -285,18 +291,18 @@ export const NotificationsModule = {
 
     // Full screen image modal zoom
     window.viewFullSizePhoto = (url) => {
-      const modal = document.getElementById('photo-modal');
-      const img = document.getElementById('modal-image');
+      const modal = document.getElementById("photo-modal");
+      const img = document.getElementById("modal-image");
       if (modal && img) {
         img.src = url;
-        modal.classList.remove('hidden');
+        modal.classList.remove("hidden");
       }
     };
 
     window.closePhotoModal = () => {
-      const modal = document.getElementById('photo-modal');
+      const modal = document.getElementById("photo-modal");
       if (modal) {
-        modal.classList.add('hidden');
+        modal.classList.add("hidden");
       }
     };
 
@@ -305,11 +311,11 @@ export const NotificationsModule = {
       // Direct question payload
       const query = `Bonjour KA-Advisor, que me conseilles-tu d'utiliser pour soigner ma planche de ${cropName} ? Le diagnostic indique : "${diagnosticNotes}". Quels biopesticides locaux ou remèdes écologiques sénégalais comme le neem me conseilles-tu ?`;
       this.sendToAdvisor(query);
-      
+
       // Focus/Scroll into view of chat form input
-      const chatInput = document.getElementById('advisor-chat-input');
+      const chatInput = document.getElementById("advisor-chat-input");
       if (chatInput) {
-        chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        chatInput.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     };
 
@@ -317,46 +323,54 @@ export const NotificationsModule = {
     window.simulateDemoAlert = () => {
       const crops = KAStorage.getCrops();
       if (crops.length === 0) {
-        ErrorHandler.showToast("Aucune culture n'est actuellement configurée dans votre base.", 'error');
+        ErrorHandler.showToast(
+          "Aucune culture n'est actuellement configurée dans votre base.",
+          "error"
+        );
         return;
       }
 
       // Find Tomate or first crop
-      const targetCrop = crops.find(c => c.name.toLowerCase().includes('tomate')) || crops[0];
+      const targetCrop = crops.find((c) => c.name.toLowerCase().includes("tomate")) || crops[0];
       if (!targetCrop.photos) {
         targetCrop.photos = [];
       }
 
       // Check if demo already simulated
-      if (targetCrop.photos.some(p => p.id === 'demo-alert-1')) {
-        ErrorHandler.showToast("L'alerte de démonstration est déjà active ! Regardez le panneau de gauche.", 'error');
+      if (targetCrop.photos.some((p) => p.id === "demo-alert-1")) {
+        ErrorHandler.showToast(
+          "L'alerte de démonstration est déjà active ! Regardez le panneau de gauche.",
+          "error"
+        );
         return;
       }
 
       const demoAlert = {
-        id: 'demo-alert-1',
-        imageUrl: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?auto=format&fit=crop&w=600&q=80',
-        status: 'Alerte',
-        date: new Date().toLocaleDateString('fr-FR'),
-        notes: 'Anomalie identifiée : Feuilles flétries avec galeries foliaires argentées creusées par des larves. Forte suspicion de Mineuse de la Tomate (Tuta Absoluta) sur la planche.'
+        id: "demo-alert-1",
+        imageUrl:
+          "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?auto=format&fit=crop&w=600&q=80",
+        status: "Alerte",
+        date: new Date().toLocaleDateString("fr-FR"),
+        notes:
+          "Anomalie identifiée : Feuilles flétries avec galeries foliaires argentées creusées par des larves. Forte suspicion de Mineuse de la Tomate (Tuta Absoluta) sur la planche.",
       };
 
       targetCrop.photos.unshift(demoAlert);
       KAStorage.saveCrops(crops);
-      
+
       // Re-render alerts
       this.renderAlerts();
 
       // Scroll to top of alerts
-      const alertsContainer = document.getElementById('alerts-container');
+      const alertsContainer = document.getElementById("alerts-container");
       if (alertsContainer) {
-        alertsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        alertsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     };
-  }
+  },
 };
 
 // Start notifications module
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   NotificationsModule.init();
 });

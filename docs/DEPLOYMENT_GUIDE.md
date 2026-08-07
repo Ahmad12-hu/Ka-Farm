@@ -229,7 +229,7 @@ app.use(
   cors({
     origin: process.env.ALLOWED_ORIGINS?.split(",") || ["https://ka-farm.com"],
     credentials: true,
-  }),
+  })
 );
 ```
 

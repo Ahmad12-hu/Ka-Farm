@@ -380,9 +380,7 @@ test("devrait créer un employé complet", () => {
   expect(saved[0].dailyRate).toBeGreaterThan(0);
 
   // Vérifier le DOM
-  expect(document.getElementById("employees-table-body").innerHTML).toContain(
-    "Amadou",
-  );
+  expect(document.getElementById("employees-table-body").innerHTML).toContain("Amadou");
 });
 ```
 

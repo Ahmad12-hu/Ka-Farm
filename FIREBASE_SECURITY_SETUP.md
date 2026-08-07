@@ -30,6 +30,7 @@ firebase deploy --only firestore:rules
 2. Sélectionner le projet `lively-ethos-5k76w`
 3. Naviguer vers **Firestore Database** → **Rules**
 4. Copier le contenu de `firestore.rules` :
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -42,6 +43,7 @@ service cloud.firestore {
   }
 }
 ```
+
 5. Cliquer sur **Publier**
 
 ## Étape 2 : Générer un Service Account Firebase
@@ -60,6 +62,7 @@ service cloud.firestore {
 
 1. Ouvrir `.env.local` (créer le fichier s'il n'existe pas)
 2. Ajouter la variable `FIREBASE_SERVICE_ACCOUNT_KEY` avec le contenu JSON du service account en une seule ligne :
+
 ```bash
 FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"lively-ethos-5k76w","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n...","client_email":"...","client_id":"...","auth_uri":"...","token_uri":"...","auth_provider_x509_cert_url":"...","client_x509_cert_url":"..."}
 ```
@@ -87,6 +90,7 @@ npm run dev
 ```
 
 Vérifier dans les logs que vous voyez :
+
 ```
 Firebase Admin SDK initialized successfully
 ```
@@ -94,6 +98,7 @@ Firebase Admin SDK initialized successfully
 ### Tester en production
 
 1. Déployer sur Vercel :
+
 ```bash
 vercel --prod
 ```
@@ -108,12 +113,12 @@ vercel --prod
 ✅ **Écriture Firestore** : Seul le backend peut écrire via Firebase Admin SDK  
 ✅ **Service Account** : Jamais commité dans Git (protégé par .gitignore)  
 ✅ **Validation** : Toutes les entrées sont validées avec Zod côté backend  
-✅ **Rate Limiting** : Protection contre les abus via express-rate-limit  
+✅ **Rate Limiting** : Protection contre les abus via express-rate-limit
 
 ### Ce qui reste à faire
 
 ⚠️ **Authentification frontend** : Actuellement basée sur localStorage (à améliorer avec Firebase Auth ou JWT)  
-⚠️ **CORS** : Configuré pour localhost en développement, à restreindre en production  
+⚠️ **CORS** : Configuré pour localhost en développement, à restreindre en production
 
 ## Dépannage
 
@@ -164,5 +169,6 @@ Il est recommandé de faire une rotation régulière des clés de service accoun
 ### Surveillance
 
 Surveillez les logs Firebase pour détecter toute activité suspecte :
+
 - Firebase Console → Firestore → Usage
 - Firebase Console → Project Settings → Service Accounts

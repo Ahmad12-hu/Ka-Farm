@@ -1,7 +1,7 @@
 // KA Farm - Cryptographic Utilities
 // Uses Web Crypto API for secure password hashing (PBKDF2)
 
-import { logger } from './logger.js';
+import { logger } from "./logger.js";
 
 export const Crypto = {
   /**
@@ -14,17 +14,17 @@ export const Crypto = {
     try {
       const encoder = new TextEncoder();
       const keyMaterial = await crypto.subtle.importKey(
-        'raw',
+        "raw",
         encoder.encode(password),
-        'PBKDF2',
+        "PBKDF2",
         false,
-        ['deriveBits', 'deriveKey']
+        ["deriveBits", "deriveKey"]
       );
 
       // Generate or use provided salt
       let saltBuffer;
       if (salt) {
-        saltBuffer = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
+        saltBuffer = Uint8Array.from(atob(salt), (c) => c.charCodeAt(0));
       } else {
         saltBuffer = crypto.getRandomValues(new Uint8Array(16));
       }
@@ -33,28 +33,28 @@ export const Crypto = {
 
       const derivedKey = await crypto.subtle.deriveKey(
         {
-          name: 'PBKDF2',
+          name: "PBKDF2",
           salt: saltBuffer,
           iterations: 100000, // OWASP recommended minimum
-          hash: 'SHA-256'
+          hash: "SHA-256",
         },
         keyMaterial,
-        { name: 'AES-GCM', length: 256 },
+        { name: "AES-GCM", length: 256 },
         false,
-        ['deriveBits']
+        ["deriveBits"]
       );
 
-      const hashBuffer = await crypto.subtle.exportKey('raw', derivedKey);
+      const hashBuffer = await crypto.subtle.exportKey("raw", derivedKey);
       const hashArray = new Uint8Array(hashBuffer);
       const hashBase64 = btoa(String.fromCharCode(...hashArray));
 
       return {
         hash: hashBase64,
-        salt: saltBase64
+        salt: saltBase64,
       };
     } catch (error) {
-      logger.error('Crypto error', { error: error.message });
-      throw new Error('Impossible de sécuriser le mot de passe');
+      logger.error("Crypto error", { error: error.message });
+      throw new Error("Impossible de sécuriser le mot de passe");
     }
   },
 
@@ -70,7 +70,7 @@ export const Crypto = {
       const { hash: newHash } = await this.hashPassword(password, salt);
       return newHash === hash;
     } catch (error) {
-      logger.error('Verification error', { error: error.message });
+      logger.error("Verification error", { error: error.message });
       return false;
     }
   },
@@ -94,9 +94,9 @@ export const Crypto = {
     let hash = 0;
     for (let i = 0; i < input.length; i++) {
       const char = input.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash).toString(16);
-  }
+  },
 };

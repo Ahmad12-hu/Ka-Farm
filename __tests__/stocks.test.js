@@ -1,28 +1,36 @@
 // KA Farm - Tests pour le module Stocks
-import { StocksModule } from '../js/modules/stocks.js';
+import { StocksModule } from "../js/modules/stocks.js";
 
 // Mock localStorage
 const localStorageMock = (() => {
   let store = {};
   return {
     getItem: (key) => store[key] || null,
-    setItem: (key, value) => { store[key] = value.toString(); },
-    removeItem: (key) => { delete store[key]; },
-    clear: () => { store = {}; }
+    setItem: (key, value) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+Object.defineProperty(window, "localStorage", { value: localStorageMock });
 
 // Mock KAStorage
 const mockKAStorage = {
   getStocks: () => [],
-  saveStocks: (stocks) => { localStorage.setItem('ka_farm_stocks', JSON.stringify(stocks)); },
+  saveStocks: (stocks) => {
+    localStorage.setItem("ka_farm_stocks", JSON.stringify(stocks));
+  },
   getScopedKey: (key) => key,
-  init: () => {}
+  init: () => {},
 };
 
-Object.defineProperty(window, 'KAStorage', { value: mockKAStorage });
+Object.defineProperty(window, "KAStorage", { value: mockKAStorage });
 
 // Mock window.confirm
 window.confirm = () => true;
@@ -30,13 +38,13 @@ window.confirm = () => true;
 // Mock fetch
 global.fetch = () => Promise.resolve({});
 
-describe('StocksModule', () => {
+describe("StocksModule", () => {
   beforeEach(() => {
     localStorage.clear();
-    localStorage.setItem('ka_farm_stocks', JSON.stringify([]));
+    localStorage.setItem("ka_farm_stocks", JSON.stringify([]));
   });
 
-  test('devrait initialiser le module sans erreur', () => {
+  test("devrait initialiser le module sans erreur", () => {
     document.body.innerHTML = `
       <div id="stocks-container"></div>
       <div id="low-stocks-container"></div>
@@ -44,7 +52,7 @@ describe('StocksModule', () => {
     expect(() => StocksModule.init()).not.toThrow();
   });
 
-  test('devrait ajouter un article en stock', () => {
+  test("devrait ajouter un article en stock", () => {
     const stocks = [];
     mockKAStorage.saveStocks(stocks);
 
@@ -60,19 +68,35 @@ describe('StocksModule', () => {
       </form>
     `;
 
-    const form = document.getElementById('add-stock-form');
-    form.dispatchEvent(new Event('submit'));
+    const form = document.getElementById("add-stock-form");
+    form.dispatchEvent(new Event("submit"));
 
-    const savedStocks = JSON.parse(localStorage.getItem('ka_farm_stocks'));
+    const savedStocks = JSON.parse(localStorage.getItem("ka_farm_stocks"));
     expect(savedStocks.length).toBe(1);
-    expect(savedStocks[0].name).toBe('Engrais NPK');
+    expect(savedStocks[0].name).toBe("Engrais NPK");
     expect(savedStocks[0].quantity).toBe(50);
   });
 
-  test('devrait identifier les stocks bas', () => {
+  test("devrait identifier les stocks bas", () => {
     const stocks = [
-      { id: 'S-1', name: 'Engrais NPK', category: 'Engrais', quantity: 5, minQuantity: 10, unit: 'kg', expiryDate: '2027-06-26' },
-      { id: 'S-2', name: 'Semences Tomate', category: 'Semences', quantity: 100, minQuantity: 20, unit: 'sachets', expiryDate: '2026-12-01' }
+      {
+        id: "S-1",
+        name: "Engrais NPK",
+        category: "Engrais",
+        quantity: 5,
+        minQuantity: 10,
+        unit: "kg",
+        expiryDate: "2027-06-26",
+      },
+      {
+        id: "S-2",
+        name: "Semences Tomate",
+        category: "Semences",
+        quantity: 100,
+        minQuantity: 20,
+        unit: "sachets",
+        expiryDate: "2026-12-01",
+      },
     ];
     mockKAStorage.saveStocks(stocks);
 
@@ -82,14 +106,22 @@ describe('StocksModule', () => {
 
     StocksModule.renderLowStocks();
 
-    const container = document.getElementById('low-stocks-container');
-    expect(container.innerHTML).toContain('Engrais NPK');
-    expect(container.innerHTML).not.toContain('Semences Tomate');
+    const container = document.getElementById("low-stocks-container");
+    expect(container.innerHTML).toContain("Engrais NPK");
+    expect(container.innerHTML).not.toContain("Semences Tomate");
   });
 
-  test('devrait mettre à jour la quantité d\'un stock', () => {
+  test("devrait mettre à jour la quantité d'un stock", () => {
     const stocks = [
-      { id: 'S-1', name: 'Engrais NPK', category: 'Engrais', quantity: 50, minQuantity: 10, unit: 'kg', expiryDate: '2027-06-26' }
+      {
+        id: "S-1",
+        name: "Engrais NPK",
+        category: "Engrais",
+        quantity: 50,
+        minQuantity: 10,
+        unit: "kg",
+        expiryDate: "2027-06-26",
+      },
     ];
     mockKAStorage.saveStocks(stocks);
 
@@ -97,15 +129,23 @@ describe('StocksModule', () => {
       <div id="stocks-container"></div>
     `;
 
-    window.updateStockQuantity('S-1', 30);
+    window.updateStockQuantity("S-1", 30);
 
-    const savedStocks = JSON.parse(localStorage.getItem('ka_farm_stocks'));
+    const savedStocks = JSON.parse(localStorage.getItem("ka_farm_stocks"));
     expect(savedStocks[0].quantity).toBe(30);
   });
 
-  test('devrait supprimer un article du stock', () => {
+  test("devrait supprimer un article du stock", () => {
     const stocks = [
-      { id: 'S-1', name: 'Engrais NPK', category: 'Engrais', quantity: 50, minQuantity: 10, unit: 'kg', expiryDate: '2027-06-26' }
+      {
+        id: "S-1",
+        name: "Engrais NPK",
+        category: "Engrais",
+        quantity: 50,
+        minQuantity: 10,
+        unit: "kg",
+        expiryDate: "2027-06-26",
+      },
     ];
     mockKAStorage.saveStocks(stocks);
 
@@ -113,16 +153,32 @@ describe('StocksModule', () => {
       <div id="stocks-container"></div>
     `;
 
-    window.deleteStock('S-1');
+    window.deleteStock("S-1");
 
-    const savedStocks = JSON.parse(localStorage.getItem('ka_farm_stocks'));
+    const savedStocks = JSON.parse(localStorage.getItem("ka_farm_stocks"));
     expect(savedStocks.length).toBe(0);
   });
 
-  test('devrait filtrer les stocks par catégorie', () => {
+  test("devrait filtrer les stocks par catégorie", () => {
     const stocks = [
-      { id: 'S-1', name: 'Engrais NPK', category: 'Engrais', quantity: 50, minQuantity: 10, unit: 'kg', expiryDate: '2027-06-26' },
-      { id: 'S-2', name: 'Semences Tomate', category: 'Semences', quantity: 100, minQuantity: 20, unit: 'sachets', expiryDate: '2026-12-01' }
+      {
+        id: "S-1",
+        name: "Engrais NPK",
+        category: "Engrais",
+        quantity: 50,
+        minQuantity: 10,
+        unit: "kg",
+        expiryDate: "2027-06-26",
+      },
+      {
+        id: "S-2",
+        name: "Semences Tomate",
+        category: "Semences",
+        quantity: 100,
+        minQuantity: 20,
+        unit: "sachets",
+        expiryDate: "2026-12-01",
+      },
     ];
     mockKAStorage.saveStocks(stocks);
 
@@ -131,17 +187,35 @@ describe('StocksModule', () => {
       <div id="stocks-container"></div>
     `;
 
-    StocksModule.filterStocks('Engrais');
+    StocksModule.filterStocks("Engrais");
 
-    const container = document.getElementById('stocks-container');
-    expect(container.innerHTML).toContain('Engrais NPK');
-    expect(container.innerHTML).not.toContain('Semences Tomate');
+    const container = document.getElementById("stocks-container");
+    expect(container.innerHTML).toContain("Engrais NPK");
+    expect(container.innerHTML).not.toContain("Semences Tomate");
   });
 
-  test('devrait calculer la valeur totale du stock', () => {
+  test("devrait calculer la valeur totale du stock", () => {
     const stocks = [
-      { id: 'S-1', name: 'Engrais NPK', category: 'Engrais', quantity: 50, minQuantity: 10, unit: 'kg', expiryDate: '2027-06-26', unitCost: 500 },
-      { id: 'S-2', name: 'Semences Tomate', category: 'Semences', quantity: 100, minQuantity: 20, unit: 'sachets', expiryDate: '2026-12-01', unitCost: 1000 }
+      {
+        id: "S-1",
+        name: "Engrais NPK",
+        category: "Engrais",
+        quantity: 50,
+        minQuantity: 10,
+        unit: "kg",
+        expiryDate: "2027-06-26",
+        unitCost: 500,
+      },
+      {
+        id: "S-2",
+        name: "Semences Tomate",
+        category: "Semences",
+        quantity: 100,
+        minQuantity: 20,
+        unit: "sachets",
+        expiryDate: "2026-12-01",
+        unitCost: 1000,
+      },
     ];
     mockKAStorage.saveStocks(stocks);
 
@@ -151,7 +225,7 @@ describe('StocksModule', () => {
 
     StocksModule.renderStats();
 
-    const totalValue = document.getElementById('total-stock-value').textContent;
-    expect(totalValue).toBe('125 000'); // (50 * 500) + (100 * 1000)
+    const totalValue = document.getElementById("total-stock-value").textContent;
+    expect(totalValue).toBe("125 000"); // (50 * 500) + (100 * 1000)
   });
 });

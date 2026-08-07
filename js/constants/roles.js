@@ -3,10 +3,10 @@
 
 // User roles (for authentication and RBAC)
 export const USER_ROLES = {
-  TERRAIN: 'Terrain',
-  BUREAU: 'Bureau',
-  ADMIN: 'admin',
-  SUPER_ADMIN: 'super_admin'
+  TERRAIN: "Terrain",
+  BUREAU: "Bureau",
+  ADMIN: "admin",
+  SUPER_ADMIN: "super_admin",
 };
 
 // All valid user roles
@@ -14,21 +14,21 @@ export const ALL_USER_ROLES = [
   USER_ROLES.TERRAIN,
   USER_ROLES.BUREAU,
   USER_ROLES.ADMIN,
-  USER_ROLES.SUPER_ADMIN
+  USER_ROLES.SUPER_ADMIN,
 ];
 
 // Employee roles (job positions in the farm)
 export const EMPLOYEE_ROLES = [
-  'Ouvrier agricole',
-  'Chef d\'Exploitation',
-  'Chef d\'équipe pépinière',
-  'Ouvrière Maraîchère',
-  'Technicien Irrigation',
-  'Arroseur principal',
-  'Maraîcher',
-  'Maraîchère',
-  'Responsable Stocks',
-  'Responsable terrain'
+  "Ouvrier agricole",
+  "Chef d'Exploitation",
+  "Chef d'équipe pépinière",
+  "Ouvrière Maraîchère",
+  "Technicien Irrigation",
+  "Arroseur principal",
+  "Maraîcher",
+  "Maraîchère",
+  "Responsable Stocks",
+  "Responsable terrain",
 ];
 
 // Role permissions mapping
@@ -42,7 +42,7 @@ export const ROLE_PERMISSIONS = {
     canManageStocks: false,
     canViewFinances: true,
     canViewEmployees: true,
-    canManageHarvests: true
+    canManageHarvests: true,
   },
   [USER_ROLES.BUREAU]: {
     canEditCrops: true,
@@ -53,7 +53,7 @@ export const ROLE_PERMISSIONS = {
     canManageStocks: true,
     canViewFinances: true,
     canViewEmployees: true,
-    canManageHarvests: true
+    canManageHarvests: true,
   },
   [USER_ROLES.ADMIN]: {
     canEditCrops: true,
@@ -65,7 +65,7 @@ export const ROLE_PERMISSIONS = {
     canViewFinances: true,
     canViewEmployees: true,
     canManageHarvests: true,
-    isAdmin: true
+    isAdmin: true,
   },
   [USER_ROLES.SUPER_ADMIN]: {
     canEditCrops: true,
@@ -77,8 +77,8 @@ export const ROLE_PERMISSIONS = {
     canViewFinances: true,
     canViewEmployees: true,
     canManageHarvests: true,
-    isAdmin: true
-  }
+    isAdmin: true,
+  },
 };
 
 // Helper function to check if a role is valid

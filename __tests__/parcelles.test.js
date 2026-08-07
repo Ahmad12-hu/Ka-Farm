@@ -1,28 +1,36 @@
 // KA Farm - Tests pour le module Parcelles
-import { ParcellesModule } from '../js/modules/parcelles.js';
+import { ParcellesModule } from "../js/modules/parcelles.js";
 
 // Mock localStorage
 const localStorageMock = (() => {
   let store = {};
   return {
     getItem: (key) => store[key] || null,
-    setItem: (key, value) => { store[key] = value.toString(); },
-    removeItem: (key) => { delete store[key]; },
-    clear: () => { store = {}; }
+    setItem: (key, value) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+Object.defineProperty(window, "localStorage", { value: localStorageMock });
 
 // Mock KAStorage
 const mockKAStorage = {
   getParcelles: () => [],
-  saveParcelles: (parcelles) => { localStorage.setItem('ka_farm_parcelles', JSON.stringify(parcelles)); },
+  saveParcelles: (parcelles) => {
+    localStorage.setItem("ka_farm_parcelles", JSON.stringify(parcelles));
+  },
   getScopedKey: (key) => key,
-  init: () => {}
+  init: () => {},
 };
 
-Object.defineProperty(window, 'KAStorage', { value: mockKAStorage });
+Object.defineProperty(window, "KAStorage", { value: mockKAStorage });
 
 // Mock window.confirm
 window.confirm = () => true;
@@ -30,13 +38,13 @@ window.confirm = () => true;
 // Mock fetch
 global.fetch = () => Promise.resolve({});
 
-describe('ParcellesModule', () => {
+describe("ParcellesModule", () => {
   beforeEach(() => {
     localStorage.clear();
-    localStorage.setItem('ka_farm_parcelles', JSON.stringify([]));
+    localStorage.setItem("ka_farm_parcelles", JSON.stringify([]));
   });
 
-  test('devrait initialiser le module sans erreur', () => {
+  test("devrait initialiser le module sans erreur", () => {
     document.body.innerHTML = `
       <div id="parcelles-container"></div>
       <div id="parcelle-details-container"></div>
@@ -44,7 +52,7 @@ describe('ParcellesModule', () => {
     expect(() => ParcellesModule.init()).not.toThrow();
   });
 
-  test('devrait ajouter une parcelle', () => {
+  test("devrait ajouter une parcelle", () => {
     const parcelles = [];
     mockKAStorage.saveParcelles(parcelles);
 
@@ -58,18 +66,25 @@ describe('ParcellesModule', () => {
       </form>
     `;
 
-    const form = document.getElementById('add-parcelle-form');
-    form.dispatchEvent(new Event('submit'));
+    const form = document.getElementById("add-parcelle-form");
+    form.dispatchEvent(new Event("submit"));
 
-    const savedParcelles = JSON.parse(localStorage.getItem('ka_farm_parcelles'));
+    const savedParcelles = JSON.parse(localStorage.getItem("ka_farm_parcelles"));
     expect(savedParcelles.length).toBe(1);
-    expect(savedParcelles[0].name).toBe('Parcelle Nord');
+    expect(savedParcelles[0].name).toBe("Parcelle Nord");
     expect(savedParcelles[0].area).toBe(1000);
   });
 
-  test('devrait modifier une parcelle', () => {
+  test("devrait modifier une parcelle", () => {
     const parcelles = [
-      { id: 'P-001', name: 'Parcelle Nord', area: 1000, soilType: 'Argileux', crops: ['Tomate'], irrigationSystem: 'Goutte-à-goutte' }
+      {
+        id: "P-001",
+        name: "Parcelle Nord",
+        area: 1000,
+        soilType: "Argileux",
+        crops: ["Tomate"],
+        irrigationSystem: "Goutte-à-goutte",
+      },
     ];
     mockKAStorage.saveParcelles(parcelles);
 
@@ -84,18 +99,25 @@ describe('ParcellesModule', () => {
       <div id="parcelles-container"></div>
     `;
 
-    const form = document.getElementById('edit-parcelle-form');
-    form.dispatchEvent(new Event('submit'));
+    const form = document.getElementById("edit-parcelle-form");
+    form.dispatchEvent(new Event("submit"));
 
-    const savedParcelles = JSON.parse(localStorage.getItem('ka_farm_parcelles'));
-    expect(savedParcelles[0].name).toBe('Parcelle Nord Modifiée');
+    const savedParcelles = JSON.parse(localStorage.getItem("ka_farm_parcelles"));
+    expect(savedParcelles[0].name).toBe("Parcelle Nord Modifiée");
     expect(savedParcelles[0].area).toBe(1500);
-    expect(savedParcelles[0].soilType).toBe('Sableux');
+    expect(savedParcelles[0].soilType).toBe("Sableux");
   });
 
-  test('devrait supprimer une parcelle', () => {
+  test("devrait supprimer une parcelle", () => {
     const parcelles = [
-      { id: 'P-001', name: 'Parcelle Nord', area: 1000, soilType: 'Argileux', crops: ['Tomate'], irrigationSystem: 'Goutte-à-goutte' }
+      {
+        id: "P-001",
+        name: "Parcelle Nord",
+        area: 1000,
+        soilType: "Argileux",
+        crops: ["Tomate"],
+        irrigationSystem: "Goutte-à-goutte",
+      },
     ];
     mockKAStorage.saveParcelles(parcelles);
 
@@ -103,15 +125,22 @@ describe('ParcellesModule', () => {
       <div id="parcelles-container"></div>
     `;
 
-    window.deleteParcelle('P-001');
+    window.deleteParcelle("P-001");
 
-    const savedParcelles = JSON.parse(localStorage.getItem('ka_farm_parcelles'));
+    const savedParcelles = JSON.parse(localStorage.getItem("ka_farm_parcelles"));
     expect(savedParcelles.length).toBe(0);
   });
 
-  test('devrait sélectionner une parcelle et afficher les détails', () => {
+  test("devrait sélectionner une parcelle et afficher les détails", () => {
     const parcelles = [
-      { id: 'P-001', name: 'Parcelle Nord', area: 1000, soilType: 'Argileux', crops: ['Tomate'], irrigationSystem: 'Goutte-à-goutte' }
+      {
+        id: "P-001",
+        name: "Parcelle Nord",
+        area: 1000,
+        soilType: "Argileux",
+        crops: ["Tomate"],
+        irrigationSystem: "Goutte-à-goutte",
+      },
     ];
     mockKAStorage.saveParcelles(parcelles);
 
@@ -120,17 +149,31 @@ describe('ParcellesModule', () => {
       <div id="parcelle-details-container"></div>
     `;
 
-    ParcellesModule.selectParcelle('P-001');
+    ParcellesModule.selectParcelle("P-001");
 
-    const detailsContainer = document.getElementById('parcelle-details-container');
-    expect(detailsContainer.innerHTML).toContain('Parcelle Nord');
-    expect(detailsContainer.innerHTML).toContain('1 000');
+    const detailsContainer = document.getElementById("parcelle-details-container");
+    expect(detailsContainer.innerHTML).toContain("Parcelle Nord");
+    expect(detailsContainer.innerHTML).toContain("1 000");
   });
 
-  test('devrait calculer la surface totale des parcelles', () => {
+  test("devrait calculer la surface totale des parcelles", () => {
     const parcelles = [
-      { id: 'P-001', name: 'Parcelle Nord', area: 1000, soilType: 'Argileux', crops: ['Tomate'], irrigationSystem: 'Goutte-à-goutte' },
-      { id: 'P-002', name: 'Parcelle Sud', area: 1500, soilType: 'Sableux', crops: ['Oignon'], irrigationSystem: 'Aspersion' }
+      {
+        id: "P-001",
+        name: "Parcelle Nord",
+        area: 1000,
+        soilType: "Argileux",
+        crops: ["Tomate"],
+        irrigationSystem: "Goutte-à-goutte",
+      },
+      {
+        id: "P-002",
+        name: "Parcelle Sud",
+        area: 1500,
+        soilType: "Sableux",
+        crops: ["Oignon"],
+        irrigationSystem: "Aspersion",
+      },
     ];
     mockKAStorage.saveParcelles(parcelles);
 
@@ -140,14 +183,28 @@ describe('ParcellesModule', () => {
 
     ParcellesModule.renderStats();
 
-    const totalArea = document.getElementById('total-area').textContent;
-    expect(totalArea).toBe('2 500');
+    const totalArea = document.getElementById("total-area").textContent;
+    expect(totalArea).toBe("2 500");
   });
 
-  test('devrait filtrer les parcelles par culture', () => {
+  test("devrait filtrer les parcelles par culture", () => {
     const parcelles = [
-      { id: 'P-001', name: 'Parcelle Nord', area: 1000, soilType: 'Argileux', crops: ['Tomate'], irrigationSystem: 'Goutte-à-goutte' },
-      { id: 'P-002', name: 'Parcelle Sud', area: 1500, soilType: 'Sableux', crops: ['Oignon'], irrigationSystem: 'Aspersion' }
+      {
+        id: "P-001",
+        name: "Parcelle Nord",
+        area: 1000,
+        soilType: "Argileux",
+        crops: ["Tomate"],
+        irrigationSystem: "Goutte-à-goutte",
+      },
+      {
+        id: "P-002",
+        name: "Parcelle Sud",
+        area: 1500,
+        soilType: "Sableux",
+        crops: ["Oignon"],
+        irrigationSystem: "Aspersion",
+      },
     ];
     mockKAStorage.saveParcelles(parcelles);
 
@@ -156,10 +213,10 @@ describe('ParcellesModule', () => {
       <div id="parcelles-container"></div>
     `;
 
-    ParcellesModule.filterParcelles('Tomate');
+    ParcellesModule.filterParcelles("Tomate");
 
-    const container = document.getElementById('parcelles-container');
-    expect(container.innerHTML).toContain('Parcelle Nord');
-    expect(container.innerHTML).not.toContain('Parcelle Sud');
+    const container = document.getElementById("parcelles-container");
+    expect(container.innerHTML).toContain("Parcelle Nord");
+    expect(container.innerHTML).not.toContain("Parcelle Sud");
   });
 });

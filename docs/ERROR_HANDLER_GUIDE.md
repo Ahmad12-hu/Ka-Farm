@@ -289,10 +289,7 @@ Object.defineProperty(window, "ErrorHandler", {
 });
 
 // Vérification
-expect(mockErrorHandler.showToast).toHaveBeenCalledWith(
-  "Message attendu",
-  "success",
-);
+expect(mockErrorHandler.showToast).toHaveBeenCalledWith("Message attendu", "success");
 ```
 
 ## 📊 Monitoring Production

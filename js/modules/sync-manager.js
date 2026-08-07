@@ -7,7 +7,7 @@ class SyncManager {
   constructor() {
     this.isOnline = navigator.onLine;
     this.isSyncing = false;
-    this.lastSync = localStorage.getItem('ka_farm_last_sync') || null;
+    this.lastSync = localStorage.getItem("ka_farm_last_sync") || null;
     this.syncInterval = null;
     this.retryCount = 0;
     this.maxRetries = 3;
@@ -15,8 +15,8 @@ class SyncManager {
 
   init() {
     // Écouter les changements de connexion
-    window.addEventListener('online', () => this.handleOnline());
-    window.addEventListener('offline', () => this.handleOffline());
+    window.addEventListener("online", () => this.handleOnline());
+    window.addEventListener("offline", () => this.handleOffline());
 
     // Vérifier la connexion initiale
     this.updateOnlineStatus();
@@ -28,7 +28,6 @@ class SyncManager {
     if (this.isOnline) {
       this.sync();
     }
-
   }
 
   updateOnlineStatus() {
@@ -39,10 +38,10 @@ class SyncManager {
   handleOnline() {
     this.isOnline = true;
     this.updateUI();
-    
+
     // Afficher notification
     if (window.ErrorHandler) {
-      window.ErrorHandler.showToast('Connexion rétablie. Synchronisation en cours...', 'info');
+      window.ErrorHandler.showToast("Connexion rétablie. Synchronisation en cours...", "info");
     }
 
     // Synchroniser immédiatement
@@ -55,36 +54,37 @@ class SyncManager {
 
     // Afficher notification
     if (window.ErrorHandler) {
-      window.ErrorHandler.showToast('Mode hors ligne activé. Vos données sont sauvegardées localement.', 'warning');
+      window.ErrorHandler.showToast(
+        "Mode hors ligne activé. Vos données sont sauvegardées localement.",
+        "warning"
+      );
     }
   }
 
   updateUI() {
     // Mettre à jour l'indicateur de connexion
-    const indicator = document.getElementById('connection-indicator');
+    const indicator = document.getElementById("connection-indicator");
     if (indicator) {
-      indicator.className = this.isOnline 
-        ? 'connection-indicator online' 
-        : 'connection-indicator offline';
-      indicator.title = this.isOnline 
-        ? 'En ligne' 
-        : 'Hors ligne';
+      indicator.className = this.isOnline
+        ? "connection-indicator online"
+        : "connection-indicator offline";
+      indicator.title = this.isOnline ? "En ligne" : "Hors ligne";
     }
 
     // Mettre à jour le statut de synchronisation
-    const syncStatus = document.getElementById('sync-status');
+    const syncStatus = document.getElementById("sync-status");
     if (syncStatus) {
       if (this.isSyncing) {
-        syncStatus.textContent = 'Synchronisation...';
-        syncStatus.className = 'sync-status syncing';
+        syncStatus.textContent = "Synchronisation...";
+        syncStatus.className = "sync-status syncing";
       } else if (!this.isOnline) {
-        syncStatus.textContent = 'Hors ligne';
-        syncStatus.className = 'sync-status offline';
+        syncStatus.textContent = "Hors ligne";
+        syncStatus.className = "sync-status offline";
       } else {
-        syncStatus.textContent = this.lastSync 
+        syncStatus.textContent = this.lastSync
           ? `Synchronisé ${this.formatLastSync(this.lastSync)}`
-          : 'En ligne';
-        syncStatus.className = 'sync-status online';
+          : "En ligne";
+        syncStatus.className = "sync-status online";
       }
     }
   }
@@ -96,7 +96,7 @@ class SyncManager {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return 'à l\'instant';
+    if (minutes < 1) return "à l'instant";
     if (minutes < 60) return `il y a ${minutes} min`;
     if (hours < 24) return `il y a ${hours}h`;
     return `il y a ${days}j`;
@@ -129,32 +129,28 @@ class SyncManager {
     try {
       // Récupérer la file d'attente
       const queue = await window.offlineStorage.getSyncQueue();
-      
+
       if (queue.length === 0) {
         this.isSyncing = false;
         this.updateUI();
         return;
       }
 
-
       // Traiter chaque élément de la file
       for (const item of queue) {
         try {
           await this.processSyncItem(item);
           // Supprimer de la file après succès
-          await window.offlineStorage.delete('syncQueue', item.id);
+          await window.offlineStorage.delete("syncQueue", item.id);
           this.retryCount = 0;
         } catch (error) {
-          console.error('[SyncManager] Erreur sync item:', error);
+          console.error("[SyncManager] Erreur sync item:", error);
           this.retryCount++;
 
           if (this.retryCount >= this.maxRetries) {
-            console.error('[SyncManager] Nombre maximum de tentatives atteint');
+            console.error("[SyncManager] Nombre maximum de tentatives atteint");
             if (window.ErrorHandler) {
-              window.ErrorHandler.showToast(
-                `Erreur de synchronisation: ${error.message}`,
-                'error'
-              );
+              window.ErrorHandler.showToast(`Erreur de synchronisation: ${error.message}`, "error");
             }
             break;
           }
@@ -163,19 +159,18 @@ class SyncManager {
 
       // Mettre à jour le timestamp de dernière synchronisation
       this.lastSync = Date.now();
-      localStorage.setItem('ka_farm_last_sync', this.lastSync.toString());
+      localStorage.setItem("ka_farm_last_sync", this.lastSync.toString());
 
       // Rafraîchir les données depuis Firebase
       await this.refreshFromFirebase();
 
       if (window.ErrorHandler) {
-        window.ErrorHandler.showToast('Synchronisation terminée', 'success');
+        window.ErrorHandler.showToast("Synchronisation terminée", "success");
       }
-
     } catch (error) {
-      console.error('[SyncManager] Erreur synchronisation:', error);
+      console.error("[SyncManager] Erreur synchronisation:", error);
       if (window.ErrorHandler) {
-        window.ErrorHandler.showToast('Erreur lors de la synchronisation', 'error');
+        window.ErrorHandler.showToast("Erreur lors de la synchronisation", "error");
       }
     } finally {
       this.isSyncing = false;
@@ -187,13 +182,13 @@ class SyncManager {
     const { type, collection, data } = item;
 
     switch (type) {
-      case 'CREATE':
+      case "CREATE":
         await this.createInFirebase(collection, data);
         break;
-      case 'UPDATE':
+      case "UPDATE":
         await this.updateInFirebase(collection, data);
         break;
-      case 'DELETE':
+      case "DELETE":
         await this.deleteInFirebase(collection, data.id);
         break;
       default:
@@ -203,33 +198,33 @@ class SyncManager {
   async createInFirebase(collection, data) {
     // Implémenter la création dans Firebase
     // Ces méthodes seront connectées aux modules respectifs
-    if (collection === 'crops' && window.CropsModule) {
+    if (collection === "crops" && window.CropsModule) {
       await window.CropsModule.createCrop(data);
-    } else if (collection === 'stocks' && window.StocksModule) {
+    } else if (collection === "stocks" && window.StocksModule) {
       await window.StocksModule.createStock(data);
-    } else if (collection === 'finances' && window.FinancesModule) {
+    } else if (collection === "finances" && window.FinancesModule) {
       await window.FinancesModule.createFinance(data);
     }
   }
 
   async updateInFirebase(collection, data) {
     // Implémenter la mise à jour dans Firebase
-    if (collection === 'crops' && window.CropsModule) {
+    if (collection === "crops" && window.CropsModule) {
       await window.CropsModule.updateCrop(data.id, data);
-    } else if (collection === 'stocks' && window.StocksModule) {
+    } else if (collection === "stocks" && window.StocksModule) {
       await window.StocksModule.updateStock(data.id, data);
-    } else if (collection === 'finances' && window.FinancesModule) {
+    } else if (collection === "finances" && window.FinancesModule) {
       await window.FinancesModule.updateFinance(data.id, data);
     }
   }
 
   async deleteInFirebase(collection, id) {
     // Implémenter la suppression dans Firebase
-    if (collection === 'crops' && window.CropsModule) {
+    if (collection === "crops" && window.CropsModule) {
       await window.CropsModule.deleteCrop(id);
-    } else if (collection === 'stocks' && window.StocksModule) {
+    } else if (collection === "stocks" && window.StocksModule) {
       await window.StocksModule.deleteStock(id);
-    } else if (collection === 'finances' && window.FinancesModule) {
+    } else if (collection === "finances" && window.FinancesModule) {
       await window.FinancesModule.deleteFinance(id);
     }
   }
@@ -239,7 +234,7 @@ class SyncManager {
     // Cette méthode sera appelée après une synchronisation réussie
 
     // Déclencher un événement pour que les modules se rafraîchissent
-    window.dispatchEvent(new CustomEvent('ka_data_refresh'));
+    window.dispatchEvent(new CustomEvent("ka_data_refresh"));
   }
 
   // Méthodes publiques pour les modules
@@ -247,7 +242,7 @@ class SyncManager {
   async queueOperation(operation) {
     // Ajouter une opération à la file de synchronisation
     await window.offlineStorage.addToSyncQueue(operation);
-    
+
     // Si en ligne, synchroniser immédiatement
     if (this.isOnline) {
       setTimeout(() => this.sync(), 1000);
@@ -264,8 +259,8 @@ class SyncManager {
 window.syncManager = new SyncManager();
 
 // Initialiser au chargement
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => window.syncManager.init());
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => window.syncManager.init());
 } else {
   window.syncManager.init();
 }

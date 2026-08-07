@@ -1,36 +1,52 @@
 // KA Farm - Tests pour le module Employees
-import { EmployeesModule } from '../js/modules/employees.js';
+import { EmployeesModule } from "../js/modules/employees.js";
 
 // Mock localStorage
 const localStorageMock = (() => {
   let store = {};
   return {
     getItem: (key) => store[key] || null,
-    setItem: (key, value) => { store[key] = value.toString(); },
-    removeItem: (key) => { delete store[key]; },
-    clear: () => { store = {}; }
+    setItem: (key, value) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+Object.defineProperty(window, "localStorage", { value: localStorageMock });
 
 // Mock KAStorage
 const mockKAStorage = {
   getEmployees: () => [],
-  saveEmployees: (emp) => { localStorage.setItem('ka_farm_employees', JSON.stringify(emp)); },
+  saveEmployees: (emp) => {
+    localStorage.setItem("ka_farm_employees", JSON.stringify(emp));
+  },
   getAttendance: () => [],
-  saveAttendance: (att) => { localStorage.setItem('ka_farm_attendance', JSON.stringify(att)); },
+  saveAttendance: (att) => {
+    localStorage.setItem("ka_farm_attendance", JSON.stringify(att));
+  },
   getEmployeePayments: () => [],
-  saveEmployeePayments: (pay) => { localStorage.setItem('ka_farm_employee_payments', JSON.stringify(pay)); },
+  saveEmployeePayments: (pay) => {
+    localStorage.setItem("ka_farm_employee_payments", JSON.stringify(pay));
+  },
   getTasks: () => [],
-  saveTasks: (tasks) => { localStorage.setItem('ka_farm_tasks', JSON.stringify(tasks)); },
+  saveTasks: (tasks) => {
+    localStorage.setItem("ka_farm_tasks", JSON.stringify(tasks));
+  },
   getFinances: () => [],
-  saveFinances: (fin) => { localStorage.setItem('ka_farm_finances', JSON.stringify(fin)); },
+  saveFinances: (fin) => {
+    localStorage.setItem("ka_farm_finances", JSON.stringify(fin));
+  },
   getScopedKey: (key) => key,
-  init: () => {}
+  init: () => {},
 };
 
-Object.defineProperty(window, 'KAStorage', { value: mockKAStorage });
+Object.defineProperty(window, "KAStorage", { value: mockKAStorage });
 
 // Mock window.confirm
 window.confirm = () => true;
@@ -38,17 +54,17 @@ window.confirm = () => true;
 // Mock fetch
 global.fetch = () => Promise.resolve({});
 
-describe('EmployeesModule', () => {
+describe("EmployeesModule", () => {
   beforeEach(() => {
     localStorage.clear();
     // Prevent demo data loading
-    localStorage.setItem('ka_farm_employees', JSON.stringify([]));
-    localStorage.setItem('ka_farm_attendance', JSON.stringify([]));
-    localStorage.setItem('ka_farm_employee_payments', JSON.stringify([]));
-    localStorage.setItem('ka_farm_tasks', JSON.stringify([]));
+    localStorage.setItem("ka_farm_employees", JSON.stringify([]));
+    localStorage.setItem("ka_farm_attendance", JSON.stringify([]));
+    localStorage.setItem("ka_farm_employee_payments", JSON.stringify([]));
+    localStorage.setItem("ka_farm_tasks", JSON.stringify([]));
   });
 
-  test('devrait initialiser le module sans erreur', () => {
+  test("devrait initialiser le module sans erreur", () => {
     document.body.innerHTML = `
       <div id="employees-table-body"></div>
       <div id="attendance-table-body"></div>
@@ -57,7 +73,7 @@ describe('EmployeesModule', () => {
     expect(() => EmployeesModule.init()).not.toThrow();
   });
 
-  test('devrait ajouter un employé', () => {
+  test("devrait ajouter un employé", () => {
     const employees = [];
     mockKAStorage.saveEmployees(employees);
 
@@ -72,18 +88,25 @@ describe('EmployeesModule', () => {
       <div id="employees-table-body"></div>
     `;
 
-    const form = document.getElementById('add-employee-form');
-    form.dispatchEvent(new Event('submit'));
+    const form = document.getElementById("add-employee-form");
+    form.dispatchEvent(new Event("submit"));
 
-    const savedEmployees = JSON.parse(localStorage.getItem('ka_farm_employees'));
+    const savedEmployees = JSON.parse(localStorage.getItem("ka_farm_employees"));
     expect(savedEmployees.length).toBe(1);
-    expect(savedEmployees[0].name).toBe('Amadou Diallo');
+    expect(savedEmployees[0].name).toBe("Amadou Diallo");
     expect(savedEmployees[0].dailyRate).toBe(3500);
   });
 
-  test('devrait modifier un employé', () => {
+  test("devrait modifier un employé", () => {
     const employees = [
-      { id: 'E-001', name: 'Amadou Diallo', phone: '771234567', role: 'Ouvrier', dailyRate: 3500, status: 'Actif' }
+      {
+        id: "E-001",
+        name: "Amadou Diallo",
+        phone: "771234567",
+        role: "Ouvrier",
+        dailyRate: 3500,
+        status: "Actif",
+      },
     ];
     mockKAStorage.saveEmployees(employees);
 
@@ -99,17 +122,24 @@ describe('EmployeesModule', () => {
       <div id="employees-table-body"></div>
     `;
 
-    const form = document.getElementById('edit-employee-form');
-    form.dispatchEvent(new Event('submit'));
+    const form = document.getElementById("edit-employee-form");
+    form.dispatchEvent(new Event("submit"));
 
-    const savedEmployees = JSON.parse(localStorage.getItem('ka_farm_employees'));
-    expect(savedEmployees[0].name).toBe('Amadou Diallo Modifié');
+    const savedEmployees = JSON.parse(localStorage.getItem("ka_farm_employees"));
+    expect(savedEmployees[0].name).toBe("Amadou Diallo Modifié");
     expect(savedEmployees[0].dailyRate).toBe(4000);
   });
 
-  test('devrait supprimer un employé', () => {
+  test("devrait supprimer un employé", () => {
     const employees = [
-      { id: 'E-001', name: 'Amadou Diallo', phone: '771234567', role: 'Ouvrier', dailyRate: 3500, status: 'Actif' }
+      {
+        id: "E-001",
+        name: "Amadou Diallo",
+        phone: "771234567",
+        role: "Ouvrier",
+        dailyRate: 3500,
+        status: "Actif",
+      },
     ];
     mockKAStorage.saveEmployees(employees);
 
@@ -117,15 +147,22 @@ describe('EmployeesModule', () => {
       <div id="employees-table-body"></div>
     `;
 
-    window.deleteEmployee('E-001');
+    window.deleteEmployee("E-001");
 
-    const savedEmployees = JSON.parse(localStorage.getItem('ka_farm_employees'));
+    const savedEmployees = JSON.parse(localStorage.getItem("ka_farm_employees"));
     expect(savedEmployees.length).toBe(0);
   });
 
-  test('devrait enregistrer un pointage journalier', () => {
+  test("devrait enregistrer un pointage journalier", () => {
     const employees = [
-      { id: 'E-001', name: 'Amadou Diallo', phone: '771234567', role: 'Ouvrier', dailyRate: 3500, status: 'Actif' }
+      {
+        id: "E-001",
+        name: "Amadou Diallo",
+        phone: "771234567",
+        role: "Ouvrier",
+        dailyRate: 3500,
+        status: "Actif",
+      },
     ];
     mockKAStorage.saveEmployees(employees);
 
@@ -138,23 +175,30 @@ describe('EmployeesModule', () => {
       <div id="attendance-table-body"></div>
     `;
 
-    const form = document.getElementById('attendance-form');
-    form.dispatchEvent(new Event('submit'));
+    const form = document.getElementById("attendance-form");
+    form.dispatchEvent(new Event("submit"));
 
-    const savedAttendance = JSON.parse(localStorage.getItem('ka_farm_attendance'));
+    const savedAttendance = JSON.parse(localStorage.getItem("ka_farm_attendance"));
     expect(savedAttendance.length).toBe(1);
-    expect(savedAttendance[0].employeeId).toBe('E-001');
-    expect(savedAttendance[0].status).toBe('Présent');
+    expect(savedAttendance[0].employeeId).toBe("E-001");
+    expect(savedAttendance[0].status).toBe("Présent");
   });
 
-  test('devrait calculer le salaire correctement', () => {
+  test("devrait calculer le salaire correctement", () => {
     const employees = [
-      { id: 'E-001', name: 'Amadou Diallo', phone: '771234567', role: 'Ouvrier', dailyRate: 3500, status: 'Actif' }
+      {
+        id: "E-001",
+        name: "Amadou Diallo",
+        phone: "771234567",
+        role: "Ouvrier",
+        dailyRate: 3500,
+        status: "Actif",
+      },
     ];
     const attendance = [
-      { employeeId: 'E-001', date: '2026-06-01', status: 'Présent', notes: '' },
-      { employeeId: 'E-001', date: '2026-06-02', status: 'Présent', notes: '' },
-      { employeeId: 'E-001', date: '2026-06-03', status: 'Demi-journée', notes: '' }
+      { employeeId: "E-001", date: "2026-06-01", status: "Présent", notes: "" },
+      { employeeId: "E-001", date: "2026-06-02", status: "Présent", notes: "" },
+      { employeeId: "E-001", date: "2026-06-03", status: "Demi-journée", notes: "" },
     ];
     mockKAStorage.saveEmployees(employees);
     mockKAStorage.saveAttendance(attendance);
@@ -173,14 +217,28 @@ describe('EmployeesModule', () => {
 
     window.calculateSalary();
 
-    const grossSalary = document.getElementById('calc-gross-salary').textContent;
-    expect(grossSalary).toBe('9 500'); // 2.5 jours * 3500
+    const grossSalary = document.getElementById("calc-gross-salary").textContent;
+    expect(grossSalary).toBe("9 500"); // 2.5 jours * 3500
   });
 
-  test('devrait filtrer les employés par recherche', () => {
+  test("devrait filtrer les employés par recherche", () => {
     const employees = [
-      { id: 'E-001', name: 'Amadou Diallo', phone: '771234567', role: 'Ouvrier', dailyRate: 3500, status: 'Actif' },
-      { id: 'E-002', name: 'Fatou Sow', phone: '781234567', role: 'Responsable', dailyRate: 5000, status: 'Actif' }
+      {
+        id: "E-001",
+        name: "Amadou Diallo",
+        phone: "771234567",
+        role: "Ouvrier",
+        dailyRate: 3500,
+        status: "Actif",
+      },
+      {
+        id: "E-002",
+        name: "Fatou Sow",
+        phone: "781234567",
+        role: "Responsable",
+        dailyRate: 5000,
+        status: "Actif",
+      },
     ];
     mockKAStorage.saveEmployees(employees);
 
@@ -189,10 +247,10 @@ describe('EmployeesModule', () => {
       <div id="employees-table-body"></div>
     `;
 
-    EmployeesModule.filterEmployees('amadou');
+    EmployeesModule.filterEmployees("amadou");
 
-    const tbody = document.getElementById('employees-table-body');
-    expect(tbody.innerHTML).toContain('Amadou Diallo');
-    expect(tbody.innerHTML).not.toContain('Fatou Sow');
+    const tbody = document.getElementById("employees-table-body");
+    expect(tbody.innerHTML).toContain("Amadou Diallo");
+    expect(tbody.innerHTML).not.toContain("Fatou Sow");
   });
 });

@@ -2,7 +2,7 @@
 // Abstraction layer for Firestore operations with offline support
 // Automatically queues changes when offline
 
-import { syncManager } from './sync-manager.js';
+import { syncManager } from "./sync-manager.js";
 
 export class FirebaseAdapter {
   constructor() {
@@ -14,7 +14,7 @@ export class FirebaseAdapter {
    * Initialize adapter
    */
   init() {
-    console.log('[FirebaseAdapter] Initialized');
+    console.log("[FirebaseAdapter] Initialized");
   }
 
   /**
@@ -24,7 +24,7 @@ export class FirebaseAdapter {
    * @param {string} enterpriseId - Enterprise scope
    * @returns {Promise<boolean>}
    */
-  async saveData(key, value, enterpriseId = 'ka_farm') {
+  async saveData(key, value, enterpriseId = "ka_farm") {
     try {
       // 1. Save to localStorage immediately (optimistic update)
       const scopedKey = this.getScopedKey(key, enterpriseId);
@@ -36,10 +36,10 @@ export class FirebaseAdapter {
         action: `SAVE_${key.toUpperCase()}`,
         data: {
           key: scopedKey,
-          value: value,
-          timestamp: Date.now()
+          value,
+          timestamp: Date.now(),
         },
-        enterpriseId: enterpriseId
+        enterpriseId,
       });
 
       // 3. Emit local change immediately
@@ -48,7 +48,7 @@ export class FirebaseAdapter {
       console.log(`[FirebaseAdapter] Saved ${key} (${actionId})`);
       return true;
     } catch (err) {
-      console.error('[FirebaseAdapter] saveData failed:', err);
+      console.error("[FirebaseAdapter] saveData failed:", err);
       return false;
     }
   }
@@ -60,7 +60,7 @@ export class FirebaseAdapter {
    * @param {string} enterpriseId - Enterprise scope
    * @returns {Object} Data from cache or fallback
    */
-  loadData(key, fallback = null, enterpriseId = 'ka_farm') {
+  loadData(key, fallback = null, enterpriseId = "ka_farm") {
     try {
       const scopedKey = this.getScopedKey(key, enterpriseId);
 
@@ -80,7 +80,7 @@ export class FirebaseAdapter {
       // 3. Return fallback
       return fallback;
     } catch (err) {
-      console.error('[FirebaseAdapter] loadData failed:', err);
+      console.error("[FirebaseAdapter] loadData failed:", err);
       return fallback;
     }
   }
@@ -92,10 +92,10 @@ export class FirebaseAdapter {
    * @param {string} enterpriseId - Enterprise scope
    * @returns {Function} Unsubscribe function
    */
-  subscribeData(key, callback, enterpriseId = 'ka_farm') {
+  subscribeData(key, callback, enterpriseId = "ka_farm") {
     try {
       const scopedKey = this.getScopedKey(key, enterpriseId);
-      
+
       // Store subscription
       if (!this.subscriptions.has(scopedKey)) {
         this.subscriptions.set(scopedKey, []);
@@ -117,7 +117,7 @@ export class FirebaseAdapter {
         }
       };
     } catch (err) {
-      console.error('[FirebaseAdapter] subscribeData failed:', err);
+      console.error("[FirebaseAdapter] subscribeData failed:", err);
       return () => {}; // No-op unsubscribe
     }
   }
@@ -128,7 +128,7 @@ export class FirebaseAdapter {
    * @param {string} enterpriseId - Enterprise scope
    * @returns {Promise<boolean>}
    */
-  async deleteData(key, enterpriseId = 'ka_farm') {
+  async deleteData(key, enterpriseId = "ka_farm") {
     try {
       const scopedKey = this.getScopedKey(key, enterpriseId);
 
@@ -141,15 +141,15 @@ export class FirebaseAdapter {
         action: `DELETE_${key.toUpperCase()}`,
         data: {
           key: scopedKey,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
-        enterpriseId: enterpriseId
+        enterpriseId,
       });
 
       console.log(`[FirebaseAdapter] Deleted ${key}`);
       return true;
     } catch (err) {
-      console.error('[FirebaseAdapter] deleteData failed:', err);
+      console.error("[FirebaseAdapter] deleteData failed:", err);
       return false;
     }
   }
@@ -160,17 +160,15 @@ export class FirebaseAdapter {
    * @param {string} enterpriseId
    * @returns {Promise<boolean>}
    */
-  async batchUpdate(updates, enterpriseId = 'ka_farm') {
+  async batchUpdate(updates, enterpriseId = "ka_farm") {
     try {
       const results = await Promise.all(
-        updates.map(({ key, value }) => 
-          this.saveData(key, value, enterpriseId)
-        )
+        updates.map(({ key, value }) => this.saveData(key, value, enterpriseId))
       );
-      
-      return results.every(r => r);
+
+      return results.every((r) => r);
     } catch (err) {
-      console.error('[FirebaseAdapter] batchUpdate failed:', err);
+      console.error("[FirebaseAdapter] batchUpdate failed:", err);
       return false;
     }
   }
@@ -193,11 +191,11 @@ export class FirebaseAdapter {
    */
   emitLocalChange(scopedKey, value) {
     const callbacks = this.subscriptions.get(scopedKey) || [];
-    callbacks.forEach(callback => {
+    callbacks.forEach((callback) => {
       try {
         callback(value);
       } catch (err) {
-        console.error('[FirebaseAdapter] Callback error:', err);
+        console.error("[FirebaseAdapter] Callback error:", err);
       }
     });
   }
@@ -208,7 +206,7 @@ export class FirebaseAdapter {
   clearSubscriptions() {
     this.subscriptions.clear();
     this.localCache.clear();
-    console.log('[FirebaseAdapter] Subscriptions cleared');
+    console.log("[FirebaseAdapter] Subscriptions cleared");
   }
 
   /**
@@ -218,7 +216,7 @@ export class FirebaseAdapter {
     return {
       subscriptions: this.subscriptions.size,
       cacheSize: this.localCache.size,
-      syncStatus: syncManager.getStatus()
+      syncStatus: syncManager.getStatus(),
     };
   }
 }

@@ -1,14 +1,14 @@
 // KA Farm - User Manager
 // Handles roles, permissions and authorization rules
 
-import { KAStorage } from './storage.js';
-import { USER_ROLES, ALL_USER_ROLES, ROLE_PERMISSIONS, isAdminRole } from './constants/roles.js';
+import { KAStorage } from "./storage.js";
+import { USER_ROLES, ALL_USER_ROLES, ROLE_PERMISSIONS, isAdminRole } from "./constants/roles.js";
 
 export const UserManager = {
   getRoles() {
     return {
       TERRAIN: USER_ROLES.TERRAIN,
-      BUREAU: USER_ROLES.BUREAU
+      BUREAU: USER_ROLES.BUREAU,
     };
   },
 
@@ -23,13 +23,13 @@ export const UserManager = {
   // Check if current user has role Terrain (ground operator)
   isTerrain() {
     const user = this.getCurrentUser();
-    return user && user.role === 'Terrain';
+    return user && user.role === "Terrain";
   },
 
   // Check if current user has role Bureau (office supervisor)
   isBureau() {
     const user = this.getCurrentUser();
-    return user && user.role === 'Bureau';
+    return user && user.role === "Bureau";
   },
 
   // Check if current user is admin
@@ -88,7 +88,7 @@ export const UserManager = {
   // Require login helper. Redirect to login if not authenticated
   requireAuth() {
     if (!this.isLoggedIn()) {
-      window.location.assign('/pages/auth/login.html');
+      window.location.assign("/pages/auth/login.html");
       return false;
     }
     return true;
@@ -97,7 +97,7 @@ export const UserManager = {
   // Redirect if logged in (e.g., from login page to dashboard)
   redirectIfAuth() {
     if (this.isLoggedIn()) {
-      window.location.assign('/pages/shared/dashboard.html');
+      window.location.assign("/pages/shared/dashboard.html");
     }
-  }
+  },
 };

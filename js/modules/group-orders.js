@@ -1,8 +1,8 @@
 // KA Farm - Module Commandes Groupées d'Intrants
 // Fonctionnalité 2.7 : Module coopératif pour commandes groupées
 
-import { KAStorage } from '../storage.js';
-import { ErrorHandler } from './error-handler.js';
+import { KAStorage } from "../storage.js";
+import { ErrorHandler } from "./error-handler.js";
 
 // ============================================================
 // MAIN MODULE EXPORT
@@ -11,19 +11,19 @@ import { ErrorHandler } from './error-handler.js';
 export const GroupOrdersModule = {
   // State management
   state: {
-    selectedRegion: 'Niayes',
-    selectedStatus: '',
-    searchQuery: '',
-    viewMode: 'orders', // 'orders', 'items', 'farms'
+    selectedRegion: "Niayes",
+    selectedStatus: "",
+    searchQuery: "",
+    viewMode: "orders", // 'orders', 'items', 'farms'
     currentOrderId: null,
-    currentFarmId: null
+    currentFarmId: null,
   },
 
   // Regions
-  regions: ['Niayes', 'Dakar', 'Thiès', 'Saint-Louis', 'Kaolack', 'Mbour', 'Fatick', 'Diourbel'],
+  regions: ["Niayes", "Dakar", "Thiès", "Saint-Louis", "Kaolack", "Mbour", "Fatick", "Diourbel"],
 
   // Order statuses
-  statuses: ['En cours', 'Confirmée', 'Livrée', 'Annulée', 'Terminée'],
+  statuses: ["En cours", "Confirmée", "Livrée", "Annulée", "Terminée"],
 
   // ============================================================
   // INITIALIZATION
@@ -37,114 +37,114 @@ export const GroupOrdersModule = {
       this.render();
       this.loadInitialData();
     } catch (err) {
-      ErrorHandler.log(err, 'GroupOrdersModule.init');
+      ErrorHandler.log(err, "GroupOrdersModule.init");
     }
   },
 
   cacheElements() {
     this.elements = {
       // Statistics
-      statTotalOrders: document.getElementById('stat-total-orders'),
-      statActiveOrders: document.getElementById('stat-active-orders'),
-      statDeliveredOrders: document.getElementById('stat-delivered-orders'),
-      statTotalAmount: document.getElementById('stat-total-amount'),
-      statTotalFarms: document.getElementById('stat-total-farms'),
-      statActiveFarms: document.getElementById('stat-active-farms'),
+      statTotalOrders: document.getElementById("stat-total-orders"),
+      statActiveOrders: document.getElementById("stat-active-orders"),
+      statDeliveredOrders: document.getElementById("stat-delivered-orders"),
+      statTotalAmount: document.getElementById("stat-total-amount"),
+      statTotalFarms: document.getElementById("stat-total-farms"),
+      statActiveFarms: document.getElementById("stat-active-farms"),
 
       // View tabs
-      viewOrdersBtn: document.getElementById('view-orders'),
-      viewItemsBtn: document.getElementById('view-items'),
-      viewFarmsBtn: document.getElementById('view-farms'),
+      viewOrdersBtn: document.getElementById("view-orders"),
+      viewItemsBtn: document.getElementById("view-items"),
+      viewFarmsBtn: document.getElementById("view-farms"),
 
       // Tables
-      ordersTableBody: document.getElementById('orders-table-body'),
-      itemsTableBody: document.getElementById('items-table-body'),
-      farmsTableBody: document.getElementById('farms-table-body'),
+      ordersTableBody: document.getElementById("orders-table-body"),
+      itemsTableBody: document.getElementById("items-table-body"),
+      farmsTableBody: document.getElementById("farms-table-body"),
 
       // Modals
-      orderDetailModal: document.getElementById('order-detail-modal'),
-      createOrderModal: document.getElementById('create-order-modal'),
-      addFarmModal: document.getElementById('add-farm-modal'),
-      addItemModal: document.getElementById('add-item-modal')
+      orderDetailModal: document.getElementById("order-detail-modal"),
+      createOrderModal: document.getElementById("create-order-modal"),
+      addFarmModal: document.getElementById("add-farm-modal"),
+      addItemModal: document.getElementById("add-item-modal"),
     };
   },
 
   setupListeners() {
     // View tabs
     if (this.elements.viewOrdersBtn) {
-      this.elements.viewOrdersBtn.addEventListener('click', () => this.switchView('orders'));
+      this.elements.viewOrdersBtn.addEventListener("click", () => this.switchView("orders"));
     }
     if (this.elements.viewItemsBtn) {
-      this.elements.viewItemsBtn.addEventListener('click', () => this.switchView('items'));
+      this.elements.viewItemsBtn.addEventListener("click", () => this.switchView("items"));
     }
     if (this.elements.viewFarmsBtn) {
-      this.elements.viewFarmsBtn.addEventListener('click', () => this.switchView('farms'));
+      this.elements.viewFarmsBtn.addEventListener("click", () => this.switchView("farms"));
     }
 
     // Modals
     if (this.elements.orderDetailModal) {
-      const closeBtn = this.elements.orderDetailModal.querySelector('[data-close-order-detail]');
-      if (closeBtn) closeBtn.addEventListener('click', () => this.closeOrderDetailModal());
+      const closeBtn = this.elements.orderDetailModal.querySelector("[data-close-order-detail]");
+      if (closeBtn) closeBtn.addEventListener("click", () => this.closeOrderDetailModal());
     }
 
     if (this.elements.createOrderModal) {
-      const saveBtn = this.elements.createOrderModal.querySelector('[data-save-order]');
-      const closeBtn = this.elements.createOrderModal.querySelector('[data-close-order]');
-      if (saveBtn) saveBtn.addEventListener('click', () => this.saveOrder());
-      if (closeBtn) closeBtn.addEventListener('click', () => this.closeCreateOrderModal());
+      const saveBtn = this.elements.createOrderModal.querySelector("[data-save-order]");
+      const closeBtn = this.elements.createOrderModal.querySelector("[data-close-order]");
+      if (saveBtn) saveBtn.addEventListener("click", () => this.saveOrder());
+      if (closeBtn) closeBtn.addEventListener("click", () => this.closeCreateOrderModal());
     }
 
     if (this.elements.addFarmModal) {
-      const saveBtn = this.elements.addFarmModal.querySelector('[data-save-farm]');
-      const closeBtn = this.elements.addFarmModal.querySelector('[data-close-farm]');
-      if (saveBtn) saveBtn.addEventListener('click', () => this.saveFarm());
-      if (closeBtn) closeBtn.addEventListener('click', () => this.closeAddFarmModal());
+      const saveBtn = this.elements.addFarmModal.querySelector("[data-save-farm]");
+      const closeBtn = this.elements.addFarmModal.querySelector("[data-close-farm]");
+      if (saveBtn) saveBtn.addEventListener("click", () => this.saveFarm());
+      if (closeBtn) closeBtn.addEventListener("click", () => this.closeAddFarmModal());
     }
 
     if (this.elements.addItemModal) {
-      const saveBtn = this.elements.addItemModal.querySelector('[data-save-item]');
-      const closeBtn = this.elements.addItemModal.querySelector('[data-close-item]');
-      if (saveBtn) saveBtn.addEventListener('click', () => this.saveItem());
-      if (closeBtn) closeBtn.addEventListener('click', () => this.closeAddItemModal());
+      const saveBtn = this.elements.addItemModal.querySelector("[data-save-item]");
+      const closeBtn = this.elements.addItemModal.querySelector("[data-close-item]");
+      if (saveBtn) saveBtn.addEventListener("click", () => this.saveItem());
+      if (closeBtn) closeBtn.addEventListener("click", () => this.closeAddItemModal());
     }
 
     // Action buttons
-    const createOrderBtn = document.getElementById('create-order-btn');
+    const createOrderBtn = document.getElementById("create-order-btn");
     if (createOrderBtn) {
-      createOrderBtn.addEventListener('click', () => this.openCreateOrderModal());
+      createOrderBtn.addEventListener("click", () => this.openCreateOrderModal());
     }
 
-    const addFarmBtn = document.getElementById('add-farm-btn');
+    const addFarmBtn = document.getElementById("add-farm-btn");
     if (addFarmBtn) {
-      addFarmBtn.addEventListener('click', () => this.openAddFarmModal());
+      addFarmBtn.addEventListener("click", () => this.openAddFarmModal());
     }
 
-    const addItemBtn = document.getElementById('add-item-btn');
+    const addItemBtn = document.getElementById("add-item-btn");
     if (addItemBtn) {
-      addItemBtn.addEventListener('click', () => this.openAddItemModal());
+      addItemBtn.addEventListener("click", () => this.openAddItemModal());
     }
 
     // Search
-    const searchInput = document.getElementById('group-search');
+    const searchInput = document.getElementById("group-search");
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
+      searchInput.addEventListener("input", (e) => {
         this.state.searchQuery = e.target.value;
         this.render();
       });
     }
 
     // Filters
-    const regionFilter = document.getElementById('filter-region');
+    const regionFilter = document.getElementById("filter-region");
     if (regionFilter) {
-      regionFilter.addEventListener('change', (e) => {
+      regionFilter.addEventListener("change", (e) => {
         this.state.selectedRegion = e.target.value;
         this.render();
       });
     }
 
-    const statusFilter = document.getElementById('filter-status');
+    const statusFilter = document.getElementById("filter-status");
     if (statusFilter) {
-      statusFilter.addEventListener('change', (e) => {
+      statusFilter.addEventListener("change", (e) => {
         this.state.selectedStatus = e.target.value;
         this.render();
       });
@@ -176,7 +176,7 @@ export const GroupOrdersModule = {
       this.elements.statDeliveredOrders.textContent = orderStats.delivered;
     }
     if (this.elements.statTotalAmount) {
-      this.elements.statTotalAmount.textContent = orderStats.totalAmount.toLocaleString('fr-FR');
+      this.elements.statTotalAmount.textContent = orderStats.totalAmount.toLocaleString("fr-FR");
     }
     if (this.elements.statTotalFarms) {
       this.elements.statTotalFarms.textContent = communityStats.total;
@@ -192,29 +192,29 @@ export const GroupOrdersModule = {
 
   switchView(mode) {
     this.state.viewMode = mode;
-    
+
     // Update active tab
     if (this.elements.viewOrdersBtn) {
-      this.elements.viewOrdersBtn.classList.toggle('bg-brand-green', mode === 'orders');
-      this.elements.viewOrdersBtn.classList.toggle('bg-brand-slate', mode !== 'orders');
+      this.elements.viewOrdersBtn.classList.toggle("bg-brand-green", mode === "orders");
+      this.elements.viewOrdersBtn.classList.toggle("bg-brand-slate", mode !== "orders");
     }
     if (this.elements.viewItemsBtn) {
-      this.elements.viewItemsBtn.classList.toggle('bg-brand-green', mode === 'items');
-      this.elements.viewItemsBtn.classList.toggle('bg-brand-slate', mode !== 'items');
+      this.elements.viewItemsBtn.classList.toggle("bg-brand-green", mode === "items");
+      this.elements.viewItemsBtn.classList.toggle("bg-brand-slate", mode !== "items");
     }
     if (this.elements.viewFarmsBtn) {
-      this.elements.viewFarmsBtn.classList.toggle('bg-brand-green', mode === 'farms');
-      this.elements.viewFarmsBtn.classList.toggle('bg-brand-slate', mode !== 'farms');
+      this.elements.viewFarmsBtn.classList.toggle("bg-brand-green", mode === "farms");
+      this.elements.viewFarmsBtn.classList.toggle("bg-brand-slate", mode !== "farms");
     }
 
     // Show/hide sections
-    const ordersSection = document.getElementById('orders-section');
-    const itemsSection = document.getElementById('items-section');
-    const farmsSection = document.getElementById('farms-section');
+    const ordersSection = document.getElementById("orders-section");
+    const itemsSection = document.getElementById("items-section");
+    const farmsSection = document.getElementById("farms-section");
 
-    if (ordersSection) ordersSection.classList.toggle('hidden', mode !== 'orders');
-    if (itemsSection) itemsSection.classList.toggle('hidden', mode !== 'items');
-    if (farmsSection) farmsSection.classList.toggle('hidden', mode !== 'farms');
+    if (ordersSection) ordersSection.classList.toggle("hidden", mode !== "orders");
+    if (itemsSection) itemsSection.classList.toggle("hidden", mode !== "items");
+    if (farmsSection) farmsSection.classList.toggle("hidden", mode !== "farms");
 
     this.render();
   },
@@ -225,15 +225,15 @@ export const GroupOrdersModule = {
 
   render() {
     this.updateStats();
-    
+
     switch (this.state.viewMode) {
-      case 'orders':
+      case "orders":
         this.renderOrders();
         break;
-      case 'items':
+      case "items":
         this.renderItems();
         break;
-      case 'farms':
+      case "farms":
         this.renderFarms();
         break;
     }
@@ -243,39 +243,41 @@ export const GroupOrdersModule = {
     if (!this.elements.ordersTableBody) return;
 
     let orders = this.storage.getGroupOrders();
-    
+
     // Apply filters
     if (this.state.selectedRegion) {
-      orders = orders.filter(o => o.region === this.state.selectedRegion);
+      orders = orders.filter((o) => o.region === this.state.selectedRegion);
     }
     if (this.state.selectedStatus) {
-      orders = orders.filter(o => o.status === this.state.selectedStatus);
+      orders = orders.filter((o) => o.status === this.state.selectedStatus);
     }
     if (this.state.searchQuery) {
       const query = this.state.searchQuery.toLowerCase();
-      orders = orders.filter(o => 
-        o.group_name.toLowerCase().includes(query) ||
-        o.supplier_name.toLowerCase().includes(query) ||
-        o.region.toLowerCase().includes(query)
+      orders = orders.filter(
+        (o) =>
+          o.group_name.toLowerCase().includes(query) ||
+          o.supplier_name.toLowerCase().includes(query) ||
+          o.region.toLowerCase().includes(query)
       );
     }
 
     // Sort by date descending
     orders.sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
 
-    this.elements.ordersTableBody.innerHTML = orders.map(order => {
-      const items = this.storage.getGroupOrderItemsByOrder(order.id);
-      const deliveredCount = items.filter(i => i.delivery_received).length;
-      const totalItems = items.length;
-      
-      return `
+    this.elements.ordersTableBody.innerHTML = orders
+      .map((order) => {
+        const items = this.storage.getGroupOrderItemsByOrder(order.id);
+        const deliveredCount = items.filter((i) => i.delivery_received).length;
+        const totalItems = items.length;
+
+        return `
         <tr class="border-b border-gray-700 hover:bg-gray-800/50">
           <td class="px-4 py-3 whitespace-nowrap">${order.group_name}</td>
           <td class="px-4 py-3">${order.supplier_name}</td>
           <td class="px-4 py-3">${order.region}</td>
-          <td class="px-4 py-3">${new Date(order.order_date).toLocaleDateString('fr-FR')}</td>
-          <td class="px-4 py-3">${order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString('fr-FR') : '-'}</td>
-          <td class="px-4 py-3 text-right">${order.total_amount_fcfa.toLocaleString('fr-FR')}</td>
+          <td class="px-4 py-3">${new Date(order.order_date).toLocaleDateString("fr-FR")}</td>
+          <td class="px-4 py-3">${order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString("fr-FR") : "-"}</td>
+          <td class="px-4 py-3 text-right">${order.total_amount_fcfa.toLocaleString("fr-FR")}</td>
           <td class="px-4 py-3">
             <span class="px-2 py-1 rounded-full text-xs ${this.getStatusColor(order.status)}">
               ${order.status}
@@ -298,7 +300,8 @@ export const GroupOrdersModule = {
           </td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
 
     this.renderLucideIcons();
   },
@@ -307,18 +310,18 @@ export const GroupOrdersModule = {
     if (!this.elements.itemsTableBody) return;
 
     let items = this.storage.getGroupOrderItems();
-    
+
     // Apply filters
     if (this.state.selectedRegion) {
       const orders = this.storage.getGroupOrdersByRegion(this.state.selectedRegion);
-      const orderIds = orders.map(o => o.id);
-      items = items.filter(i => orderIds.includes(i.group_order_id));
+      const orderIds = orders.map((o) => o.id);
+      items = items.filter((i) => orderIds.includes(i.group_order_id));
     }
     if (this.state.searchQuery) {
       const query = this.state.searchQuery.toLowerCase();
-      items = items.filter(i => 
-        i.intrant_name.toLowerCase().includes(query) ||
-        i.farm_name.toLowerCase().includes(query)
+      items = items.filter(
+        (i) =>
+          i.intrant_name.toLowerCase().includes(query) || i.farm_name.toLowerCase().includes(query)
       );
     }
 
@@ -330,34 +333,40 @@ export const GroupOrdersModule = {
       return new Date(orderB.order_date) - new Date(orderA.order_date);
     });
 
-    this.elements.itemsTableBody.innerHTML = items.map(item => {
-      const order = this.storage.getGroupOrderById(item.group_order_id);
-      
-      return `
+    this.elements.itemsTableBody.innerHTML = items
+      .map((item) => {
+        const order = this.storage.getGroupOrderById(item.group_order_id);
+
+        return `
         <tr class="border-b border-gray-700 hover:bg-gray-800/50">
           <td class="px-4 py-3">${item.intrant_name}</td>
           <td class="px-4 py-3">${order ? order.group_name : item.group_order_id}</td>
           <td class="px-4 py-3">${item.farm_name}</td>
           <td class="px-4 py-3">${item.quantity} ${item.unit}</td>
-          <td class="px-4 py-3 text-right">${item.unit_price.toLocaleString('fr-FR')}</td>
-          <td class="px-4 py-3 text-right">${item.total_price.toLocaleString('fr-FR')}</td>
+          <td class="px-4 py-3 text-right">${item.unit_price.toLocaleString("fr-FR")}</td>
+          <td class="px-4 py-3 text-right">${item.total_price.toLocaleString("fr-FR")}</td>
           <td class="px-4 py-3 text-center">
-            <span class="px-2 py-1 rounded-full text-xs ${item.delivery_received ? 'bg-green-800 text-green-200' : 'bg-amber-800 text-amber-200'}">
-              ${item.delivery_received ? 'Livré' : 'En attente'}
+            <span class="px-2 py-1 rounded-full text-xs ${item.delivery_received ? "bg-green-800 text-green-200" : "bg-amber-800 text-amber-200"}">
+              ${item.delivery_received ? "Livré" : "En attente"}
             </span>
           </td>
           <td class="px-4 py-3 text-center">${item.received_quantity || 0}/${item.quantity}</td>
           <td class="px-4 py-3 whitespace-nowrap">
-            ${!item.delivery_received ? `
+            ${
+              !item.delivery_received
+                ? `
               <button onclick="GroupOrdersModule.markAsReceived('${item.id}')" 
                       class="px-3 py-1 bg-brand-green hover:bg-brand-hover text-white text-xs rounded-lg">
                 Réception
               </button>
-            ` : ''}
+            `
+                : ""
+            }
           </td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
 
     this.renderLucideIcons();
   },
@@ -366,17 +375,18 @@ export const GroupOrdersModule = {
     if (!this.elements.farmsTableBody) return;
 
     let farms = this.storage.getFarmsCommunity();
-    
+
     // Apply filters
     if (this.state.selectedRegion) {
-      farms = farms.filter(f => f.region === this.state.selectedRegion);
+      farms = farms.filter((f) => f.region === this.state.selectedRegion);
     }
     if (this.state.searchQuery) {
       const query = this.state.searchQuery.toLowerCase();
-      farms = farms.filter(f => 
-        f.farm_name.toLowerCase().includes(query) ||
-        f.contact_name.toLowerCase().includes(query) ||
-        f.location.toLowerCase().includes(query)
+      farms = farms.filter(
+        (f) =>
+          f.farm_name.toLowerCase().includes(query) ||
+          f.contact_name.toLowerCase().includes(query) ||
+          f.location.toLowerCase().includes(query)
       );
     }
 
@@ -388,24 +398,25 @@ export const GroupOrdersModule = {
       return new Date(b.last_order_date) - new Date(a.last_order_date);
     });
 
-    this.elements.farmsTableBody.innerHTML = farms.map(farm => {
-      const orderCount = this.storage.getGroupOrderItemsByFarm(farm.id).length;
-      const lastOrder = this.storage.getGroupOrderItemsByFarm(farm.id)[0];
-      
-      return `
-        <tr class="border-b border-gray-700 hover:bg-gray-800/50 ${!farm.is_active ? 'opacity-50' : ''}">
+    this.elements.farmsTableBody.innerHTML = farms
+      .map((farm) => {
+        const orderCount = this.storage.getGroupOrderItemsByFarm(farm.id).length;
+        const lastOrder = this.storage.getGroupOrderItemsByFarm(farm.id)[0];
+
+        return `
+        <tr class="border-b border-gray-700 hover:bg-gray-800/50 ${!farm.is_active ? "opacity-50" : ""}">
           <td class="px-4 py-3 whitespace-nowrap">${farm.farm_name}</td>
           <td class="px-4 py-3">${farm.contact_name}</td>
           <td class="px-4 py-3">${farm.contact_phone}</td>
           <td class="px-4 py-3">${farm.region}</td>
           <td class="px-4 py-3">${farm.location}</td>
           <td class="px-4 py-3 text-center">
-            <span class="px-2 py-1 rounded-full text-xs ${farm.is_active ? 'bg-green-800 text-green-200' : 'bg-red-800 text-red-200'}">
-              ${farm.is_active ? 'Active' : 'Inactive'}
+            <span class="px-2 py-1 rounded-full text-xs ${farm.is_active ? "bg-green-800 text-green-200" : "bg-red-800 text-red-200"}">
+              ${farm.is_active ? "Active" : "Inactive"}
             </span>
           </td>
           <td class="px-4 py-3 text-center">${orderCount}</td>
-          <td class="px-4 py-3">${farm.last_order_date ? new Date(farm.last_order_date).toLocaleDateString('fr-FR') : '-'}</td>
+          <td class="px-4 py-3">${farm.last_order_date ? new Date(farm.last_order_date).toLocaleDateString("fr-FR") : "-"}</td>
           <td class="px-4 py-3 whitespace-nowrap">
             <button onclick="GroupOrdersModule.viewFarmDetails('${farm.id}')" 
                     class="text-brand-green hover:text-brand-hover mr-2">
@@ -422,26 +433,27 @@ export const GroupOrdersModule = {
           </td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
 
     this.renderLucideIcons();
   },
 
   getStatusColor(status) {
     const colors = {
-      'En cours': 'bg-blue-800 text-blue-200',
-      'Confirmée': 'bg-cyan-800 text-cyan-200',
-      'Livrée': 'bg-green-800 text-green-200',
-      'Annulée': 'bg-red-800 text-red-200',
-      'Terminée': 'bg-gray-800 text-gray-200'
+      "En cours": "bg-blue-800 text-blue-200",
+      Confirmée: "bg-cyan-800 text-cyan-200",
+      Livrée: "bg-green-800 text-green-200",
+      Annulée: "bg-red-800 text-red-200",
+      Terminée: "bg-gray-800 text-gray-200",
     };
-    return colors[status] || 'bg-gray-800 text-gray-200';
+    return colors[status] || "bg-gray-800 text-gray-200";
   },
 
   renderLucideIcons() {
-    if (typeof lucide === 'undefined') return;
-    document.querySelectorAll('[data-lucide]').forEach(el => {
-      const iconName = el.getAttribute('data-lucide');
+    if (typeof lucide === "undefined") return;
+    document.querySelectorAll("[data-lucide]").forEach((el) => {
+      const iconName = el.getAttribute("data-lucide");
       el.innerHTML = lucide.create(iconName);
     });
   },
@@ -452,68 +464,70 @@ export const GroupOrdersModule = {
 
   openCreateOrderModal(orderId = null) {
     this.currentOrderId = orderId;
-    
+
     if (orderId) {
       const order = this.storage.getGroupOrderById(orderId);
       if (order) {
-        const form = this.elements.createOrderModal.querySelector('form');
+        const form = this.elements.createOrderModal.querySelector("form");
         if (form) {
-          form.elements['order-name'].value = order.group_name || '';
-          form.elements['order-supplier'].value = order.supplier_name || '';
-          form.elements['order-region'].value = order.region || '';
-          form.elements['order-date'].value = order.order_date || '';
-          form.elements['order-delivery-date'].value = order.expected_delivery_date || '';
-          form.elements['order-address'].value = order.delivery_address || '';
-          form.elements['order-notes'].value = order.notes || '';
+          form.elements["order-name"].value = order.group_name || "";
+          form.elements["order-supplier"].value = order.supplier_name || "";
+          form.elements["order-region"].value = order.region || "";
+          form.elements["order-date"].value = order.order_date || "";
+          form.elements["order-delivery-date"].value = order.expected_delivery_date || "";
+          form.elements["order-address"].value = order.delivery_address || "";
+          form.elements["order-notes"].value = order.notes || "";
         }
       }
     } else {
-      const form = this.elements.createOrderModal.querySelector('form');
+      const form = this.elements.createOrderModal.querySelector("form");
       if (form) form.reset();
-      
+
       // Set default date
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       const deliveryDate = new Date();
       deliveryDate.setDate(deliveryDate.getDate() + 10);
-      const deliveryDateStr = deliveryDate.toISOString().split('T')[0];
-      
+      const deliveryDateStr = deliveryDate.toISOString().split("T")[0];
+
       if (form) {
-        form.elements['order-date'].value = today;
-        form.elements['order-delivery-date'].value = deliveryDateStr;
+        form.elements["order-date"].value = today;
+        form.elements["order-delivery-date"].value = deliveryDateStr;
       }
     }
 
     if (this.elements.createOrderModal) {
-      this.elements.createOrderModal.classList.remove('hidden');
+      this.elements.createOrderModal.classList.remove("hidden");
     }
   },
 
   closeCreateOrderModal() {
     if (this.elements.createOrderModal) {
-      this.elements.createOrderModal.classList.add('hidden');
+      this.elements.createOrderModal.classList.add("hidden");
     }
     this.currentOrderId = null;
   },
 
   saveOrder() {
-    const form = this.elements.createOrderModal.querySelector('form');
+    const form = this.elements.createOrderModal.querySelector("form");
     if (!form) return;
 
     const order = {
       id: this.currentOrderId || `GO-${Date.now()}`,
-      group_name: form.elements['order-name'].value,
-      initiated_by: 'Utilisateur Actuel', // TODO: Get from session
-      supplier_id: '',
-      supplier_name: form.elements['order-supplier'].value,
-      status: this.currentOrderId ? this.storage.getGroupOrderById(this.currentOrderId).status : 'En cours',
+      group_name: form.elements["order-name"].value,
+      initiated_by: "Utilisateur Actuel", // TODO: Get from session
+      supplier_id: "",
+      supplier_name: form.elements["order-supplier"].value,
+      status: this.currentOrderId
+        ? this.storage.getGroupOrderById(this.currentOrderId).status
+        : "En cours",
       total_amount_fcfa: 0, // Will be calculated from items
-      order_date: form.elements['order-date'].value,
-      expected_delivery_date: form.elements['order-delivery-date'].value,
-      delivery_address: form.elements['order-address'].value,
-      region: form.elements['order-region'].value,
-      notes: form.elements['order-notes'].value,
+      order_date: form.elements["order-date"].value,
+      expected_delivery_date: form.elements["order-delivery-date"].value,
+      delivery_address: form.elements["order-address"].value,
+      region: form.elements["order-region"].value,
+      notes: form.elements["order-notes"].value,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     if (this.currentOrderId) {
@@ -525,8 +539,8 @@ export const GroupOrdersModule = {
     this.closeCreateOrderModal();
     this.loadInitialData();
     this.render();
-    
-    ErrorHandler.showToast('Commande enregistrée avec succès!', 'success');
+
+    ErrorHandler.showToast("Commande enregistrée avec succès!", "success");
   },
 
   editOrder(orderId) {
@@ -534,13 +548,13 @@ export const GroupOrdersModule = {
   },
 
   deleteOrder(orderId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette commande ?')) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
       // Delete all items for this order first
       const items = this.storage.getGroupOrderItemsByOrder(orderId);
-      items.forEach(item => {
+      items.forEach((item) => {
         this.storage.deleteGroupOrderItem(item.id);
       });
-      
+
       this.storage.deleteGroupOrder(orderId);
       this.loadInitialData();
       this.render();
@@ -550,7 +564,7 @@ export const GroupOrdersModule = {
   viewOrderDetails(orderId) {
     this.currentOrderId = orderId;
     this.openCreateOrderModal(orderId);
-    
+
     // Show items for this order
     const items = this.storage.getGroupOrderItemsByOrder(orderId);
   },
@@ -561,77 +575,81 @@ export const GroupOrdersModule = {
 
   openAddItemModal(itemId = null) {
     this.currentItemId = itemId;
-    
+
     if (itemId) {
-      const item = this.storage.getGroupOrderItems().find(i => i.id === itemId);
+      const item = this.storage.getGroupOrderItems().find((i) => i.id === itemId);
       if (item) {
-        const form = this.elements.addItemModal.querySelector('form');
+        const form = this.elements.addItemModal.querySelector("form");
         if (form) {
-          form.elements['item-order'].value = item.group_order_id || '';
-          form.elements['item-farm'].value = item.farm_id || '';
-          form.elements['item-intrant'].value = item.intrant_name || '';
-          form.elements['item-quantity'].value = item.quantity || '';
-          form.elements['item-unit'].value = item.unit || '';
-          form.elements['item-unit-price'].value = item.unit_price || '';
-          form.elements['item-notes'].value = item.notes || '';
+          form.elements["item-order"].value = item.group_order_id || "";
+          form.elements["item-farm"].value = item.farm_id || "";
+          form.elements["item-intrant"].value = item.intrant_name || "";
+          form.elements["item-quantity"].value = item.quantity || "";
+          form.elements["item-unit"].value = item.unit || "";
+          form.elements["item-unit-price"].value = item.unit_price || "";
+          form.elements["item-notes"].value = item.notes || "";
         }
       }
     } else {
-      const form = this.elements.addItemModal.querySelector('form');
+      const form = this.elements.addItemModal.querySelector("form");
       if (form) {
         form.reset();
-        form.elements['item-order'].value = this.currentOrderId || '';
+        form.elements["item-order"].value = this.currentOrderId || "";
       }
     }
 
     if (this.elements.addItemModal) {
-      this.elements.addItemModal.classList.remove('hidden');
+      this.elements.addItemModal.classList.remove("hidden");
     }
   },
 
   closeAddItemModal() {
     if (this.elements.addItemModal) {
-      this.elements.addItemModal.classList.add('hidden');
+      this.elements.addItemModal.classList.add("hidden");
     }
     this.currentItemId = null;
   },
 
   saveItem() {
-    const form = this.elements.addItemModal.querySelector('form');
+    const form = this.elements.addItemModal.querySelector("form");
     if (!form) return;
 
-    const orderId = form.elements['item-order'].value;
+    const orderId = form.elements["item-order"].value;
     const order = this.storage.getGroupOrderById(orderId);
     if (!order) {
-      ErrorHandler.showToast('Veuillez sélectionner une commande valide', 'error');
+      ErrorHandler.showToast("Veuillez sélectionner une commande valide", "error");
       return;
     }
 
-    const farm = this.storage.getFarmsCommunity().find(f => f.id === form.elements['item-farm'].value);
-    
+    const farm = this.storage
+      .getFarmsCommunity()
+      .find((f) => f.id === form.elements["item-farm"].value);
+
     const item = {
       id: this.currentItemId || `GOI-${Date.now()}`,
       group_order_id: orderId,
-      farm_id: form.elements['item-farm'].value,
-      farm_name: farm ? farm.farm_name : form.elements['item-farm'].value,
-      intrant_id: '',
-      intrant_name: form.elements['item-intrant'].value,
-      quantity: parseFloat(form.elements['item-quantity'].value) || 0,
-      unit: form.elements['item-unit'].value,
-      unit_price: parseInt(form.elements['item-unit-price'].value) || 0,
-      total_price: (parseFloat(form.elements['item-quantity'].value) || 0) * (parseInt(form.elements['item-unit-price'].value) || 0),
+      farm_id: form.elements["item-farm"].value,
+      farm_name: farm ? farm.farm_name : form.elements["item-farm"].value,
+      intrant_id: "",
+      intrant_name: form.elements["item-intrant"].value,
+      quantity: parseFloat(form.elements["item-quantity"].value) || 0,
+      unit: form.elements["item-unit"].value,
+      unit_price: parseInt(form.elements["item-unit-price"].value) || 0,
+      total_price:
+        (parseFloat(form.elements["item-quantity"].value) || 0) *
+        (parseInt(form.elements["item-unit-price"].value) || 0),
       delivery_received: false,
       received_quantity: 0,
-      notes: form.elements['item-notes'].value,
+      notes: form.elements["item-notes"].value,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     if (this.currentItemId) {
       this.storage.updateGroupOrderItem(this.currentItemId, item);
     } else {
       this.storage.addGroupOrderItem(item);
-      
+
       // Update order total amount
       const orderItems = this.storage.getGroupOrderItemsByOrder(orderId);
       const totalAmount = orderItems.reduce((sum, i) => sum + (i.total_price || 0), 0);
@@ -641,36 +659,38 @@ export const GroupOrdersModule = {
     this.closeAddItemModal();
     this.loadInitialData();
     this.render();
-    
-    ErrorHandler.showToast('Article ajouté avec succès!', 'success');
+
+    ErrorHandler.showToast("Article ajouté avec succès!", "success");
   },
 
   markAsReceived(itemId) {
-    const item = this.storage.getGroupOrderItems().find(i => i.id === itemId);
+    const item = this.storage.getGroupOrderItems().find((i) => i.id === itemId);
     if (!item) return;
-    
-    const quantity = prompt('Quantité reçue:', item.quantity);
+
+    const quantity = prompt("Quantité reçue:", item.quantity);
     if (quantity !== null) {
       this.storage.markItemAsReceived(itemId, parseFloat(quantity));
-      
+
       // Check if all items are received
       const orderId = item.group_order_id;
       const orderItems = this.storage.getGroupOrderItemsByOrder(orderId);
-      const allReceived = orderItems.every(i => i.delivery_received);
-      
+      const allReceived = orderItems.every((i) => i.delivery_received);
+
       if (allReceived) {
-        this.storage.updateGroupOrder(orderId, { status: 'Livré' });
+        this.storage.updateGroupOrder(orderId, { status: "Livré" });
         // Update farm last order date
         const farms = this.storage.getFarmsCommunity();
-        const farmIds = [...new Set(orderItems.map(i => i.farm_id))];
-        farmIds.forEach(farmId => {
-          this.storage.updateFarmInCommunity(farmId, { last_order_date: new Date().toISOString().split('T')[0] });
+        const farmIds = [...new Set(orderItems.map((i) => i.farm_id))];
+        farmIds.forEach((farmId) => {
+          this.storage.updateFarmInCommunity(farmId, {
+            last_order_date: new Date().toISOString().split("T")[0],
+          });
         });
       }
-      
+
       this.loadInitialData();
       this.render();
-      ErrorHandler.showToast('Réception confirmée!', 'success');
+      ErrorHandler.showToast("Réception confirmée!", "success");
     }
   },
 
@@ -680,56 +700,56 @@ export const GroupOrdersModule = {
 
   openAddFarmModal(farmId = null) {
     this.currentFarmId = farmId;
-    
+
     if (farmId) {
       const farm = this.storage.getFarmById(farmId);
       if (farm) {
-        const form = this.elements.addFarmModal.querySelector('form');
+        const form = this.elements.addFarmModal.querySelector("form");
         if (form) {
-          form.elements['farm-name'].value = farm.farm_name || '';
-          form.elements['farm-region'].value = farm.region || '';
-          form.elements['farm-contact'].value = farm.contact_name || '';
-          form.elements['farm-phone'].value = farm.contact_phone || '';
-          form.elements['farm-email'].value = farm.contact_email || '';
-          form.elements['farm-location'].value = farm.location || '';
-          form.elements['farm-active'].checked = farm.is_active || true;
-          form.elements['farm-notes'].value = farm.notes || '';
+          form.elements["farm-name"].value = farm.farm_name || "";
+          form.elements["farm-region"].value = farm.region || "";
+          form.elements["farm-contact"].value = farm.contact_name || "";
+          form.elements["farm-phone"].value = farm.contact_phone || "";
+          form.elements["farm-email"].value = farm.contact_email || "";
+          form.elements["farm-location"].value = farm.location || "";
+          form.elements["farm-active"].checked = farm.is_active || true;
+          form.elements["farm-notes"].value = farm.notes || "";
         }
       }
     } else {
-      const form = this.elements.addFarmModal.querySelector('form');
+      const form = this.elements.addFarmModal.querySelector("form");
       if (form) form.reset();
     }
 
     if (this.elements.addFarmModal) {
-      this.elements.addFarmModal.classList.remove('hidden');
+      this.elements.addFarmModal.classList.remove("hidden");
     }
   },
 
   closeAddFarmModal() {
     if (this.elements.addFarmModal) {
-      this.elements.addFarmModal.classList.add('hidden');
+      this.elements.addFarmModal.classList.add("hidden");
     }
     this.currentFarmId = null;
   },
 
   saveFarm() {
-    const form = this.elements.addFarmModal.querySelector('form');
+    const form = this.elements.addFarmModal.querySelector("form");
     if (!form) return;
 
     const farm = {
       id: this.currentFarmId || `FC-${Date.now()}`,
-      farm_name: form.elements['farm-name'].value,
-      region: form.elements['farm-region'].value,
-      contact_name: form.elements['farm-contact'].value,
-      contact_phone: form.elements['farm-phone'].value,
-      contact_email: form.elements['farm-email'].value,
-      location: form.elements['farm-location'].value,
-      is_active: form.elements['farm-active'].checked,
+      farm_name: form.elements["farm-name"].value,
+      region: form.elements["farm-region"].value,
+      contact_name: form.elements["farm-contact"].value,
+      contact_phone: form.elements["farm-phone"].value,
+      contact_email: form.elements["farm-email"].value,
+      location: form.elements["farm-location"].value,
+      is_active: form.elements["farm-active"].checked,
       last_order_date: null,
-      notes: form.elements['farm-notes'].value,
+      notes: form.elements["farm-notes"].value,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     if (this.currentFarmId) {
@@ -741,8 +761,8 @@ export const GroupOrdersModule = {
     this.closeAddFarmModal();
     this.loadInitialData();
     this.render();
-    
-    ErrorHandler.showToast('Ferme enregistrée avec succès!', 'success');
+
+    ErrorHandler.showToast("Ferme enregistrée avec succès!", "success");
   },
 
   editFarm(farmId) {
@@ -750,13 +770,13 @@ export const GroupOrdersModule = {
   },
 
   deleteFarm(farmId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette ferme ?')) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette ferme ?")) {
       // Delete all order items for this farm first
       const items = this.storage.getGroupOrderItemsByFarm(farmId);
-      items.forEach(item => {
+      items.forEach((item) => {
         this.storage.deleteGroupOrderItem(item.id);
       });
-      
+
       this.storage.deleteFarmFromCommunity(farmId);
       this.loadInitialData();
       this.render();
@@ -766,10 +786,10 @@ export const GroupOrdersModule = {
   viewFarmDetails(farmId) {
     this.currentFarmId = farmId;
     this.openAddFarmModal(farmId);
-  }
+  },
 };
 
 // Initialize module when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   GroupOrdersModule.init();
 });

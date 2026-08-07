@@ -5,7 +5,7 @@
   top: -100px;
   left: 50%;
   transform: translateX(-50%);
-  background: #10B981;
+  background: #10b981;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -21,7 +21,7 @@
 
 /* Focus visible global */
 *:focus-visible {
-  outline: 2px solid #10B981;
+  outline: 2px solid #10b981;
   outline-offset: 2px;
 }
 
@@ -31,13 +31,13 @@
 }
 
 .dark .auth-input:focus {
-  border-color: #10B981;
+  border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 /* Error message styling */
 .error-message {
-  color: #EF4444;
+  color: #ef4444;
   font-size: 11px;
   font-weight: 600;
   margin-top: 4px;

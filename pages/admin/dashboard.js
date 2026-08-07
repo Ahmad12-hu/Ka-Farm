@@ -1,2 +1,2 @@
 // Dashboard admin placeholder
-console.log('Admin dashboard loaded');
+console.log("Admin dashboard loaded");

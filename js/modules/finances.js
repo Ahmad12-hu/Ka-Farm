@@ -1,6 +1,6 @@
 // KA Farm - Financial & Compost Calculator Module
-import { KAStorage } from '../storage.js';
-import { ErrorHandler } from './error-handler.js';
+import { KAStorage } from "../storage.js";
+import { ErrorHandler } from "./error-handler.js";
 
 export const FinancesModule = {
   marketsData: {
@@ -8,29 +8,29 @@ export const FinancesModule = {
       sandiara: 450,
       mbour: 500,
       dakar: 650,
-      'saint-louis': 400
+      "saint-louis": 400,
     },
     oignon: {
       sandiara: 500,
       mbour: 550,
       dakar: 600,
-      'saint-louis': 450
+      "saint-louis": 450,
     },
     piment: {
       sandiara: 1200,
       mbour: 1300,
       dakar: 1600,
-      'saint-louis': 1100
+      "saint-louis": 1100,
     },
     gombo: {
       sandiara: 700,
       mbour: 800,
       dakar: 950,
-      'saint-louis': 650
-    }
+      "saint-louis": 650,
+    },
   },
 
-  selectedMarket: 'mbour',
+  selectedMarket: "mbour",
 
   init() {
     this.renderFinances();
@@ -40,35 +40,39 @@ export const FinancesModule = {
   },
 
   renderFinances() {
-    const tbody = document.getElementById('finances-table-body');
+    const tbody = document.getElementById("finances-table-body");
     if (!tbody) return;
 
     const finances = KAStorage.getFinances();
 
     // Cumulative stats - Centralized
-    const { totalRevenu: totalRevenue, totalDepense: totalExpenses, solde: totalBalance } = KAStorage.getFinanceStats();
+    const {
+      totalRevenu: totalRevenue,
+      totalDepense: totalExpenses,
+      solde: totalBalance,
+    } = KAStorage.getFinanceStats();
 
-    const elRev = document.getElementById('finances-total-revenu');
-    const elExp = document.getElementById('finances-total-depense');
-    const elSol = document.getElementById('finances-total-solde');
+    const elRev = document.getElementById("finances-total-revenu");
+    const elExp = document.getElementById("finances-total-depense");
+    const elSol = document.getElementById("finances-total-solde");
 
     if (elRev) {
       if (window.animateValue) window.animateValue(elRev, 0, totalRevenue, 900);
-      else elRev.textContent = totalRevenue.toLocaleString('fr-FR') + ' F';
+      else elRev.textContent = totalRevenue.toLocaleString("fr-FR") + " F";
     }
     if (elExp) {
       if (window.animateValue) window.animateValue(elExp, 0, totalExpenses, 900);
-      else elExp.textContent = totalExpenses.toLocaleString('fr-FR') + ' F';
+      else elExp.textContent = totalExpenses.toLocaleString("fr-FR") + " F";
     }
-      if (elSol) {
-        if (window.animateValue) window.animateValue(elSol, 0, totalBalance, 1100);
-        else elSol.textContent = totalBalance.toLocaleString('fr-FR') + ' F';
-        if (totalBalance >= 0) {
-          elSol.className = 'text-xl md:text-2xl font-black text-emerald-500 font-mono';
-        } else {
-          elSol.className = 'text-xl md:text-2xl font-black text-rose-500 font-mono';
-        }
+    if (elSol) {
+      if (window.animateValue) window.animateValue(elSol, 0, totalBalance, 1100);
+      else elSol.textContent = totalBalance.toLocaleString("fr-FR") + " F";
+      if (totalBalance >= 0) {
+        elSol.className = "text-xl md:text-2xl font-black text-emerald-500 font-mono";
+      } else {
+        elSol.className = "text-xl md:text-2xl font-black text-rose-500 font-mono";
       }
+    }
 
     if (finances.length === 0) {
       tbody.innerHTML = `
@@ -81,16 +85,17 @@ export const FinancesModule = {
       return;
     }
 
-    tbody.innerHTML = finances.map(f => {
-      const isRevenu = f.type === 'Revenu';
-      const typeBadge = isRevenu 
-        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
-        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
-      
-      const amountColor = isRevenu ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold';
-      const sign = isRevenu ? '+' : '-';
+    tbody.innerHTML = finances
+      .map((f) => {
+        const isRevenu = f.type === "Revenu";
+        const typeBadge = isRevenu
+          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+          : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
 
-      return `
+        const amountColor = isRevenu ? "text-emerald-500 font-bold" : "text-rose-500 font-bold";
+        const sign = isRevenu ? "+" : "-";
+
+        return `
         <tr class="border-b border-slate-50 dark:border-slate-800/40 hover:bg-slate-50/50 dark:hover:bg-[#061109]/30 transition-colors">
           <td class="py-3.5 text-slate-850 dark:text-slate-100 font-black">${f.description}</td>
           <td class="py-3.5">
@@ -98,7 +103,7 @@ export const FinancesModule = {
           </td>
           <td class="py-3.5 text-slate-500 font-bold">${f.category}</td>
           <td class="py-3.5 text-slate-450 font-semibold">${f.date}</td>
-          <td class="py-3.5 ${amountColor} font-black font-mono">${sign}${f.amount.toLocaleString('fr-FR')} F</td>
+          <td class="py-3.5 ${amountColor} font-black font-mono">${sign}${f.amount.toLocaleString("fr-FR")} F</td>
           <td class="py-3.5 text-right">
             <div class="flex items-center justify-end gap-1.5">
               <button onclick="window.shareFinanceWhatsApp('${f.id}')" class="text-emerald-500 hover:text-emerald-400 p-1 rounded-lg transition-colors cursor-pointer" title="Partager le reçu sur WhatsApp">
@@ -111,7 +116,8 @@ export const FinancesModule = {
           </td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
 
     if (window.lucide) {
       window.lucide.createIcons();
@@ -121,30 +127,35 @@ export const FinancesModule = {
 
   renderCharts() {
     const finances = KAStorage.getFinances();
-    const parcelBody = document.getElementById('parcel-margins-table-body');
-    const cropBody = document.getElementById('crop-margins-table-body');
+    const parcelBody = document.getElementById("parcel-margins-table-body");
+    const cropBody = document.getElementById("crop-margins-table-body");
     if (!parcelBody && !cropBody) return;
 
     // 1. Parcels Margins calculation
     const parcels = [
-      { id: 'P-001', name: 'Parcelle Nord' },
-      { id: 'P-002', name: 'Parcelle Est' },
-      { id: 'P-003', name: 'Parcelle Sud' },
-      { id: 'P-004', name: 'Zone Ombragée' },
-      { id: 'P-005', name: 'Parcelle Ouest' }
+      { id: "P-001", name: "Parcelle Nord" },
+      { id: "P-002", name: "Parcelle Est" },
+      { id: "P-003", name: "Parcelle Sud" },
+      { id: "P-004", name: "Zone Ombragée" },
+      { id: "P-005", name: "Parcelle Ouest" },
     ];
 
-    const parcelStats = parcels.map(p => {
+    const parcelStats = parcels.map((p) => {
       let rev = 0;
       let exp = 0;
-      finances.forEach(f => {
+      finances.forEach((f) => {
         if (f.parcelId === p.id) {
-          if (f.type === 'Revenu') rev += f.amount;
-          else if (f.type === 'Dépense') exp += f.amount;
-        } else if (!f.parcelId && f.description.toLowerCase().includes(p.name.toLowerCase().split(' ')[1] || 'impossible_match')) {
+          if (f.type === "Revenu") rev += f.amount;
+          else if (f.type === "Dépense") exp += f.amount;
+        } else if (
+          !f.parcelId &&
+          f.description
+            .toLowerCase()
+            .includes(p.name.toLowerCase().split(" ")[1] || "impossible_match")
+        ) {
           // Fallback matching by keyword in description
-          if (f.type === 'Revenu') rev += f.amount;
-          else if (f.type === 'Dépense') exp += f.amount;
+          if (f.type === "Revenu") rev += f.amount;
+          else if (f.type === "Dépense") exp += f.amount;
         }
       });
       return { name: p.name, rev, exp, net: rev - exp };
@@ -153,52 +164,68 @@ export const FinancesModule = {
     // Add "Autres/Non affectés" row
     let otherParcelRev = 0;
     let otherParcelExp = 0;
-    finances.forEach(f => {
-      const matched = parcels.some(p => f.parcelId === p.id || f.description.toLowerCase().includes(p.name.toLowerCase().split(' ')[1] || 'impossible_match'));
+    finances.forEach((f) => {
+      const matched = parcels.some(
+        (p) =>
+          f.parcelId === p.id ||
+          f.description
+            .toLowerCase()
+            .includes(p.name.toLowerCase().split(" ")[1] || "impossible_match")
+      );
       if (!matched) {
-        if (f.type === 'Revenu') otherParcelRev += f.amount;
-        else if (f.type === 'Dépense') otherParcelExp += f.amount;
+        if (f.type === "Revenu") otherParcelRev += f.amount;
+        else if (f.type === "Dépense") otherParcelExp += f.amount;
       }
     });
     if (otherParcelRev > 0 || otherParcelExp > 0) {
-      parcelStats.push({ name: 'Hors parcelles / Général', rev: otherParcelRev, exp: otherParcelExp, net: otherParcelRev - otherParcelExp });
+      parcelStats.push({
+        name: "Hors parcelles / Général",
+        rev: otherParcelRev,
+        exp: otherParcelExp,
+        net: otherParcelRev - otherParcelExp,
+      });
     }
 
     if (parcelBody) {
-      parcelBody.innerHTML = parcelStats.map(ps => {
-        const netColor = ps.net >= 0 ? 'text-emerald-500' : 'text-rose-500';
-        const sign = ps.net >= 0 ? '+' : '';
-        return `
+      parcelBody.innerHTML = parcelStats
+        .map((ps) => {
+          const netColor = ps.net >= 0 ? "text-emerald-500" : "text-rose-500";
+          const sign = ps.net >= 0 ? "+" : "";
+          return `
           <tr class="border-b border-slate-50 dark:border-slate-800/40 hover:bg-slate-50/25 transition-colors">
             <td class="py-2.5 text-slate-800 dark:text-slate-200 font-extrabold">${ps.name}</td>
-            <td class="py-2.5 text-slate-600 dark:text-slate-400 font-mono">${ps.rev.toLocaleString('fr-FR')} F</td>
-            <td class="py-2.5 text-slate-600 dark:text-slate-400 font-mono">${ps.exp.toLocaleString('fr-FR')} F</td>
-            <td class="py-2.5 text-right font-black font-mono ${netColor}">${sign}${ps.net.toLocaleString('fr-FR')} F</td>
+            <td class="py-2.5 text-slate-600 dark:text-slate-400 font-mono">${ps.rev.toLocaleString("fr-FR")} F</td>
+            <td class="py-2.5 text-slate-600 dark:text-slate-400 font-mono">${ps.exp.toLocaleString("fr-FR")} F</td>
+            <td class="py-2.5 text-right font-black font-mono ${netColor}">${sign}${ps.net.toLocaleString("fr-FR")} F</td>
           </tr>
         `;
-      }).join('');
+        })
+        .join("");
     }
 
     // 2. Crop Margins calculation
     const cropsList = [
-      'Tomate Mongal F1',
-      'Oignon Rouge de Galmi',
-      'Menthe de Thiès',
-      'Chou Cabus',
-      'Piment Oiseau'
+      "Tomate Mongal F1",
+      "Oignon Rouge de Galmi",
+      "Menthe de Thiès",
+      "Chou Cabus",
+      "Piment Oiseau",
     ];
 
-    const cropStats = cropsList.map(cName => {
+    const cropStats = cropsList.map((cName) => {
       let rev = 0;
       let exp = 0;
-      finances.forEach(f => {
+      finances.forEach((f) => {
         if (f.cropName === cName) {
-          if (f.type === 'Revenu') rev += f.amount;
-          else if (f.type === 'Dépense') exp += f.amount;
-        } else if (!f.cropName && f.description.toLowerCase().includes(cName.toLowerCase().split(' ')[0])) {
+          if (f.type === "Revenu") rev += f.amount;
+          else if (f.type === "Dépense") exp += f.amount;
+        } else if (
+          !f.cropName &&
+          f.description.toLowerCase().includes(cName.toLowerCase().split(" ")[0])
+        ) {
           // Fallback matching by keyword in description (e.g. "tomates", "oignons", "menthe", "choux", "piments")
-          if (f.type === 'Revenu') rev += f.amount;
-          else if (f.type === 'Dépense') exp += f.amount;
+          if (f.type === "Revenu") rev += f.amount;
+          else if (f.type === "Dépense") exp += f.amount;
         }
       });
       return { name: cName, rev, exp, net: rev - exp };
@@ -207,30 +234,41 @@ export const FinancesModule = {
     // Add "Autres" row for crops
     let otherCropRev = 0;
     let otherCropExp = 0;
-    finances.forEach(f => {
-      const matched = cropsList.some(cName => f.cropName === cName || f.description.toLowerCase().includes(cName.toLowerCase().split(' ')[0]));
+    finances.forEach((f) => {
+      const matched = cropsList.some(
+        (cName) =>
+          f.cropName === cName ||
+          f.description.toLowerCase().includes(cName.toLowerCase().split(" ")[0])
+      );
       if (!matched) {
-        if (f.type === 'Revenu') otherCropRev += f.amount;
-        else if (f.type === 'Dépense') otherCropExp += f.amount;
+        if (f.type === "Revenu") otherCropRev += f.amount;
+        else if (f.type === "Dépense") otherCropExp += f.amount;
       }
     });
     if (otherCropRev > 0 || otherCropExp > 0) {
-      cropStats.push({ name: 'Autres / Élevage', rev: otherCropRev, exp: otherCropExp, net: otherCropRev - otherCropExp });
+      cropStats.push({
+        name: "Autres / Élevage",
+        rev: otherCropRev,
+        exp: otherCropExp,
+        net: otherCropRev - otherCropExp,
+      });
     }
 
     if (cropBody) {
-      cropBody.innerHTML = cropStats.map(cs => {
-        const netColor = cs.net >= 0 ? 'text-emerald-500' : 'text-rose-500';
-        const sign = cs.net >= 0 ? '+' : '';
-        return `
+      cropBody.innerHTML = cropStats
+        .map((cs) => {
+          const netColor = cs.net >= 0 ? "text-emerald-500" : "text-rose-500";
+          const sign = cs.net >= 0 ? "+" : "";
+          return `
           <tr class="border-b border-slate-50 dark:border-slate-800/40 hover:bg-slate-50/25 transition-colors">
             <td class="py-2.5 text-slate-800 dark:text-slate-200 font-extrabold">${cs.name}</td>
-            <td class="py-2.5 text-slate-600 dark:text-slate-400 font-mono">${cs.rev.toLocaleString('fr-FR')} F</td>
-            <td class="py-2.5 text-slate-600 dark:text-slate-400 font-mono">${cs.exp.toLocaleString('fr-FR')} F</td>
-            <td class="py-2.5 text-right font-black font-mono ${netColor}">${sign}${cs.net.toLocaleString('fr-FR')} F</td>
+            <td class="py-2.5 text-slate-600 dark:text-slate-400 font-mono">${cs.rev.toLocaleString("fr-FR")} F</td>
+            <td class="py-2.5 text-slate-600 dark:text-slate-400 font-mono">${cs.exp.toLocaleString("fr-FR")} F</td>
+            <td class="py-2.5 text-right font-black font-mono ${netColor}">${sign}${cs.net.toLocaleString("fr-FR")} F</td>
           </tr>
         `;
-      }).join('');
+        })
+        .join("");
     }
 
     // Update charts
@@ -239,247 +277,274 @@ export const FinancesModule = {
 
   updateCharts(parcelStats, cropStats, finances) {
     // Helper to get chart colors for dark/light mode
-    const isDark = document.documentElement.classList.contains('dark');
-    const gridColor = isDark ? '#334155' : '#e2e8f0';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const isDark = document.documentElement.classList.contains("dark");
+    const gridColor = isDark ? "#334155" : "#e2e8f0";
+    const textColor = isDark ? "#94a3b8" : "#64748b";
 
     // 1. Parcel Margins Bar Chart
-    const parcelCanvas = document.getElementById('parcel-margins-chart');
+    const parcelCanvas = document.getElementById("parcel-margins-chart");
     if (parcelCanvas) {
-      const ctx = parcelCanvas.getContext('2d');
+      const ctx = parcelCanvas.getContext("2d");
       if (window.parcelMarginsChart) window.parcelMarginsChart.destroy();
       window.parcelMarginsChart = new Chart(ctx, {
-        type: 'bar',
+        type: "bar",
         data: {
-          labels: parcelStats.map(p => p.name),
+          labels: parcelStats.map((p) => p.name),
           datasets: [
             {
-              label: 'Revenus',
-              data: parcelStats.map(p => p.rev),
-              backgroundColor: '#10b981',
-              borderRadius: 6
+              label: "Revenus",
+              data: parcelStats.map((p) => p.rev),
+              backgroundColor: "#10b981",
+              borderRadius: 6,
             },
             {
-              label: 'Dépenses',
-              data: parcelStats.map(p => p.exp),
-              backgroundColor: '#ef4444',
-              borderRadius: 6
-            }
-          ]
+              label: "Dépenses",
+              data: parcelStats.map((p) => p.exp),
+              backgroundColor: "#ef4444",
+              borderRadius: 6,
+            },
+          ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: textColor, font: { size: 11 } } }
+            legend: { labels: { color: textColor, font: { size: 11 } } },
           },
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { color: textColor, callback: v => v.toLocaleString('fr-FR') + ' F' },
-              grid: { color: gridColor }
+              ticks: { color: textColor, callback: (v) => v.toLocaleString("fr-FR") + " F" },
+              grid: { color: gridColor },
             },
             x: {
               ticks: { color: textColor, font: { size: 10 } },
-              grid: { display: false }
-            }
-          }
-        }
+              grid: { display: false },
+            },
+          },
+        },
       });
     }
 
     // 2. Expense Categories Pie Chart
-    const expenseCanvas = document.getElementById('expense-categories-chart');
+    const expenseCanvas = document.getElementById("expense-categories-chart");
     if (expenseCanvas) {
       const categories = {};
-      finances.forEach(f => {
-        if (f.type === 'Dépense') {
+      finances.forEach((f) => {
+        if (f.type === "Dépense") {
           categories[f.category] = (categories[f.category] || 0) + f.amount;
         }
       });
-      const ctx = expenseCanvas.getContext('2d');
+      const ctx = expenseCanvas.getContext("2d");
       if (window.expenseCategoriesChart) window.expenseCategoriesChart.destroy();
       window.expenseCategoriesChart = new Chart(ctx, {
-        type: 'doughnut',
+        type: "doughnut",
         data: {
           labels: Object.keys(categories),
-          datasets: [{
-            data: Object.values(categories),
-            backgroundColor: [
-              '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
-              '#ec4899', '#14b8a6', '#f97316'
-            ],
-            borderWidth: 2,
-            borderColor: isDark ? '#0B2112' : '#ffffff'
-          }]
+          datasets: [
+            {
+              data: Object.values(categories),
+              backgroundColor: [
+                "#10b981",
+                "#3b82f6",
+                "#f59e0b",
+                "#ef4444",
+                "#8b5cf6",
+                "#ec4899",
+                "#14b8a6",
+                "#f97316",
+              ],
+              borderWidth: 2,
+              borderColor: isDark ? "#0B2112" : "#ffffff",
+            },
+          ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              position: 'bottom',
-              labels: { color: textColor, font: { size: 10 }, padding: 12 }
-            }
-          }
-        }
+              position: "bottom",
+              labels: { color: textColor, font: { size: 10 }, padding: 12 },
+            },
+          },
+        },
       });
     }
 
     // 3. Monthly Cashflow Line Chart
-    const monthlyCanvas = document.getElementById('monthly-cashflow-chart');
+    const monthlyCanvas = document.getElementById("monthly-cashflow-chart");
     if (monthlyCanvas) {
       const monthly = {};
-      finances.forEach(f => {
+      finances.forEach((f) => {
         const month = f.date.substring(0, 7);
         if (!monthly[month]) monthly[month] = { rev: 0, exp: 0 };
-        if (f.type === 'Revenu') monthly[month].rev += f.amount;
+        if (f.type === "Revenu") monthly[month].rev += f.amount;
         else monthly[month].exp += f.amount;
       });
       const sortedMonths = Object.keys(monthly).sort();
-      const ctx = monthlyCanvas.getContext('2d');
+      const ctx = monthlyCanvas.getContext("2d");
       if (window.monthlyCashflowChart) window.monthlyCashflowChart.destroy();
       window.monthlyCashflowChart = new Chart(ctx, {
-        type: 'line',
+        type: "line",
         data: {
-          labels: sortedMonths.map(m => {
-            const [y, mo] = m.split('-');
-            const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+          labels: sortedMonths.map((m) => {
+            const [y, mo] = m.split("-");
+            const months = [
+              "Jan",
+              "Fév",
+              "Mar",
+              "Avr",
+              "Mai",
+              "Juin",
+              "Juil",
+              "Août",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Déc",
+            ];
             return `${months[parseInt(mo) - 1]} ${y}`;
           }),
           datasets: [
             {
-              label: 'Revenus',
-              data: sortedMonths.map(m => monthly[m].rev),
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              label: "Revenus",
+              data: sortedMonths.map((m) => monthly[m].rev),
+              borderColor: "#10b981",
+              backgroundColor: "rgba(16, 185, 129, 0.1)",
               fill: true,
-              tension: 0.3
+              tension: 0.3,
             },
             {
-              label: 'Dépenses',
-              data: sortedMonths.map(m => monthly[m].exp),
-              borderColor: '#ef4444',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              label: "Dépenses",
+              data: sortedMonths.map((m) => monthly[m].exp),
+              borderColor: "#ef4444",
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
               fill: true,
-              tension: 0.3
-            }
-          ]
+              tension: 0.3,
+            },
+          ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: textColor, font: { size: 11 } } }
+            legend: { labels: { color: textColor, font: { size: 11 } } },
           },
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { color: textColor, callback: v => v.toLocaleString('fr-FR') + ' F' },
-              grid: { color: gridColor }
+              ticks: { color: textColor, callback: (v) => v.toLocaleString("fr-FR") + " F" },
+              grid: { color: gridColor },
             },
             x: {
               ticks: { color: textColor, font: { size: 10 } },
-              grid: { display: false }
-            }
-          }
-        }
+              grid: { display: false },
+            },
+          },
+        },
       });
     }
 
     // 4. Crop Performance Bar Chart
-    const cropCanvas = document.getElementById('crop-performance-chart');
+    const cropCanvas = document.getElementById("crop-performance-chart");
     if (cropCanvas) {
-      const ctx = cropCanvas.getContext('2d');
+      const ctx = cropCanvas.getContext("2d");
       if (window.cropPerformanceChart) window.cropPerformanceChart.destroy();
       window.cropPerformanceChart = new Chart(ctx, {
-        type: 'bar',
+        type: "bar",
         data: {
-          labels: cropStats.map(c => c.name),
-          datasets: [{
-            label: 'Marge Nette',
-            data: cropStats.map(c => c.net),
-            backgroundColor: cropStats.map(c => c.net >= 0 ? '#10b981' : '#ef4444'),
-            borderRadius: 6
-          }]
+          labels: cropStats.map((c) => c.name),
+          datasets: [
+            {
+              label: "Marge Nette",
+              data: cropStats.map((c) => c.net),
+              backgroundColor: cropStats.map((c) => (c.net >= 0 ? "#10b981" : "#ef4444")),
+              borderRadius: 6,
+            },
+          ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          indexAxis: 'y',
+          indexAxis: "y",
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
           },
           scales: {
             x: {
               beginAtZero: true,
-              ticks: { color: textColor, callback: v => v.toLocaleString('fr-FR') + ' F' },
-              grid: { color: gridColor }
+              ticks: { color: textColor, callback: (v) => v.toLocaleString("fr-FR") + " F" },
+              grid: { color: gridColor },
             },
             y: {
               ticks: { color: textColor, font: { size: 10 } },
-              grid: { display: false }
-            }
-          }
-        }
+              grid: { display: false },
+            },
+          },
+        },
       });
     }
   },
 
   calculateCompost() {
     try {
-      const carbonInput = document.getElementById('compost-carbon-input');
-      const nitrogenInput = document.getElementById('compost-nitrogen-input');
-      
+      const carbonInput = document.getElementById("compost-carbon-input");
+      const nitrogenInput = document.getElementById("compost-nitrogen-input");
+
       if (!carbonInput || !nitrogenInput) return;
 
       const carbonKg = parseFloat(carbonInput.value) || 0;
       const nitrogenKg = parseFloat(nitrogenInput.value) || 0;
 
-      const resultBox = document.getElementById('compost-result-box');
-      const ratioText = document.getElementById('compost-ratio-text');
-      const statusLabel = document.getElementById('compost-status-label');
-      const adviceText = document.getElementById('compost-advice-text');
+      const resultBox = document.getElementById("compost-result-box");
+      const ratioText = document.getElementById("compost-ratio-text");
+      const statusLabel = document.getElementById("compost-status-label");
+      const adviceText = document.getElementById("compost-advice-text");
 
       if (!resultBox) return;
 
       if (carbonKg === 0 && nitrogenKg === 0) {
-        resultBox.classList.add('hidden');
+        resultBox.classList.add("hidden");
         return;
       }
 
-    resultBox.classList.remove('hidden');
+      resultBox.classList.remove("hidden");
 
-    // Calculate simulated C/N ratio based on input weights
-    // Carbonaceous materials (straw, dry leaves) have high carbon (ratio around 60:1)
-    // Nitrogenous materials (manure, green scraps) have high nitrogen (ratio around 15:1)
-    // Weighted formula: C/N = (CarbonKg * 60 + NitrogenKg * 15) / (CarbonKg * 1 + NitrogenKg * 1)
-    let ratioVal = 0;
-    if (carbonKg + nitrogenKg > 0) {
-      ratioVal = ((carbonKg * 60) + (nitrogenKg * 15)) / (carbonKg + nitrogenKg);
-    }
-    
-    ratioVal = Math.round(ratioVal * 10) / 10;
-    if (ratioText) ratioText.textContent = `C/N ≈ ${ratioVal} : 1`;
+      // Calculate simulated C/N ratio based on input weights
+      // Carbonaceous materials (straw, dry leaves) have high carbon (ratio around 60:1)
+      // Nitrogenous materials (manure, green scraps) have high nitrogen (ratio around 15:1)
+      // Weighted formula: C/N = (CarbonKg * 60 + NitrogenKg * 15) / (CarbonKg * 1 + NitrogenKg * 1)
+      let ratioVal = 0;
+      if (carbonKg + nitrogenKg > 0) {
+        ratioVal = (carbonKg * 60 + nitrogenKg * 15) / (carbonKg + nitrogenKg);
+      }
 
-    if (ratioVal >= 25 && ratioVal <= 35) {
-      statusLabel.textContent = '🟢 ÉQUILIBRÉ (Idéal)';
-      statusLabel.className = 'inline-block text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20';
-      adviceText.textContent = 'Votre mélange de compostage est optimal. L\'échauffement thermique sera excellent pour détruire les graines de mauvaises herbes. Arrosez régulièrement le tas de compost.';
-    } else if (ratioVal < 25) {
-      statusLabel.textContent = '🟡 EXCES D\'AZOTE (Trop humide / Odorants)';
-      statusLabel.className = 'inline-block text-[10px] font-black text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20';
-      const neededCarbon = Math.round((nitrogenKg * 25 - nitrogenKg * 15) / (60 - 25));
-      adviceText.textContent = `Votre tas est trop riche en azote. Il risque de se tasser et de dégager de mauvaises odeurs d'ammoniac. Ajoutez environ ${neededCarbon} kg de matières carbonées sèches (paille sèche, feuilles mortes ou copeaux de bois) pour l'équilibrer.`;
-    } else {
-      statusLabel.textContent = '🟤 EXCES DE CARBONE (Décomposition lente)';
-      statusLabel.className = 'inline-block text-[10px] font-black text-orange-500 bg-orange-500/10 px-2.5 py-1 rounded-full border border-orange-500/20';
-      const neededNitrogen = Math.round((carbonKg * 60 - carbonKg * 30) / (30 - 15));
-      adviceText.textContent = `Votre tas est trop sec et carboné. La décomposition sera extrêmement lente par manque d'azote pour les bactéries. Ajoutez environ ${neededNitrogen} kg de matières azotées (fientes de poule, bouse de vache, herbe verte ou déchets de cuisine humides).`;
-    }
+      ratioVal = Math.round(ratioVal * 10) / 10;
+      if (ratioText) ratioText.textContent = `C/N ≈ ${ratioVal} : 1`;
+
+      if (ratioVal >= 25 && ratioVal <= 35) {
+        statusLabel.textContent = "🟢 ÉQUILIBRÉ (Idéal)";
+        statusLabel.className =
+          "inline-block text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20";
+        adviceText.textContent =
+          "Votre mélange de compostage est optimal. L'échauffement thermique sera excellent pour détruire les graines de mauvaises herbes. Arrosez régulièrement le tas de compost.";
+      } else if (ratioVal < 25) {
+        statusLabel.textContent = "🟡 EXCES D'AZOTE (Trop humide / Odorants)";
+        statusLabel.className =
+          "inline-block text-[10px] font-black text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20";
+        const neededCarbon = Math.round((nitrogenKg * 25 - nitrogenKg * 15) / (60 - 25));
+        adviceText.textContent = `Votre tas est trop riche en azote. Il risque de se tasser et de dégager de mauvaises odeurs d'ammoniac. Ajoutez environ ${neededCarbon} kg de matières carbonées sèches (paille sèche, feuilles mortes ou copeaux de bois) pour l'équilibrer.`;
+      } else {
+        statusLabel.textContent = "🟤 EXCES DE CARBONE (Décomposition lente)";
+        statusLabel.className =
+          "inline-block text-[10px] font-black text-orange-500 bg-orange-500/10 px-2.5 py-1 rounded-full border border-orange-500/20";
+        const neededNitrogen = Math.round((carbonKg * 60 - carbonKg * 30) / (30 - 15));
+        adviceText.textContent = `Votre tas est trop sec et carboné. La décomposition sera extrêmement lente par manque d'azote pour les bactéries. Ajoutez environ ${neededNitrogen} kg de matières azotées (fientes de poule, bouse de vache, herbe verte ou déchets de cuisine humides).`;
+      }
     } catch (err) {
-      ErrorHandler.log(err, 'Finances.calculateCompost');
-      ErrorHandler.showToast('Erreur lors du calcul du compost.', 'error');
+      ErrorHandler.log(err, "Finances.calculateCompost");
+      ErrorHandler.showToast("Erreur lors du calcul du compost.", "error");
     }
   },
 
@@ -492,7 +557,11 @@ export const FinancesModule = {
         return;
       }
 
-      const { totalRevenu: totalRevenue, totalDepense: totalExpenses, solde: totalBalance } = KAStorage.getFinanceStats();
+      const {
+        totalRevenu: totalRevenue,
+        totalDepense: totalExpenses,
+        solde: totalBalance,
+      } = KAStorage.getFinanceStats();
 
       // Build comprehensive Excel workbook with multiple sheets
       const wb = XLSX.utils.book_new();
@@ -500,12 +569,12 @@ export const FinancesModule = {
       // Sheet 1: Transactions
       const transactionsData = [
         ["KA FARM - Bilan Financier"],
-        [`Date de génération: ${new Date().toLocaleDateString('fr-FR')}`],
+        [`Date de génération: ${new Date().toLocaleDateString("fr-FR")}`],
         [],
-        ["Désignation", "Type", "Rubrique", "Date", "Montant (FCFA)", "Parcelle", "Culture"]
+        ["Désignation", "Type", "Rubrique", "Date", "Montant (FCFA)", "Parcelle", "Culture"],
       ];
 
-      finances.forEach(f => {
+      finances.forEach((f) => {
         transactionsData.push([
           f.description,
           f.type,
@@ -513,7 +582,7 @@ export const FinancesModule = {
           f.date,
           f.amount,
           f.parcelId || "",
-          f.cropName || ""
+          f.cropName || "",
         ]);
       });
 
@@ -527,8 +596,14 @@ export const FinancesModule = {
       const ws1 = XLSX.utils.aoa_to_sheet(transactionsData);
 
       // Set column widths for Transactions sheet
-      ws1['!cols'] = [
-        { wch: 35 }, { wch: 12 }, { wch: 20 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 20 }
+      ws1["!cols"] = [
+        { wch: 35 },
+        { wch: 12 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 20 },
       ];
 
       XLSX.utils.book_append_sheet(wb, ws1, "Transactions");
@@ -536,85 +611,91 @@ export const FinancesModule = {
       // Sheet 2: Marges par Parcelle
       const parcelData = [
         ["Marges par Parcelle"],
-        ["Parcelle", "Revenus (FCFA)", "Dépenses (FCFA)", "Marge Nette (FCFA)"]
+        ["Parcelle", "Revenus (FCFA)", "Dépenses (FCFA)", "Marge Nette (FCFA)"],
       ];
 
       const parcels = [
-        { id: 'P-001', name: 'Parcelle Nord' },
-        { id: 'P-002', name: 'Parcelle Est' },
-        { id: 'P-003', name: 'Parcelle Sud' },
-        { id: 'P-004', name: 'Zone Ombragée' },
-        { id: 'P-005', name: 'Parcelle Ouest' }
+        { id: "P-001", name: "Parcelle Nord" },
+        { id: "P-002", name: "Parcelle Est" },
+        { id: "P-003", name: "Parcelle Sud" },
+        { id: "P-004", name: "Zone Ombragée" },
+        { id: "P-005", name: "Parcelle Ouest" },
       ];
 
-      parcels.forEach(p => {
-        let rev = 0, exp = 0;
-        finances.forEach(f => {
+      parcels.forEach((p) => {
+        let rev = 0,
+          exp = 0;
+        finances.forEach((f) => {
           if (f.parcelId === p.id) {
-            if (f.type === 'Revenu') rev += f.amount;
-            else if (f.type === 'Dépense') exp += f.amount;
+            if (f.type === "Revenu") rev += f.amount;
+            else if (f.type === "Dépense") exp += f.amount;
           }
         });
         parcelData.push([p.name, rev, exp, rev - exp]);
       });
 
       const ws2 = XLSX.utils.aoa_to_sheet(parcelData);
-      ws2['!cols'] = [{ wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+      ws2["!cols"] = [{ wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
       XLSX.utils.book_append_sheet(wb, ws2, "Marges Parcelles");
 
       // Sheet 3: Marges par Variété
       const cropData = [
         ["Marges par Variété"],
-        ["Variété", "Revenus (FCFA)", "Dépenses (FCFA)", "Marge Nette (FCFA)"]
+        ["Variété", "Revenus (FCFA)", "Dépenses (FCFA)", "Marge Nette (FCFA)"],
       ];
 
       const cropsList = [
-        'Tomate Mongal F1', 'Oignon Rouge de Galmi', 'Menthe de Thiès',
-        'Chou Cabus', 'Piment Oiseau'
+        "Tomate Mongal F1",
+        "Oignon Rouge de Galmi",
+        "Menthe de Thiès",
+        "Chou Cabus",
+        "Piment Oiseau",
       ];
 
-      cropsList.forEach(cName => {
-        let rev = 0, exp = 0;
-        finances.forEach(f => {
+      cropsList.forEach((cName) => {
+        let rev = 0,
+          exp = 0;
+        finances.forEach((f) => {
           if (f.cropName === cName) {
-            if (f.type === 'Revenu') rev += f.amount;
-            else if (f.type === 'Dépense') exp += f.amount;
+            if (f.type === "Revenu") rev += f.amount;
+            else if (f.type === "Dépense") exp += f.amount;
           }
         });
         cropData.push([cName, rev, exp, rev - exp]);
       });
 
       const ws3 = XLSX.utils.aoa_to_sheet(cropData);
-      ws3['!cols'] = [{ wch: 25 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+      ws3["!cols"] = [{ wch: 25 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
       XLSX.utils.book_append_sheet(wb, ws3, "Marges Variétés");
 
       // Download the Excel file
-      XLSX.writeFile(wb, `ka_farm_bilan_financier_${new Date().toISOString().split('T')[0]}.xlsx`);
-      ErrorHandler.showToast('Export Excel réussi !', 'success');
+      XLSX.writeFile(wb, `ka_farm_bilan_financier_${new Date().toISOString().split("T")[0]}.xlsx`);
+      ErrorHandler.showToast("Export Excel réussi !", "success");
     };
 
     // WhatsApp Export of a single receipt
     window.shareFinanceWhatsApp = (id) => {
       const finances = KAStorage.getFinances();
-      const f = finances.find(item => item.id === id);
+      const f = finances.find((item) => item.id === id);
       if (!f) return;
 
-      const parcelText = f.parcelId ? `\n*Parcelle :* ${f.parcelId}` : '';
-      const cropText = f.cropName ? `\n*Culture :* ${f.cropName}` : '';
+      const parcelText = f.parcelId ? `\n*Parcelle :* ${f.parcelId}` : "";
+      const cropText = f.cropName ? `\n*Culture :* ${f.cropName}` : "";
 
-      const text = `*📋 REÇU DE COMPTABILITÉ - KA FARM*\n` +
-                   `----------------------------------------\n` +
-                   `*Réf :* ${f.id}\n` +
-                   `*Date :* ${f.date}\n` +
-                   `*Description :* ${f.description}\n` +
-                   `*Type :* ${f.type}\n` +
-                   `*Rubrique :* ${f.category}\n` +
-                   `*Montant :* ${f.amount.toLocaleString('fr-FR')} FCFA${parcelText}${cropText}\n` +
-                   `----------------------------------------\n` +
-                   `_KA Farm - Sénégal • Maraîchage horticole_`;
+      const text =
+        `*📋 REÇU DE COMPTABILITÉ - KA FARM*\n` +
+        `----------------------------------------\n` +
+        `*Réf :* ${f.id}\n` +
+        `*Date :* ${f.date}\n` +
+        `*Description :* ${f.description}\n` +
+        `*Type :* ${f.type}\n` +
+        `*Rubrique :* ${f.category}\n` +
+        `*Montant :* ${f.amount.toLocaleString("fr-FR")} FCFA${parcelText}${cropText}\n` +
+        `----------------------------------------\n` +
+        `_KA Farm - Sénégal • Maraîchage horticole_`;
 
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-      window.open(url, '_blank');
+      window.open(url, "_blank");
     };
 
     // CSV Export
@@ -625,20 +706,23 @@ export const FinancesModule = {
         return;
       }
       const headers = ["ID", "Description", "Type de Flux", "Rubrique", "Date", "Montant (FCFA)"];
-      const rows = finances.map(f => [
+      const rows = finances.map((f) => [
         f.id,
         `"${f.description.replace(/"/g, '""')}"`,
         f.type,
         f.category,
         f.date,
-        f.amount
+        f.amount,
       ]);
-      const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `ka_farm_bilan_financier_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute(
+        "download",
+        `ka_farm_bilan_financier_${new Date().toISOString().split("T")[0]}.csv`
+      );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -648,35 +732,43 @@ export const FinancesModule = {
     window.exportFinancesPDF = () => {
       const finances = KAStorage.getFinances();
       const { totalRevenu, totalDepense, solde } = KAStorage.getFinanceStats();
-      const zone = localStorage.getItem('ka_farm_zone') || 'Dakar (Sénégal)';
-      const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      const zone = localStorage.getItem("ka_farm_zone") || "Dakar (Sénégal)";
+      const today = new Date().toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
 
       // Create print style and print container
-      const printAreaId = 'print-report-area';
+      const printAreaId = "print-report-area";
       let printArea = document.getElementById(printAreaId);
       if (printArea) {
         printArea.remove();
       }
 
-      printArea = document.createElement('div');
+      printArea = document.createElement("div");
       printArea.id = printAreaId;
-      printArea.className = 'hidden';
-      
+      printArea.className = "hidden";
+
       // Build a premium-styled printable financial statement
-      const transactionsHtml = finances.map(f => {
-        const isRevenu = f.type === 'Revenu';
-        const sign = isRevenu ? '+' : '-';
-        const amountClass = isRevenu ? 'color: #10b981; font-weight: bold;' : 'color: #ef4444; font-weight: bold;';
-        return `
+      const transactionsHtml = finances
+        .map((f) => {
+          const isRevenu = f.type === "Revenu";
+          const sign = isRevenu ? "+" : "-";
+          const amountClass = isRevenu
+            ? "color: #10b981; font-weight: bold;"
+            : "color: #ef4444; font-weight: bold;";
+          return `
           <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
             <td style="padding: 10px 0; text-align: left; font-weight: 600; color: #1e293b;">${f.description}</td>
-            <td style="padding: 10px 0; text-align: left;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; background: ${isRevenu ? '#ecfdf5' : '#fef2f2'}; color: ${isRevenu ? '#065f46' : '#991b1b'}; border: 1px solid ${isRevenu ? '#a7f3d0' : '#fca5a5'};">${f.type.toUpperCase()}</span></td>
+            <td style="padding: 10px 0; text-align: left;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; background: ${isRevenu ? "#ecfdf5" : "#fef2f2"}; color: ${isRevenu ? "#065f46" : "#991b1b"}; border: 1px solid ${isRevenu ? "#a7f3d0" : "#fca5a5"};">${f.type.toUpperCase()}</span></td>
             <td style="padding: 10px 0; text-align: left; color: #64748b;">${f.category}</td>
             <td style="padding: 10px 0; text-align: left; color: #64748b;">${f.date}</td>
-            <td style="padding: 10px 0; text-align: right; font-family: monospace; ${amountClass}">${sign}${f.amount.toLocaleString('fr-FR')} F</td>
+            <td style="padding: 10px 0; text-align: right; font-family: monospace; ${amountClass}">${sign}${f.amount.toLocaleString("fr-FR")} F</td>
           </tr>
         `;
-      }).join('');
+        })
+        .join("");
 
       printArea.innerHTML = `
         <style>
@@ -784,15 +876,15 @@ export const FinancesModule = {
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px;">
             <div style="border: 1px solid #a7f3d0; background: #f0fdf4; border-radius: 12px; padding: 12px; text-align: left;">
               <span style="font-size: 8px; text-transform: uppercase; font-weight: bold; color: #047857; letter-spacing: 0.5px;">Total Revenus (Entrées)</span>
-              <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 900; color: #059669; font-family: monospace;">+${totalRevenu.toLocaleString('fr-FR')} F</p>
+              <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 900; color: #059669; font-family: monospace;">+${totalRevenu.toLocaleString("fr-FR")} F</p>
             </div>
             <div style="border: 1px solid #fca5a5; background: #fef2f2; border-radius: 12px; padding: 12px; text-align: left;">
               <span style="font-size: 8px; text-transform: uppercase; font-weight: bold; color: #b91c1c; letter-spacing: 0.5px;">Total Dépenses (Sorties)</span>
-              <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 900; color: #dc2626; font-family: monospace;">-${totalDepense.toLocaleString('fr-FR')} F</p>
+              <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 900; color: #dc2626; font-family: monospace;">-${totalDepense.toLocaleString("fr-FR")} F</p>
             </div>
             <div style="border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 12px; padding: 12px; text-align: left;">
               <span style="font-size: 8px; text-transform: uppercase; font-weight: bold; color: #334155; letter-spacing: 0.5px;">Solde Net Trésorerie</span>
-              <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 900; color: ${solde >= 0 ? '#10b981' : '#dc2626'}; font-family: monospace;">${solde.toLocaleString('fr-FR')} F</p>
+              <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 900; color: ${solde >= 0 ? "#10b981" : "#dc2626"}; font-family: monospace;">${solde.toLocaleString("fr-FR")} F</p>
             </div>
           </div>
 
@@ -843,31 +935,31 @@ export const FinancesModule = {
 
     // Delete finance item
     window.deleteFinance = (id) => {
-      if (!confirm('Voulez-vous supprimer cette ligne de comptabilité ?')) return;
+      if (!confirm("Voulez-vous supprimer cette ligne de comptabilité ?")) return;
       try {
-        const finances = KAStorage.getFinances().filter(f => f.id !== id);
+        const finances = KAStorage.getFinances().filter((f) => f.id !== id);
         KAStorage.saveFinances(finances);
         this.renderFinances();
-        ErrorHandler.showToast('Ligne de comptabilité supprimée.', 'info');
+        ErrorHandler.showToast("Ligne de comptabilité supprimée.", "info");
       } catch (err) {
-        ErrorHandler.log(err, 'Finances.deleteFinance');
-        ErrorHandler.showToast('Erreur lors de la suppression.', 'error');
+        ErrorHandler.log(err, "Finances.deleteFinance");
+        ErrorHandler.showToast("Erreur lors de la suppression.", "error");
       }
     };
 
     // Form submit
-    const form = document.getElementById('shared-finance-form');
+    const form = document.getElementById("shared-finance-form");
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener("submit", (e) => {
         e.preventDefault();
         try {
-          const desc = document.getElementById('form-fin-desc').value;
-          const type = document.getElementById('form-fin-type').value;
-          const cat = document.getElementById('form-fin-cat').value;
-          const amt = parseFloat(document.getElementById('form-fin-amount').value);
-          const date = document.getElementById('form-fin-date').value;
-          const parcelId = document.getElementById('form-fin-parcel').value;
-          const cropName = document.getElementById('form-fin-crop').value;
+          const desc = document.getElementById("form-fin-desc").value;
+          const type = document.getElementById("form-fin-type").value;
+          const cat = document.getElementById("form-fin-cat").value;
+          const amt = parseFloat(document.getElementById("form-fin-amount").value);
+          const date = document.getElementById("form-fin-date").value;
+          const parcelId = document.getElementById("form-fin-parcel").value;
+          const cropName = document.getElementById("form-fin-crop").value;
 
           if (!desc || !amt || !date) return;
 
@@ -875,39 +967,39 @@ export const FinancesModule = {
           finances.unshift({
             id: `F-${Date.now()}`,
             description: desc,
-            type: type,
+            type,
             category: cat,
             amount: amt,
-            date: date,
+            date,
             parcelId: parcelId || undefined,
-            cropName: cropName || undefined
+            cropName: cropName || undefined,
           });
 
           KAStorage.saveFinances(finances);
           this.renderFinances();
           form.reset();
-          
-          // Reset date
-          const todayStr = new Date().toISOString().split('T')[0];
-          document.getElementById('form-fin-date').value = todayStr;
 
-          document.getElementById('finance-modal').classList.add('hidden');
-          ErrorHandler.showToast('Flux de trésorerie enregistré avec succès !', 'success');
+          // Reset date
+          const todayStr = new Date().toISOString().split("T")[0];
+          document.getElementById("form-fin-date").value = todayStr;
+
+          document.getElementById("finance-modal").classList.add("hidden");
+          ErrorHandler.showToast("Flux de trésorerie enregistré avec succès !", "success");
         } catch (err) {
-          ErrorHandler.log(err, 'Finances.formSubmit');
-          ErrorHandler.showToast('Erreur lors de l\'enregistrement du flux financier.', 'error');
+          ErrorHandler.log(err, "Finances.formSubmit");
+          ErrorHandler.showToast("Erreur lors de l'enregistrement du flux financier.", "error");
         }
       });
     }
 
     // Live listening to compost calculator inputs
-    const carbonInput = document.getElementById('compost-carbon-input');
-    const nitrogenInput = document.getElementById('compost-nitrogen-input');
-    
+    const carbonInput = document.getElementById("compost-carbon-input");
+    const nitrogenInput = document.getElementById("compost-nitrogen-input");
+
     if (carbonInput && nitrogenInput) {
       const calcFn = () => this.calculateCompost();
-      carbonInput.addEventListener('input', calcFn);
-      nitrogenInput.addEventListener('input', calcFn);
+      carbonInput.addEventListener("input", calcFn);
+      nitrogenInput.addEventListener("input", calcFn);
     }
   },
 
@@ -922,30 +1014,31 @@ export const FinancesModule = {
   },
 
   renderMarkets() {
-    const grid = document.getElementById('markets-comparison-grid');
+    const grid = document.getElementById("markets-comparison-grid");
     if (!grid) return;
 
-    const cropKey = document.getElementById('market-crop-select').value || 'tomate';
+    const cropKey = document.getElementById("market-crop-select").value || "tomate";
     const cropPrices = this.marketsData[cropKey];
 
     const marketNames = {
-      sandiara: 'Sandiara',
-      mbour: 'Mbour',
-      dakar: 'Dakar (Samba)',
-      'saint-louis': 'St-Louis'
+      sandiara: "Sandiara",
+      mbour: "Mbour",
+      dakar: "Dakar (Samba)",
+      "saint-louis": "St-Louis",
     };
 
-    grid.innerHTML = Object.entries(cropPrices).map(([marketId, price]) => {
-      const isSelected = marketId === this.selectedMarket;
-      const borderClass = isSelected 
-        ? 'border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20 shadow-sm scale-[1.01]' 
-        : 'border-slate-100 dark:border-[#143E23]/20 bg-slate-50/50 dark:bg-[#061109]/30 hover:border-[#143E23]/50';
+    grid.innerHTML = Object.entries(cropPrices)
+      .map(([marketId, price]) => {
+        const isSelected = marketId === this.selectedMarket;
+        const borderClass = isSelected
+          ? "border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20 shadow-sm scale-[1.01]"
+          : "border-slate-100 dark:border-[#143E23]/20 bg-slate-50/50 dark:bg-[#061109]/30 hover:border-[#143E23]/50";
 
-      const checkBadge = isSelected
-        ? '<span class="absolute top-2.5 right-2.5 flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span>'
-        : '';
+        const checkBadge = isSelected
+          ? '<span class="absolute top-2.5 right-2.5 flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span>'
+          : "";
 
-      return `
+        return `
         <div onclick="window.setSimSelectedMarket('${marketId}')" class="relative cursor-pointer border rounded-2xl p-3.5 transition-all flex flex-col justify-between text-left space-y-1.5 ${borderClass}">
           <div class="flex items-center justify-between">
             <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">${marketNames[marketId]}</span>
@@ -954,26 +1047,27 @@ export const FinancesModule = {
           <p class="text-base font-black text-slate-800 dark:text-white font-mono">${price} F <span class="text-[9px] font-bold text-slate-400">/ kg</span></p>
         </div>
       `;
-    }).join('');
+      })
+      .join("");
   },
 
   updateMarketCalculations() {
-    const seeds = parseFloat(document.getElementById('cost-seeds').value) || 0;
-    const fertilizers = parseFloat(document.getElementById('cost-fertilizers').value) || 0;
-    const fuel = parseFloat(document.getElementById('cost-fuel').value) || 0;
-    const labor = parseFloat(document.getElementById('cost-labor').value) || 0;
-    const others = parseFloat(document.getElementById('cost-others').value) || 0;
-    const qty = parseFloat(document.getElementById('param-yield').value) || 500;
+    const seeds = parseFloat(document.getElementById("cost-seeds").value) || 0;
+    const fertilizers = parseFloat(document.getElementById("cost-fertilizers").value) || 0;
+    const fuel = parseFloat(document.getElementById("cost-fuel").value) || 0;
+    const labor = parseFloat(document.getElementById("cost-labor").value) || 0;
+    const others = parseFloat(document.getElementById("cost-others").value) || 0;
+    const qty = parseFloat(document.getElementById("param-yield").value) || 500;
 
     // Update yield display
-    const yieldDisplay = document.getElementById('yield-display');
+    const yieldDisplay = document.getElementById("yield-display");
     if (yieldDisplay) yieldDisplay.textContent = `${qty} kg`;
 
     const totalCost = seeds + fertilizers + fuel + labor + others;
     const costPerKg = qty > 0 ? Math.round(totalCost / qty) : 0;
 
     // Current price from selected market and crop
-    const cropKey = document.getElementById('market-crop-select').value || 'tomate';
+    const cropKey = document.getElementById("market-crop-select").value || "tomate";
     const currentPrice = this.marketsData[cropKey][this.selectedMarket];
 
     const totalRevenue = qty * currentPrice;
@@ -981,32 +1075,34 @@ export const FinancesModule = {
     const roi = totalCost > 0 ? Math.round((netProfit / totalCost) * 100) : 0;
 
     // Update fields
-    const elCost = document.getElementById('calc-total-cost');
-    const elPerKg = document.getElementById('calc-cost-per-kg');
-    const elProfit = document.getElementById('calc-net-profit');
-    const elRoi = document.getElementById('calc-roi');
+    const elCost = document.getElementById("calc-total-cost");
+    const elPerKg = document.getElementById("calc-cost-per-kg");
+    const elProfit = document.getElementById("calc-net-profit");
+    const elRoi = document.getElementById("calc-roi");
 
-    if (elCost) elCost.textContent = `${totalCost.toLocaleString('fr-FR')} F`;
-    if (elPerKg) elPerKg.textContent = `${costPerKg.toLocaleString('fr-FR')} F / kg`;
-    
+    if (elCost) elCost.textContent = `${totalCost.toLocaleString("fr-FR")} F`;
+    if (elPerKg) elPerKg.textContent = `${costPerKg.toLocaleString("fr-FR")} F / kg`;
+
     if (elProfit) {
-      elProfit.textContent = (netProfit >= 0 ? '+' : '') + `${netProfit.toLocaleString('fr-FR')} F`;
-      elProfit.className = netProfit >= 0 
-        ? 'text-lg font-black text-emerald-500 font-mono' 
-        : 'text-lg font-black text-rose-500 font-mono';
+      elProfit.textContent = (netProfit >= 0 ? "+" : "") + `${netProfit.toLocaleString("fr-FR")} F`;
+      elProfit.className =
+        netProfit >= 0
+          ? "text-lg font-black text-emerald-500 font-mono"
+          : "text-lg font-black text-rose-500 font-mono";
     }
 
     if (elRoi) {
-      elRoi.textContent = `ROI: ${roi >= 0 ? '+' : ''}${roi}%`;
-      elRoi.className = roi >= 0
-        ? 'text-[9px] text-emerald-500 font-extrabold uppercase'
-        : 'text-[9px] text-rose-500 font-extrabold uppercase';
+      elRoi.textContent = `ROI: ${roi >= 0 ? "+" : ""}${roi}%`;
+      elRoi.className =
+        roi >= 0
+          ? "text-[9px] text-emerald-500 font-extrabold uppercase"
+          : "text-[9px] text-rose-500 font-extrabold uppercase";
     }
 
     // Advice box update
-    const adviceTitle = document.getElementById('profit-advice-title');
-    const adviceDesc = document.getElementById('profit-advice-desc');
-    const adviceIcon = document.getElementById('profit-indicator-icon');
+    const adviceTitle = document.getElementById("profit-advice-title");
+    const adviceDesc = document.getElementById("profit-advice-desc");
+    const adviceIcon = document.getElementById("profit-indicator-icon");
 
     if (adviceTitle && adviceDesc && adviceIcon) {
       if (netProfit < 0) {
@@ -1035,16 +1131,16 @@ export const FinancesModule = {
     if (window.lucide) {
       window.lucide.createIcons();
     }
-  }
+  },
 };
 
 // Start finances module
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   FinancesModule.init();
 });
 
-document.addEventListener('ka_data_updated', (e) => {
-  if (e.detail && e.detail.key === 'ka_farm_finances') {
+document.addEventListener("ka_data_updated", (e) => {
+  if (e.detail && e.detail.key === "ka_farm_finances") {
     FinancesModule.renderFinances();
   }
 });
