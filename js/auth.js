@@ -1,64 +1,187 @@
-// KA Farm - Authentication Controller
+// KA Farm - Authentication Controller (Firebase Auth)
+// ------------------------------------------------------------------
+// ✅ Commute l'authentification du système LOCAL (PBKDF2 + localStorage)
+//    vers Firebase Auth (SDK client).
+//
+// Flux :
+//   - login  : signInWithEmailAndPassword → stocke l'ID token dans
+//              localStorage (clé `kafarm_token`, lue par api-client.js) →
+//              hydrate le profil (rôles depuis Firestore via `/api/auth/me`) →
+//              persiste le profil courant (localStorage) pour l'UI locale.
+//   - signup : createUserWithEmailAndPassword → profil local (rôles choisis
+//              conservés localement ; la source de vérité serveur reste le doc
+//              Firestore `users/{uid}` provisionné côté admin/seed).
+//   - logout : signOut → purge token + profil local.
+//   - Session : onAuthStateChanged restaure token + profil si localStorage est
+//              vide (couverture des cas cookie/localStorage vidé).
+//
+// Source de vérité du rôle :
+//   1) Serveur `/api/auth/me` (Firestore users/{uid} via Admin SDK) — best effort.
+//   2) Profil local mis en cache pour le MÊME uid (fallback hors-ligne).
+//   3) Rôle par défaut « Terrain ».
+// L'envoi de l'ID token dans chaque requête API (Bearer) débloque les routes
+// protégées par requireAuth (voir api/index.js).
+// ------------------------------------------------------------------
+
+import { auth } from "./firebase/firebase.js";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut,
+  getIdToken,
+} from "firebase/auth";
 import { KAStorage } from "./storage.js";
-import { UserManager } from "./user-manager.js";
-import { Crypto } from "./modules/crypto.js";
+import { USER_ROLES, isValidUserRole } from "./constants/roles.js";
 import { logger } from "./modules/logger.js";
 import { ErrorHandler } from "./modules/error-handler.js";
 
+export const TOKEN_KEY = "kafarm_token";
+const LEGACY_TOKEN_KEY = "ka_farm_token";
+const DEFAULT_ENTERPRISE_ID = "ka_farm";
+const DEFAULT_ENTERPRISE_NAME = "KA Farm";
+const DEFAULT_ENTERPRISE_CODE = "KA-FARM";
+
+// ---- Gestion du token (Bearer pour les routes /api/*) ----------------------
+function getToken() {
+  try {
+    return (
+      localStorage.getItem(TOKEN_KEY) ||
+      localStorage.getItem(LEGACY_TOKEN_KEY) ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
+function setToken(token) {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    /* localStorage indisponible : silencieux */
+  }
+}
+
+function clearToken() {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    /* silencieux */
+  }
+}
+
+// Traduction des codes d'erreur Firebase Auth en messages français
+const FIREBASE_AUTH_ERROR_MESSAGES = {
+  "auth/invalid-credential": "Email ou mot de passe incorrect.",
+  "auth/user-not-found": "Aucun compte associé à cette adresse email.",
+  "auth/wrong-password": "Mot de passe incorrect.",
+  "auth/invalid-email": "Adresse email invalide.",
+  "auth/user-disabled": "Ce compte a été désactivé.",
+  "auth/too-many-requests": "Trop de tentatives. Réessayez plus tard.",
+  "auth/email-already-in-use": "Cette adresse email est déjà utilisée.",
+  "auth/weak-password": "Le mot de passe doit contenir au moins 6 caractères.",
+  "auth/operation-not-allowed": "Cette opération n'est pas autorisée.",
+  "auth/network-request-failed": "Erreur réseau. Vérifiez votre connexion.",
+  "auth/internal-error": "Erreur interne. Veuillez réessayer.",
+};
+
+function getFriendlyAuthError(error) {
+  const code = (error && error.code) || "";
+  return (
+    FIREBASE_AUTH_ERROR_MESSAGES[code] ||
+    "Erreur lors de l'opération. Veuillez réessayer."
+  );
+}
+
+const AUTH_API = "/pages/shared/dashboard.html";
+// Construit l'objet utilisateur applicatif (même shape que l'ancien profil).
+function profileFromFirebaseUser(firebaseUser, extra = {}) {
+  const email = (firebaseUser && firebaseUser.email) || "";
+  const nameGuess = email.split("@")[0] || "Utilisateur";
+  const role = isValidUserRole(extra.role) ? extra.role : USER_ROLES.TERRAIN;
+  return {
+    uid: (firebaseUser && firebaseUser.uid) || "",
+    userId: (firebaseUser && firebaseUser.uid) || "",
+    email,
+    name: extra.name || (firebaseUser && firebaseUser.displayName) || nameGuess,
+    role,
+    enterpriseId: extra.enterpriseId || DEFAULT_ENTERPRISE_ID,
+    enterpriseName: extra.enterpriseName || DEFAULT_ENTERPRISE_NAME,
+    enterpriseCode: extra.enterpriseCode || DEFAULT_ENTERPRISE_CODE,
+    firebase: true,
+  };
+}
+
+// Lecture du profil autoritatif depuis le serveur (rôles en provenance de
+// Firestore users/{uid}). Retourne null en cas d'échec (réseau, 401, off).
+async function fetchServerProfile(firebaseUser, token) {
+  const response = await fetch("/api/auth/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  const u = payload && payload.user;
+  if (!u) return null;
+  return profileFromFirebaseUser(firebaseUser, {
+    name: u.name,
+    role: u.role,
+    enterpriseId: u.enterpriseId,
+    enterpriseName: u.enterpriseName,
+    enterpriseCode: u.enterpriseCode,
+  });
+}
+
+// Hydrate le profil dans l'ordre : serveur → cache local (même uid) → défaut.
+async function hydrateProfile(firebaseUser, token) {
+  try {
+    const server = await fetchServerProfile(firebaseUser, token);
+    if (server) return server;
+  } catch (err) {
+    logger.warn("hydrateProfile: fallback local", {
+      error: (err && err.message) || "",
+    });
+  }
+
+  const cached = KAStorage.getCurrentUser();
+  if (cached && cached.uid && cached.uid === firebaseUser.uid) {
+    return profileFromFirebaseUser(firebaseUser, {
+      name: cached.name,
+      role: cached.role,
+      enterpriseId: cached.enterpriseId,
+      enterpriseName: cached.enterpriseName,
+      enterpriseCode: cached.enterpriseCode,
+    });
+  }
+
+  return profileFromFirebaseUser(firebaseUser);
+}
 export const Auth = {
-  async login(email, password, remember = true) {
+  async login(email, password) {
     try {
-      const users = KAStorage.getUsers();
-      const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = credential.user;
+      const token = await getIdToken(firebaseUser, true);
+      setToken(token);
 
-      if (!user) {
-        ErrorHandler.showToast(
-          "Identifiants incorrects. Si vous n'avez pas de compte, veuillez vous inscrire via le lien d'inscription.",
-          "error"
-        );
-        return false;
-      }
+      const profile = await hydrateProfile(firebaseUser, token);
+      KAStorage.setCurrentUser(profile, true);
 
-      // Check if user has new format (salt + hash) or old format (legacy SHA-256)
-      if (user.password_salt) {
-        // New secure format with PBKDF2
-        const isValid = await Crypto.verifyPassword(password, user.password, user.password_salt);
-        if (!isValid) {
-          ErrorHandler.showToast("Mot de passe incorrect.", "error");
-          return false;
-        }
-      } else {
-        // Legacy format - migrate on the fly
-        const legacyHash = KAStorage.hashPassword(password);
-        if (user.password !== legacyHash) {
-          ErrorHandler.showToast("Mot de passe incorrect.", "error");
-          return false;
-        }
-        // Migrate to new format
-        const { hash, salt } = await Crypto.hashPassword(password);
-        user.password = hash;
-        user.password_salt = salt;
-        KAStorage.saveUsers(users);
-      }
-
-      KAStorage.setCurrentUser(
-        {
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          enterpriseId: user.enterpriseId || "ka_farm",
-          enterpriseName: user.enterpriseName || "KA Farm",
-          enterpriseCode: user.enterpriseCode || "KA-FARM",
-        },
-        remember
-      );
-
-      ErrorHandler.showToast(`Bienvenue, ${user.name} (${user.role}) !`, "success");
-      window.location.href = "/pages/shared/dashboard.html";
+      logger.info("User logged in via Firebase", {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+      });
+      ErrorHandler.showToast(`Bienvenue, ${profile.name} !`, "success");
+      window.location.assign(AUTH_API);
       return true;
     } catch (error) {
-      logger.error("Login error", { error: error.message });
-      ErrorHandler.showToast("Erreur lors de la connexion. Veuillez réessayer.", "error");
+      logger.warn("Login failed", {
+        error: (error && (error.code || error.message)) || "",
+      });
+      ErrorHandler.showToast(getFriendlyAuthError(error), "error");
       return false;
     }
   },
@@ -68,82 +191,110 @@ export const Auth = {
     email,
     role,
     password,
-    mode = "create",
-    enterpriseName = "",
-    invitationCode = ""
+    _mode = "create",
+    enterpriseName = ""
   ) {
     try {
-      const users = KAStorage.getUsers();
-      const exists = users.some((u) => u.email.toLowerCase() === email.toLowerCase());
+      const selectedRole = isValidUserRole(role) ? role : USER_ROLES.TERRAIN;
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = credential.user;
 
-      if (exists) {
-        ErrorHandler.showToast("Cette adresse e-mail est déjà utilisée.", "error");
-        return false;
-      }
-
-      let enterpriseId = "";
-      let entName = "";
-      let entCode = "";
-
-      if (mode === "create") {
-        enterpriseId = `ent_${Date.now()}`;
-        entName = (enterpriseName || "Mon Exploitation").trim();
-        entCode = `KAF-${Math.floor(1000 + Math.random() * 9000)}`;
-      } else {
-        const code = (invitationCode || "").trim().toUpperCase();
-        const foundUser = users.find(
-          (u) => u.enterpriseCode && u.enterpriseCode.toUpperCase() === code
-        );
-        if (!foundUser) {
-          ErrorHandler.showToast(
-            "Code d'invitation de l'équipe invalide. Veuillez demander le code à l'entrepreneur gérant.",
-            "error"
-          );
-          return false;
+      if (name) {
+        try {
+          await updateProfile(firebaseUser, { displayName: name });
+        } catch {
+          /* non bloquant */
         }
-        enterpriseId = foundUser.enterpriseId;
-        entName = foundUser.enterpriseName;
-        entCode = foundUser.enterpriseCode;
       }
 
-      // Hash password with new secure method
-      const { hash, salt } = await Crypto.hashPassword(password);
+      const token = await getIdToken(firebaseUser, true);
+      setToken(token);
 
-      const newUser = {
+      const enterpriseId = `ent_${Date.now()}`;
+      const entName = (enterpriseName || "Mon Exploitation").trim() || "Mon Exploitation";
+      const entCode = `KAF-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const profile = profileFromFirebaseUser(firebaseUser, {
         name,
-        email,
-        role,
+        role: selectedRole,
         enterpriseId,
         enterpriseName: entName,
         enterpriseCode: entCode,
-        password: hash,
-        password_salt: salt,
-      };
+      });
+      KAStorage.setCurrentUser(profile, true);
 
-      users.push(newUser);
-      KAStorage.saveUsers(users);
-
-      KAStorage.setCurrentUser(newUser, true);
-
+      logger.info("User signed up via Firebase", {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        role: selectedRole,
+      });
       ErrorHandler.showToast(
         `Compte créé avec succès !\nExploitation : ${entName}\nCode Équipe : ${entCode}`,
         "success"
       );
-      window.location.href = "/pages/shared/dashboard.html";
+      window.location.assign(AUTH_API);
       return true;
     } catch (error) {
-      logger.error("Signup error", { error: error.message });
-      ErrorHandler.showToast("Erreur lors de la création du compte. Veuillez réessayer.", "error");
+      logger.warn("Signup failed", {
+        error: (error && (error.code || error.message)) || "",
+      });
+      ErrorHandler.showToast(getFriendlyAuthError(error), "error");
       return false;
     }
   },
 
-  logout() {
+  async logout() {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      logger.warn("Logout error", { error: (error && error.message) || "" });
+    }
+    clearToken();
     KAStorage.setCurrentUser(null);
     ErrorHandler.showToast("Vous avez été déconnecté.", "success");
-    window.location.href = "/index.html";
+    window.location.assign(LOGOUT_URL);
   },
-};
 
-// Expose globally so inline onclick/onsubmit can call it if needed
-window.Auth = Auth;
+  // Token courant (ID token Firebase frais ou token mis en cache).
+  async getFirebaseToken(refresh = false) {
+    if (auth.currentUser) {
+      return getIdToken(auth.currentUser, refresh);
+    }
+    return getToken();
+  },
+
+  getToken,
+};
+// Restauration de session : si Firebase confirme un utilisateur connecté alors
+// que le profil local est absent (ou appartient à un autre uid), on le
+// ré-hydrate et on resynchronise le token.
+let authStateBound = false;
+if (typeof window !== "undefined" && !authStateBound) {
+  authStateBound = true;
+  onAuthStateChanged(auth, async (firebaseUser) => {
+    try {
+      if (firebaseUser) {
+        const token = await getIdToken(firebaseUser, false);
+        setToken(token);
+        const local = KAStorage.getCurrentUser();
+        if (!local || (local.uid && local.uid !== firebaseUser.uid)) {
+          const profile = await hydrateProfile(firebaseUser, token);
+          KAStorage.setCurrentUser(profile, true);
+        }
+      } else {
+        clearToken();
+        KAStorage.setCurrentUser(null);
+      }
+    } catch (err) {
+      logger.warn("onAuthStateChanged handler error", {
+        error: (err && err.message) || "",
+      });
+    }
+  });
+}
+
+// Expose globalement pour compat avec les appels inline.
+if (typeof window !== "undefined") {
+  window.Auth = Auth;
+}
+const LOGOUT_URL = "/index.html";
