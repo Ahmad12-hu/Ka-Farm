@@ -1,7 +1,7 @@
 // KA Farm - Compost Storage Domain
 // Manages organic composting data
 
-import { KAStorage } from "./core.js";
+import { KAStorage, daysBetween } from "./core.js";
 
 const DEFAULT_COMPOST_MATERIALS = [
   {
@@ -191,7 +191,7 @@ const DEFAULT_COMPOST_MATERIALS = [
   },
 ];
 
-const DEFAULT_MAIN = [
+const DEFAULT_COMPOST_RECIPES = [
   {
     id: "CR-001",
     name: "Recette Classique 3 Couches",

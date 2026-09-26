@@ -588,6 +588,9 @@ export const CompostModule = {
   openNewBatchModal() {
     this.elements.newBatchModal?.classList.remove("hidden");
     this.loadRecipeSelectOptions();
+    this.state.currentBatchMaterials = {};
+    this.renderBatchMaterialsSelector();
+    this.updateBatchCNRatio();
   },
 
   closeNewBatchModal() {
@@ -1413,43 +1416,6 @@ export const CompostModule = {
 
   closeBatchDetailModal() {
     this.elements.batchDetailModal?.classList.add("hidden");
-  },
-
-  // ============================================================
-  // MODAL MANAGEMENT
-  // ============================================================
-
-  openNewBatchModal() {
-    this.elements.newBatchModal?.classList.remove("hidden");
-    this.state.currentBatchMaterials = {};
-    this.renderBatchMaterialsSelector();
-    this.updateBatchCNRatio();
-  },
-
-  closeNewBatchModal() {
-    this.elements.newBatchModal?.classList.add("hidden");
-    this.state.currentBatchMaterials = {};
-    this.state.editingBatchId = null;
-  },
-
-  openRecipeModal() {
-    this.elements.recipeManagerModal?.classList.remove("hidden");
-    this.renderRecipesList();
-    this.hideRecipeForm();
-  },
-
-  closeRecipeModal() {
-    this.elements.recipeManagerModal?.classList.add("hidden");
-  },
-
-  openMaterialModal() {
-    this.elements.materialManagerModal?.classList.remove("hidden");
-    this.renderMaterialsList();
-    this.hideMaterialForm();
-  },
-
-  closeMaterialModal() {
-    this.elements.materialManagerModal?.classList.add("hidden");
   },
 
   // ============================================================

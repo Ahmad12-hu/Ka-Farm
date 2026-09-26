@@ -538,7 +538,4 @@ export const KAStorage = {
   saveTasks(tasks) {
     this.set("ka_farm_tasks", tasks);
   },
-  getUsers() {
-    return this.get("ka_farm_users", DEFAULT_USERS);
-  },
-};
+  };

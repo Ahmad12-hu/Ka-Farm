@@ -376,7 +376,7 @@ export const WeatherAlertsModule = {
         <tr>
           <td colspan="6" class="px-4 py-8 text-center text-slate-400">
             <p class="text-xs font-bold">Aucune alerte active.</p>
-            <p class="text-[10px] mt-1">Toutes les alertes ont été acquittées ou aucune n\'est active actuellement.</p>
+            <p class="text-[10px] mt-1">Toutes les alertes ont été acquittées ou aucune n'est active actuellement.</p>
           </td>
         </tr>
       `;
@@ -441,7 +441,7 @@ export const WeatherAlertsModule = {
       tableBody.innerHTML = `
         <tr>
           <td colspan="7" class="px-4 py-8 text-center text-slate-400">
-            <p class="text-xs font-bold">Aucune alerte dans l\'historique.</p>
+            <p class="text-xs font-bold">Aucune alerte dans l'historique.</p>
             <p class="text-[10px] mt-1">Les alertes climatiques seront affichées ici après leur déclenchement.</p>
           </td>
         </tr>
@@ -688,7 +688,7 @@ window.submitWeatherAlert = (e) => {
 };
 
 window.editWeatherAlert = (id) => {
-  const alert = weatherAlerts.find((a) => a.id === id);
+  let alert = weatherAlerts.find((a) => a.id === id);
   if (!alert) {
     // Try to find in history
     const historyAlert = weatherAlertHistory.find((h) => h.id === id);
@@ -864,7 +864,7 @@ window.openAcknowledgeModal = (id) => {
   const message = document.getElementById("acknowledge-message");
 
   if (modal && message) {
-    message.textContent = `Vous êtes sur le point d\'acquitter l\'alerte : "${alert.alert_type}". Cette action marque l\'alerte comme lue et traitée.`;
+    message.textContent = `Vous êtes sur le point d'acquitter l'alerte : "${alert.alert_type}". Cette action marque l'alerte comme lue et traitée.`;
     modal.classList.remove("hidden");
   }
 };

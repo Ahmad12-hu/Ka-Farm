@@ -2,6 +2,7 @@
 import { KAStorage } from "../storage.js";
 import { logger } from "./logger.js";
 import { ErrorHandler } from "./error-handler.js";
+import { UserManager } from "../user-manager.js";
 
 let parcelles = [];
 let selectedParcelId = null;

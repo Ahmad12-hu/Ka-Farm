@@ -216,7 +216,7 @@ const DISEASE_LIBRARY = [
     prevention: [
       "Installer des pièges englués jaunes",
       "Introduire des coccinelles (prédateurs naturels)",
-      "Éviter les excès d\'azote",
+      "Éviter les excès d'azote",
       "Irriguer au pied pour éviter de mouiller les feuilles",
     ],
     organicTreatments: [
@@ -307,18 +307,18 @@ const DISEASE_LIBRARY = [
     cropTypes: ["Tomate", "Piment", "Poivron"],
     affectedParts: ["fruits"],
     symptoms: [
-      "Taches brunes et nécrotiques à l\'extrémité des fruits",
+      "Taches brunes et nécrotiques à l'extrémité des fruits",
       "Fruits qui pourrissent avant maturité",
       "Taches noires et enfoncées à la base du fruit",
     ],
     description:
-      "Trouble physiologique causé par une carence en calcium ou des fluctuations de l\'humidité du sol. Très courant dans les cultures de tomate.",
+      "Trouble physiologique causé par une carence en calcium ou des fluctuations de l'humidité du sol. Très courant dans les cultures de tomate.",
     severity: "Moyenne",
     frequency: "Élevée",
     prevention: [
       "Maintenir une irrigation régulière et uniforme",
-      "Apporter du calcium (gypse agricole, coquilles d\'œufs broyées)",
-      "Éviter les excès d\'azote et de potassium",
+      "Apporter du calcium (gypse agricole, coquilles d'œufs broyées)",
+      "Éviter les excès d'azote et de potassium",
       "Utiliser des variétés résistantes",
     ],
     organicTreatments: [
@@ -344,7 +344,7 @@ const DISEASE_LIBRARY = [
       },
     ],
     notes:
-      "Problème souvent confondu avec une maladie fongique. C\'est un trouble physiologique, pas une maladie contagieuse.",
+      "Problème souvent confondu avec une maladie fongique. C'est un trouble physiologique, pas une maladie contagieuse.",
   },
   {
     id: "D-007",
@@ -402,15 +402,15 @@ const DISEASE_LIBRARY = [
       "Taches circulaires noires et enfoncées sur les fruits",
       "Taches brunes à centre clair sur les feuilles",
       "Pourriture des fruits mûrs",
-      "Taches qui s\'agrandissent par temps humide",
+      "Taches qui s'agrandissent par temps humide",
     ],
     description:
       "Maladie fongique causée par Colletotrichum spp. Affecte particulièrement les fruits mûrs. Se développe par temps chaud et humide.",
     severity: "Élevée",
     frequency: "Moyenne",
     prevention: [
-      "Éviter de mouiller les feuilles lors de l\'irrigation",
-      "Récolter les fruits dès qu\'ils sont mûrs",
+      "Éviter de mouiller les feuilles lors de l'irrigation",
+      "Récolter les fruits dès qu'ils sont mûrs",
       "Élimination des fruits infectés",
       "Rotation des cultures",
     ],
@@ -457,12 +457,12 @@ const DISEASE_LIBRARY = [
       "Feuilles qui jaunissent et tombent prématurément",
     ],
     description:
-      "Maladie bactérienne causée par Xanthomonas spp. ou Pseudomonas spp. Se propage rapidement par temps humide et par l\'eau d\'irrigation.",
+      "Maladie bactérienne causée par Xanthomonas spp. ou Pseudomonas spp. Se propage rapidement par temps humide et par l'eau d'irrigation.",
     severity: "Élevée",
     frequency: "Élevée",
     prevention: [
       "Utiliser des semences certifiées et saines",
-      "Éviter l\'irrigation par aspersion",
+      "Éviter l'irrigation par aspersion",
       "Désinfecter les outils de taille",
       "Rotation des cultures",
       "Élimination des plants infectés",
@@ -499,13 +499,13 @@ const DISEASE_LIBRARY = [
     affectedParts: ["feuilles", "tiges", "plante_entiere"],
     symptoms: [
       "Flétrissement soudain des plants",
-      "Feuilles qui s\'enroulent et se dessèchent",
+      "Feuilles qui s'enroulent et se dessèchent",
       "Vaisseaux bruns dans la tige",
       "Plants qui meurent rapidement",
       "Croissance arrêtée",
     ],
     description:
-      "Maladie bactérienne très destructrice causée par Ralstonia solanacearum. Peut tuer des plants en quelques jours. Se propage par l\'eau, le sol et les outils.",
+      "Maladie bactérienne très destructrice causée par Ralstonia solanacearum. Peut tuer des plants en quelques jours. Se propage par l'eau, le sol et les outils.",
     severity: "Critique",
     frequency: "Moyenne",
     prevention: [

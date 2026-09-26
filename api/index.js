@@ -1881,5 +1881,163 @@ app.get("/api/weather", async (req, res) => {
     return res.status(500).json({ error: "Erreur lors de la récupération des données météo" });
   }
 });
+// ==================== SYNC (Phase 1 Fullstack, additif) ====================
+// BEST-EFFORT : cette route ne bloque jamais. Si Firestore est indisponible,
+// elle met à jour la mémoire serveur et répond { ok: true } pour ne pas casser
+// le frontend actuel (qui continue de fonctionner en local via localStorage).
+// ⚠ Sécurité : à protéger par requireAuth lors de la migration Firebase Auth
+//   (Phase 2). Ne pas exposer cette route publiquement en production sans auth.
+const SYNCABLE_MEMORY = {
+  crops: { get: () => serverCrops, set: (v) => { serverCrops = v; } },
+  parcelles: { get: () => serverParcelles, set: (v) => { serverParcelles = v; } },
+  tasks: { get: () => serverTasks, set: (v) => { serverTasks = v; } },
+  finances: { get: () => serverFinances, set: (v) => { serverFinances = v; } },
+  employees: { get: () => serverEmployees, set: (v) => { serverEmployees = v; } },
+  cheptel: { get: () => serverCheptel, set: (v) => { serverCheptel = v; } },
+};
+
+// Sérialiser proprement le JSON reçu (protection anti-casse syntaxe).
+function safeJson(body) {
+  if (!body || typeof body !== "string") return null;
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+}
+
+// Applique une action SAVE sur une collection (collection entière ou éléments).
+function applySave(collection, items) {
+  const entry = SYNCABLE_MEMORY[collection];
+  if (!entry || !Array.isArray(items)) return false;
+  entry.set(items);
+  return true;
+}
+
+// Route de synchronisation (réception d'une action unique).
+app.post("/api/sync/item", async (req, res) => {
+  try {
+    const action = req.body || {};
+    const { collection, type } = action;
+    if (!collection || !SYNCABLE_MEMORY[collection]) {
+      return res.status(400).json({ ok: false, error: "Collection inconnue" });
+    }
+
+    if (type === "SAVE" || type === "SAVE_ALL") {
+      const items = typeof action.data === "string" ? safeJson(action.data) : (action.data || action.items);
+      if (!applySave(collection, items)) {
+        return res.status(400).json({ ok: false, error: "données invalides" });
+      }
+    } else if (type === "UPDATE" || type === "CREATE") {
+      const item = action.data;
+      if (!item || !item.id) {
+        return res.status(400).json({ ok: false, error: "Donnée (id) requise" });
+      }
+      const entry = SYNCABLE_MEMORY[collection];
+      const current = Array.isArray(entry.get()) ? entry.get() : [];
+      const idx = current.findIndex((x) => x && x.id === item.id);
+      if (idx === -1) current.push(item);
+      else current[idx] = { ...current[idx], ...item };
+      entry.set(current);
+    } else if (type === "DELETE") {
+      const id = action.data?.id || action.id;
+      const entry = SYNCABLE_MEMORY[collection];
+      const current = Array.isArray(entry.get()) ? entry.get() : [];
+      entry.set(current.filter((x) => x && x.id !== id));
+    } else {
+      return res.status(400).json({ ok: false, error: `Type inconnu: ${type}` });
+    }
+
+    const enterpriseId = req.user?.enterpriseId || action.enterpriseId || "ka_farm";
+
+    // Best-effort : persister en Firestore si disponible, sinon tant pis.
+    if (!getFirestoreUnavailableMessage()) {
+      try {
+        await saveToFirestore(collection, SYNCABLE_MEMORY[collection].get(), enterpriseId);
+        return res.json({ ok: true, persisted: true });
+      } catch (err) {
+        logger.warn(`Sync save best-effort failed for ${collection}: ${err.message}`);
+      }
+    }
+
+    return res.json({ ok: true, persisted: false });
+  } catch (error) {
+    logger.error("Sync route error", { error: error.message });
+    // Dégradation : ne jamais casser le frontend, répondre ok au mieux.
+    return res.status(400).json({ ok: false, error: error.message || "Erreur" });
+  }
+});
+// Route de synchronisation batch (plusieurs actions en un appel).
+app.post("/api/sync", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const actions = Array.isArray(body) ? body : body.actions;
+
+    if (!Array.isArray(actions) || actions.length === 0) {
+      return res.status(400).json({ ok: false, error: "actions requis" });
+    }
+
+    const results = [];
+    for (const action of actions) {
+      const collection = action && action.collection;
+      if (!collection || !SYNCABLE_MEMORY[collection]) {
+        results.push({ ok: false, collection, error: "Collection inconnue" });
+        continue;
+      }
+
+      const type = action.type || "SAVE_ALL";
+      try {
+        if (type === "SAVE" || type === "SAVE_ALL") {
+          const raw = action.data || action.items;
+          const items = typeof raw === "string" ? safeJson(raw) : raw;
+          if (!Array.isArray(items)) {
+            results.push({ ok: false, collection, error: "données invalides" });
+            continue;
+          }
+          applySave(collection, items);
+        } else if ((type === "UPDATE" || type === "CREATE") && action.data) {
+          const item = action.data;
+          const entry = SYNCABLE_MEMORY[collection];
+          const current = Array.isArray(entry.get()) ? entry.get() : [];
+          const idx = current.findIndex((x) => x && x.id === item.id);
+          if (idx === -1) current.push(item);
+          else current[idx] = { ...current[idx], ...item };
+          entry.set(current);
+        } else if (type === "DELETE" && (action.data?.id || action.id)) {
+          const id = action.data?.id || action.id;
+          const entry = SYNCABLE_MEMORY[collection];
+          const current = Array.isArray(entry.get()) ? entry.get() : [];
+          entry.set(current.filter((x) => x && x.id !== id));
+        }
+
+        const enterpriseId =
+          req.user?.enterpriseId || action.enterpriseId || "ka_farm";
+        let persisted = false;
+        if (!getFirestoreUnavailableMessage()) {
+          try {
+            await saveToFirestore(collection, SYNCABLE_MEMORY[collection].get(), enterpriseId);
+            persisted = true;
+          } catch (err) {
+            logger.warn(`Sync batch save failed ${collection}: ${err.message}`);
+          }
+        }
+        results.push({ ok: true, collection, persisted });
+      } catch (err) {
+        logger.error(`Sync batch item error ${collection}`, { error: err.message });
+        results.push({ ok: false, collection, error: err.message });
+      }
+    }
+
+    return res.json({ ok: true, results });
+  } catch (error) {
+    logger.error("Sync batch route error", { error: error.message });
+    return res.status(400).json({ ok: false, error: error.message || "Erreur" });
+  }
+});
+
+// Route santé (annexe, non bloquante).
+app.get("/api/health", async (req, res) => {
+  res.json({ ok: true, status: "up", timestamp: new Date().toISOString() });
+});
 
 export default app;
