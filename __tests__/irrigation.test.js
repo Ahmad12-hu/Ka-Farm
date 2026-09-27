@@ -68,6 +68,7 @@ describe("Irrigation Calculator", () => {
     sableux: { drainage: 1.2, retenue: 0.8, label: "Sableux (Drainage rapide)" },
     argileux: { drainage: 0.8, retenue: 1.2, label: "Argileux (Rétention forte)" },
     limoneux: { drainage: 1.0, retenue: 1.0, label: "Argilo-limoneux (Équilibré)" },
+    lateritique: { drainage: 1.1, retenue: 0.9, label: "Latéritique" },
   };
 
   function calculateIrrigation(surface, cropKey, solKey, weatherData = null) {
@@ -186,6 +187,15 @@ describe("Irrigation Calculator", () => {
       const limonResult = calculateIrrigation(100, "tomate", "limoneux");
 
       expect(clayResult.volumeLitres).toBeLessThan(limonResult.volumeLitres);
+    });
+
+    test("laterite soil volume should be between clay and sandy", () => {
+      const sandyResult = calculateIrrigation(100, "tomate", "sableux");
+      const lateriteResult = calculateIrrigation(100, "tomate", "lateritique");
+      const clayResult = calculateIrrigation(100, "tomate", "argileux");
+
+      expect(lateriteResult.volumeLitres).toBeGreaterThan(clayResult.volumeLitres);
+      expect(lateriteResult.volumeLitres).toBeLessThan(sandyResult.volumeLitres);
     });
   });
 

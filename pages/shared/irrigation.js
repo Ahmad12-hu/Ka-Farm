@@ -307,6 +307,7 @@ window.updateET0Calculations = () => {
     sableux: "Sableux (Dakar)",
     argileux: "Argileux (Fleuve)",
     limoneux: "Argilo-limoneux",
+    lateritique: "Latéritique",
   };
   document.getElementById("sol-val").textContent = solNames[solKey] || "Sableux";
   document.getElementById("surface-val").textContent = `${surface} m²`;
@@ -356,6 +357,15 @@ window.updateET0Calculations = () => {
       "text-[9px] px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded-md font-extrabold uppercase";
     soilAdvice =
       " Sols argileux : un seul arrosage matinal profond suffit, la rétention est maximale.";
+  } else if (solKey === "lateritique") {
+    recMinutes = Math.round(recMinutes * 1.05);
+    recMinutes = Math.max(10, Math.min(45, recMinutes));
+    suggest.textContent = `${recMinutes} minutes le matin`;
+    splitBadge.textContent = "1-2 cycles (Latérite)";
+    splitBadge.className =
+      "text-[9px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-md font-extrabold uppercase";
+    soilAdvice =
+      " Sols latéritiques : drainage correct mais réserve moyenne, arrosez modérément et paillez pour limiter l'évaporation.";
   } else {
     recMinutes = Math.max(10, Math.min(45, recMinutes));
     suggest.textContent = `${recMinutes} minutes le matin`;
@@ -369,6 +379,7 @@ window.updateET0Calculations = () => {
   // Add safety margins for sandy soil
   let volumeLitres = etc * surface;
   if (solKey === "sableux") volumeLitres *= 1.15; // 15% leaching loss allowance
+  else if (solKey === "lateritique") volumeLitres *= 1.05; // 5% perte lessivage modérée
   volumeLitres = Math.round(volumeLitres);
   volumeSuggest.textContent = `${volumeLitres.toLocaleString("fr-FR")} Litres`;
 
