@@ -287,10 +287,11 @@ app.use("/api", apiLimiter);
 
 // ============================================================================
 // AUTH MIDDLEWARE — accepte deux types de Bearer token :
-//   1) JWT HMAC local (signé avec JWT_SECRET via POST /api/auth/login) — backward compat
-//   2) ID token Firebase (signé RS256 par Google, validé par Firebase Admin SDK)
-// L'ordre JWT → Firebase garantit la compatibilité ascendante pendant la migration
-// Firebase Auth, sans casser les clients/existants qui utilisent encore le JWT local.
+//   1) ID token Firebase (validé par Firebase Admin SDK, rôle lu depuis
+//      Firestore users/{uid}) — flux cible (le frontend utilise Firebase Auth)
+//   2) JWT HMAC local (signé avec JWT_SECRET via POST /api/auth/login) — compat
+// L'ID token Firebase est testé EN PREMIER ; on retombe sur le JWT local
+// uniquement si la vérification Firebase échoue.
 // ============================================================================
 
 // Valeurs par défaut (fallback sécurisé si le rôle n'a pas encore de doc Firestore)
@@ -372,7 +373,7 @@ async function verifyFirebaseIdToken(token) {
   };
 }
 
-// Auth middleware: require valid token (JWT local OU ID token Firebase)
+// Auth middleware: valide soit un ID token Firebase, soit un JWT local.
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -382,42 +383,43 @@ function requireAuth(req, res, next) {
 
   const token = authHeader.split(" ")[1];
 
-  // Chemin 1 : JWT local (comportement historiquement attendu, préservé à l'identique)
-  let jwtSecret = null;
-  try {
-    jwtSecret = getJwtSecret();
-  } catch (error) {
-    jwtSecret = null;
-  }
-  if (jwtSecret) {
-    try {
-      const decoded = jwt.verify(token, jwtSecret);
-      req.user = decoded;
-      logger.info("Authenticated via JWT local", {
-        email: decoded.email,
-        url: req.originalUrl,
-      });
-      return next();
-    } catch (jwtErr) {
-      // JWT local invalide → on tente l'ID token Firebase ci-dessous
-    }
-  }
-
-  // Chemin 2 : ID token Firebase
+  // Chemin 1 : ID token Firebase (flux cible, frontend migré Firebase Auth)
   verifyFirebaseIdToken(token)
     .then((user) => {
       req.user = user;
-      logger.info("Authenticated via Firebase ID token", {
-        uid: user.uid,
-        email: user.email,
-        role: user.role,
-        url: req.originalUrl,
-      });
       next();
     })
-    .catch((err) => {
-      logger.warn("Invalid auth token", { error: err.message, url: req.originalUrl });
-      return res.status(401).json({ error: "Token invalide ou expiré" });
+    .catch((firebaseErr) => {
+      // Chemin 2 : repli sur le JWT local (JWT_SECRET) — compat anciens clients
+      let jwtSecret = null;
+      try {
+        jwtSecret = getJwtSecret();
+      } catch (error) {
+        logger.error("JWT configuration error", { error: error.message });
+        jwtSecret = null;
+      }
+      if (!jwtSecret) {
+        logger.warn("Invalid auth token (Firebase + JWT indisponibles)", {
+          error: firebaseErr.message,
+          url: req.originalUrl,
+        });
+        return res.status(401).json({ error: "Token invalide ou expiré" });
+      }
+      try {
+        const decoded = jwt.verify(token, jwtSecret);
+        req.user = decoded;
+        logger.info("Authenticated via JWT local", {
+          email: decoded.email,
+          url: req.originalUrl,
+        });
+        return next();
+      } catch (jwtErr) {
+        logger.warn("Invalid auth token", {
+          error: `${firebaseErr.message} / ${jwtErr.message}`,
+          url: req.originalUrl,
+        });
+        return res.status(401).json({ error: "Token invalide ou expiré" });
+      }
     });
 }
 
@@ -425,32 +427,22 @@ function requireAuth(req, res, next) {
 // /api/weather ne dépend pas de Firestore (API Open-Meteo externe)
 app.use(["/api/auth/login"], requireFirestoreReady);
 
-// ⚠️ NOTE DE MIGRATION IA / AUTH (2026-08-09, mis à jour après implémentation)
+// ⚠️ NOTE AUTH IA (2026-09-27, mise à jour après vérification)
 // ------------------------------------------------------------------
-// Les routes IA ci-dessous sont protégées par requireAuth. requireAuth accepte
+// Les routes IA ci-dessous sont protégées par requireAuth, qui accepte
 // désormais DEUX types de Bearer token :
-//   1) JWT HMAC local (signé avec JWT_SECRET via POST /api/auth/login) — compat
-//   2) ID token Firebase (validé par Firebase Admin SDK, rôle lu depuis
-//      Firestore users/{uid}) — nouveau flux cible
-// Le frontend actuel utilise encore une authentification LOCALE
-// (js/auth.js -> localStorage) et n'envoie AUCUN token dans ses appels fetch
-// (js/index-main.js, js/modules/ai-service.js, js/modules/crops.js,
-// js/modules/diagnostics.js, js/modules/notifications.js, pages/shared/training.html).
+//   1) ID token Firebase (validé par Firebase Admin SDK, rôle lu depuis
+//      Firestore users/{uid}) — flux cible
+//   2) JWT HMAC local (signé avec JWT_SECRET) — compat anciens clients
+// Le frontend actuel (js/auth.js) est DÉJÀ migré vers Firebase Auth
+// (signInWithEmailAndPassword / onAuthStateChanged) et envoie son ID token
+// Firebase via api-client.js / Auth.getFirebaseToken. On isole ces routes
+// du middleware requireFirestoreReady pour ne pas bloquer l'IA si le SDK
+// Admin n'est pas configuré, mais requireAuth reste obligatoire (protection
+// du quota API).
 //
-// CONSÉQUENCE à ce stade : tant que le frontend n'est pas migré vers le SDK
-// Firebase Auth, l'IA (et les autres routes requireAuth appelées par le frontend)
-// ne reçoivent aucun token en production sur Vercel (réponse 401 « Token requis »).
-// En développement (server.js), les routes IA ne sont PAS protégées, donc l'IA
-// fonctionne en local.
-//
-// La migration RESTANTE (côté client) débloquera les routes requireAuth :
-// - réécrire js/auth.js pour utiliser Firebase Auth (signInWithEmailAndPassword,
-//   onAuthStateChanged)
-// - injecter l'ID token Firebase dans chaque requête via api-client.js
-// Le serveur (requireAuth) est déjà prêt à les accepter.
-//
-// → Ne pas construire de route de session JWT temporaire pour l'IA : le flux
-//   cible est Firebase Auth uniquement (le JWT local sera retiré après migration).
+// → Ne pas construire de route de session JWT temporaire pour l'IA : cela
+//   créerait un second système d'auth à jeter ensuite.
 // ------------------------------------------------------------------
 
 // Protected AI routes (auth required, no Firestore dependency)
