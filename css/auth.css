@@ -16,3 +16,20 @@
   border-color: #10b981;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
+
+/* Style des messages d'erreur de validation (partagé login/signup) */
+.error-message {
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+  display: none;
+}
+
+.error-message.visible {
+  display: block;
+}
+
+.input-error {
+  border-color: #ef4444 !important;
+}
