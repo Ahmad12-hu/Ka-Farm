@@ -421,6 +421,46 @@ function requireAuth(req, res, next) {
     });
 }
 
+// ─────────────────────────────────────────────────────────────
+// Contrôle des rôles (RBAC) — à utiliser APRÈS requireAuth.
+// Rôles exacts définis dans js/constants/roles.js :
+//   "Terrain", "Bureau", "admin", "super_admin"
+// (casse respectée telle que trouvée dans le code).
+// ─────────────────────────────────────────────────────────────
+
+// Rôles autorisés pour les écritures sensibles (finances, employés, stocks, crop-profits).
+const ROLE_BUREAU_ADMIN = ["Bureau", "admin", "super_admin"];
+// Rôles autorisés pour la suppression d'un employé (admin uniquement).
+const ROLE_ADMIN_ONLY = ["admin", "super_admin"];
+
+// Middleware de contrôle de rôle : renvoie 403 si le rôle du token
+// (req.user.role) n'est pas dans la liste autorisée.
+function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    const role = req.user && req.user.role;
+    if (!role || !allowedRoles.includes(role)) {
+      return res.status(403).json({ error: "Accès refusé : rôle insuffisant" });
+    }
+    next();
+  };
+}
+
+// Règle de rôle à appliquer aux écritures via /api/sync* selon la collection cible.
+// Retourne la liste des rôles autorisés, ou null si la collection n'est pas restreinte
+// (dans ce cas, aucune restriction supplémentaire : seuls les autres middlewares
+// existants s'appliquent).
+function syncWriteAllowedRoles(collection, type) {
+  if (collection === "employees") {
+    // Suppression d'employé : admin uniquement (comme le CRUD direct).
+    return type === "DELETE" ? ROLE_ADMIN_ONLY : ROLE_BUREAU_ADMIN;
+  }
+  if (collection === "finances") {
+    // Écriture financière : Bureau / admin (PAS Terrain), comme le CRUD direct.
+    return ROLE_BUREAU_ADMIN;
+  }
+  return null; // autres collections (crops, parcelles, tasks, cheptel…) : inchangé
+}
+
 // Public routes (no auth required)
 // /api/weather ne dépend pas de Firestore (API Open-Meteo externe)
 app.use(["/api/auth/login"], requireFirestoreReady);
@@ -489,6 +529,11 @@ app.use(
   requireAuth,
   requireFirestoreReady
 );
+
+// Protected sync routes (auth required, no Firestore dependency:
+// best-effort behavior so req.user.role est disponible pour le contrôle
+// de rôle sur les écritures sensibles des collections finances/employés).
+app.use(["/api/sync", "/api/sync/item"], requireAuth);
 
 // ==================== AUTH ====================
 app.post("/api/auth/login", async (req, res) => {
@@ -1035,7 +1080,7 @@ app.get("/api/finances", async (req, res) => {
 // Apply write rate limiting to finances routes
 app.use("/api/finances", writeLimiter);
 
-app.post("/api/finances", async (req, res) => {
+app.post("/api/finances", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const finance = FinanceSchema.parse(req.body);
     const existing = serverFinances.find((f) => f.id === finance.id);
@@ -1057,7 +1102,7 @@ app.post("/api/finances", async (req, res) => {
   }
 });
 
-app.delete("/api/finances/:id", async (req, res) => {
+app.delete("/api/finances/:id", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
     serverFinances = serverFinances.filter((f) => f.id !== id);
@@ -1082,6 +1127,15 @@ app.get("/api/employees", async (req, res) => {
       async () => await syncWithFirestore("employees", serverEmployees, enterpriseId),
       30000
     );
+    // Règle métier : un utilisateur « Terrain » ne doit pas recevoir le salaire (dailyRate).
+    // On ne bloque pas la route, on filtre juste ce champ sensible.
+    if (req.user && req.user.role === "Terrain") {
+      const sanitized = data.map((e) => {
+        const { dailyRate, ...rest } = e;
+        return rest;
+      });
+      return res.json(sanitized);
+    }
     res.json(data);
   } catch (error) {
     res.status(503).json({ error: error.message || "Service Firestore indisponible" });
@@ -1091,7 +1145,7 @@ app.get("/api/employees", async (req, res) => {
 // Apply write rate limiting to employees routes
 app.use("/api/employees", writeLimiter);
 
-app.post("/api/employees", async (req, res) => {
+app.post("/api/employees", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const employee = EmployeeSchema.parse(req.body);
     const existing = serverEmployees.find((e) => e.id === employee.id);
@@ -1113,7 +1167,7 @@ app.post("/api/employees", async (req, res) => {
   }
 });
 
-app.put("/api/employees/:id", async (req, res) => {
+app.put("/api/employees/:id", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
     const patch = EmployeeSchema.partial().parse(req.body);
@@ -1129,7 +1183,7 @@ app.put("/api/employees/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/employees/:id", async (req, res) => {
+app.delete("/api/employees/:id", requireRole(...ROLE_ADMIN_ONLY), async (req, res) => {
   try {
     const { id } = req.params;
     serverEmployees = serverEmployees.filter((e) => e.id !== id);
@@ -1375,7 +1429,7 @@ app.get("/api/crop-profits", async (req, res) => {
   }
 });
 
-app.post("/api/crop-profits", async (req, res) => {
+app.post("/api/crop-profits", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const profit = req.body;
     if (!profit || !profit.id || !profit.crop_name) {
@@ -1402,7 +1456,7 @@ app.post("/api/crop-profits", async (req, res) => {
   }
 });
 
-app.post("/api/crop-profits/sync", async (req, res) => {
+app.post("/api/crop-profits/sync", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const { cropProfits } = req.body;
     if (cropProfits && Array.isArray(cropProfits)) {
@@ -1474,7 +1528,7 @@ app.get("/api/stocks", async (req, res) => {
   }
 });
 
-app.post("/api/stocks", async (req, res) => {
+app.post("/api/stocks", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const { stocks } = req.body;
     if (stocks && Array.isArray(stocks)) {
@@ -2035,6 +2089,16 @@ app.post("/api/sync/item", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Collection inconnue" });
     }
 
+    // Contrôle de rôle sur les écritures sensibles (finances / employés).
+    // Les autres collections ne sont pas restreintes (comportement inchangé).
+    const allowedRoles = syncWriteAllowedRoles(collection, type);
+    if (allowedRoles) {
+      const role = req.user && req.user.role;
+      if (!allowedRoles.includes(role)) {
+        return res.status(403).json({ ok: false, error: "Accès refusé : rôle insuffisant" });
+      }
+    }
+
     if (type === "SAVE" || type === "SAVE_ALL") {
       const items = typeof action.data === "string" ? safeJson(action.data) : (action.data || action.items);
       if (!applySave(collection, items)) {
@@ -2098,6 +2162,17 @@ app.post("/api/sync", async (req, res) => {
       }
 
       const type = action.type || "SAVE_ALL";
+
+      // Contrôle de rôle sur les écritures sensibles (finances / employés) dans le batch.
+      const allowedRoles = syncWriteAllowedRoles(collection, type);
+      if (allowedRoles) {
+        const role = req.user && req.user.role;
+        if (!allowedRoles.includes(role)) {
+          results.push({ ok: false, collection, error: "Accès refusé : rôle insuffisant" });
+          continue;
+        }
+      }
+
       try {
         if (type === "SAVE" || type === "SAVE_ALL") {
           const raw = action.data || action.items;

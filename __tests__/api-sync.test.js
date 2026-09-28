@@ -20,7 +20,19 @@ if (typeof globalThis.TransformStream === "undefined") {
   globalThis.TransformStream = require("stream/web").TransformStream;
 }
 
+jest.mock("jsonwebtoken", () => ({
+  ...jest.requireActual("jsonwebtoken"),
+  verify: jest.fn(() => ({
+    userId: "USR-001",
+    email: "amadou@ka-farm.sn",
+    role: "admin",
+    enterpriseId: "ka_farm",
+  })),
+}));
+
 const request = require("supertest");
+
+const authHeaders = { Authorization: "Bearer test-token" };
 
 describe("Sync API Routes (additive)", () => {
   const app = require("../api/index.js").default;
@@ -35,6 +47,7 @@ describe("Sync API Routes (additive)", () => {
   test("POST /api/sync/item collection inconnue -> 400 sans crash", async () => {
     const response = await request(app)
       .post("/api/sync/item")
+      .set(authHeaders)
       .send({ collection: "inconnue", type: "SAVE", data: [] });
     expect(response.status).toBe(400);
     expect(response.body.ok).toBe(false);
@@ -43,6 +56,7 @@ describe("Sync API Routes (additive)", () => {
   test("POST /api/sync/item SAVE valide -> ok (avec ou sans Firestore)", async () => {
     const response = await request(app)
       .post("/api/sync/item")
+      .set(authHeaders)
       .send({ collection: "crops", type: "SAVE", data: [{ id: "C-TEST", name: "Test" }] });
     // Best-effort : on accepte ok:true, que la persistance ait réussi ou non.
     expect(response.status).toBe(200);
@@ -51,7 +65,7 @@ describe("Sync API Routes (additive)", () => {
   });
 
   test("POST /api/sync batch valide -> ok avec results", async () => {
-    const response = await request(app).post("/api/sync").send({
+    const response = await request(app).post("/api/sync").set(authHeaders).send({
       actions: [
         { collection: "tasks", type: "SAVE_ALL", data: [{ id: "T-TEST", title: "T" }] },
         { collection: "X", type: "SAVE_ALL", data: [] },
@@ -64,7 +78,7 @@ describe("Sync API Routes (additive)", () => {
   });
 
   test("POST /api/sync sans actions -> 400 sans crash", async () => {
-    const response = await request(app).post("/api/sync").send({});
+    const response = await request(app).post("/api/sync").set(authHeaders).send({});
     expect(response.status).toBe(400);
     expect(response.body.ok).toBe(false);
   });
