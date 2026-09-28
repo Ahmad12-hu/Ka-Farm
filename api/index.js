@@ -490,6 +490,10 @@ app.use(
   requireFirestoreReady
 );
 
+// Protected sync routes (auth required, no Firestore dependency:
+// best-effort behavior, matches the existing AI-route pattern)
+app.use(["/api/sync", "/api/sync/item"], requireAuth);
+
 // ==================== AUTH ====================
 app.post("/api/auth/login", async (req, res) => {
   try {
