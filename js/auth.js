@@ -89,9 +89,24 @@ const FIREBASE_AUTH_ERROR_MESSAGES = {
   "auth/internal-error": "Erreur interne. Veuillez réessayer.",
 };
 
+// Codes serveur Identity Toolkit (exposés par le SDK via error.message) que le
+// SDK ne traduit pas toujours en error.code. On les détecte pour afficher une
+// cause claire au lieu du message générique.
+const FIREBASE_SERVER_ERROR_MESSAGES = {
+  CONFIGURATION_NOT_FOUND:
+    "Configuration Firebase introuvable : le projet Firebase référencé n'existe pas ou l'API Identity Toolkit est désactivée. Vérifiez firebase-applet-config.json.",
+  OPERATION_NOT_ALLOWED:
+    "La connexion Email/Mot de passe est désactivée : activez-la dans la console Firebase (Authentication → Sign-in method → Email/Password).",
+};
+
 function getFriendlyAuthError(error) {
   const code = (error && error.code) || "";
+  const message = (error && error.message) || "";
+  const serverCode = Object.keys(FIREBASE_SERVER_ERROR_MESSAGES).find((k) =>
+    message.includes(k)
+  );
   return (
+    (serverCode && FIREBASE_SERVER_ERROR_MESSAGES[serverCode]) ||
     FIREBASE_AUTH_ERROR_MESSAGES[code] ||
     "Erreur lors de l'opération. Veuillez réessayer."
   );
