@@ -1,5 +1,12 @@
 // Jest setup file to handle console methods in tests
 
+// Les tests doivent être déterministes quel que soit l'environnement ambiant :
+// si NODE_ENV=production, api/index.js démarre sans données de démo (isProd)
+// et les tests CRUD (ex. PUT /api/crops/:id) échouent. On force l'environnement
+// de test avant tout import de module applicatif.
+process.env.NODE_ENV = "test";
+delete process.env.VERCEL_ENV;
+
 // Mock console.error to prevent test failures when logger tries to log
 const originalConsoleError = console.error;
 console.error = jest.fn((...args) => {

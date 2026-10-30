@@ -26,6 +26,7 @@ import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import fs from "fs";
+import { logger } from "../js/modules/logger.js";
 
 // ============================================================================
 // Configuration
@@ -152,7 +153,7 @@ function initializeFirebase() {
     db = getFirestore(app);
     adminAuth = getAuth(app);
     CONFIG.projectId = serviceAccount.project_id || serviceAccount.projectId;
-    logger.success(`Firebase Admin SDK initialisé (${CONFIG.projectId})`);
+    logger.info(`Firebase Admin SDK initialisé (${CONFIG.projectId})`);
     return true;
   } catch (error) {
     logger.error(`Échec de l'initialisation Firebase: ${error.message}`);
@@ -175,7 +176,7 @@ async function resolveUidByEmail(email) {
 async function upsertUserRole(profile) {
   const uid = await resolveUidByEmail(profile.email);
   if (!uid) {
-    logger.warning(`Aucun compte Firebase Auth pour ${profile.email} — doc ignoré`);
+    logger.warn(`Aucun compte Firebase Auth pour ${profile.email} — doc ignoré`);
     return { status: "missing", email: profile.email };
   }
 
@@ -231,9 +232,9 @@ async function main() {
   const users = loadUsers();
 
   if (CONFIG.dryRun) {
-    logger.warning("MODE DRY-RUN ACTIF — aucune écriture effective");
+    logger.warn("MODE DRY-RUN ACTIF — aucune écriture effective");
   } else {
-    logger.warning("MODE EXÉCUTION ACTIF — les docs Firestore seront modifiés");
+    logger.warn("MODE EXÉCUTION ACTIF — les docs Firestore seront modifiés");
     console.log("Appuyez sur Ctrl+C pour annuler, ou attendez 5 secondes...");
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
@@ -260,16 +261,16 @@ Durée:       ${duration}s
 `);
 
   if (missing > 0) {
-    logger.warning(
+    logger.warn(
       `${missing} utilisateur(s) sans compte Firebase Auth. Vérifiez les emails ou créez les comptes.`
     );
   }
 
   if (CONFIG.dryRun) {
-    logger.warning("MODE DRY-RUN: aucune modification effectuée");
+    logger.warn("MODE DRY-RUN: aucune modification effectuée");
     console.log("Pour exécuter la migration réelle: node scripts/migrate-firebase-roles.js --execute");
   } else {
-    logger.success("Migration terminée !");
+    logger.info("Migration terminée !");
   }
 
   process.exit(missing > 0 ? 1 : 0);
