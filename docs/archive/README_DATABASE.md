@@ -40,8 +40,8 @@ PG_USER=postgres
 PG_PASSWORD=MotDePasse123
 PG_DATABASE=postgres
 
-# Gemini AI (déjà configuré)
-GEMINI_API_KEY=AIzaSyDvBwiYrxsGgnJLoJrBqQAAB0oSZoQBSLk
+# Gemini AI
+GEMINI_API_KEY=votre-cle-gemini
 
 # Application
 NODE_ENV=development
