@@ -782,48 +782,120 @@ let serverElevageHealth = isProd ? [] : [
 let serverTreatments = [];
 let serverCropProfits = [];
 
-// Helper to read from Firestore using Admin SDK
-// Multi-tenant: data is organized as app_data/{enterpriseId}/{collection}
-async function syncWithFirestore(collection, fallbackData, enterpriseId = "ka_farm") {
+// ============================================================================
+// COUCHE DE PERSISTANCE FIRESTORE — un document par entité
+// ----------------------------------------------------------------------------
+// Modèle cible : app_data/{enterpriseId}/{collection}/{id} (un document par
+// enregistrement) → plus de limite de 1 Mo par document, plus d'écrasement
+// « last-write-wins » sur toute la collection.
+//
+// Compatibilité : les données historiques étaient stockées en tableau JSON dans
+// app_data/{enterpriseId}/{collection}/data. À la première écriture d'une
+// collection, ce tableau est « matérialisé » en documents par entité puis un
+// marqueur __meta est posé ; la lecture privilégie alors le nouveau modèle.
+// ============================================================================
+
+const ENTITY_META_DOC_ID = "__meta";
+const LEGACY_DATA_DOC_ID = "data";
+
+// Documents internes d'une collection (jamais traités comme des entités).
+function isReservedDocId(id) {
+  return id === ENTITY_META_DOC_ID || id === LEGACY_DATA_DOC_ID;
+}
+
+function collectionRef(collection, enterpriseId) {
+  return adminDb.collection("app_data").doc(enterpriseId).collection(collection);
+}
+
+function assertFirestoreReady(collection) {
   const errorMsg = getFirestoreUnavailableMessage();
   if (errorMsg) {
-    logger.error(`Firestore read error for ${collection}`, { error: errorMsg });
+    logger.error(`Firestore indisponible pour ${collection}`, { error: errorMsg });
     throw new Error(errorMsg);
-  }
-
-  try {
-    const docSnap = await adminDb
-      .collection("app_data")
-      .doc(enterpriseId)
-      .collection(collection)
-      .doc("data")
-      .get();
-    if (docSnap.exists) {
-      return docSnap.data().data || fallbackData;
-    }
-    return fallbackData;
-  } catch (err) {
-    logger.error(`Firestore read error for ${collection}`, { error: err.message });
-    throw err;
   }
 }
 
-async function saveToFirestore(collection, data, enterpriseId = "ka_farm") {
-  const errorMsg = getFirestoreUnavailableMessage();
-  if (errorMsg) {
-    logger.error(`Firestore write error for ${collection}`, { error: errorMsg });
-    throw new Error(errorMsg);
-  }
+// Convertit une seule fois le tableau hérité en documents par entité, puis
+// supprime le document tableau (jusqu'à 1 Mo) pour ne plus le traîner.
+async function ensureCollectionMigrated(collection, enterpriseId) {
+  const colRef = collectionRef(collection, enterpriseId);
+  const meta = await colRef.doc(ENTITY_META_DOC_ID).get();
+  if (meta.exists) return;
 
+  const legacy = await colRef.doc(LEGACY_DATA_DOC_ID).get();
+  const items = legacy.exists ? legacy.data().data || [] : [];
+  for (const entity of items) {
+    if (entity && entity.id !== undefined && entity.id !== null) {
+      await colRef.doc(String(entity.id)).set(entity);
+    }
+  }
+  await colRef.doc(ENTITY_META_DOC_ID).set({
+    model: "entity",
+    migratedAt: new Date().toISOString(),
+  });
+  if (legacy.exists) {
+    await colRef.doc(LEGACY_DATA_DOC_ID).delete();
+  }
+}
+
+async function readCollection(collection, fallbackData, enterpriseId = DEFAULT_ENTERPRISE_ID) {
+  assertFirestoreReady(collection);
+  const colRef = collectionRef(collection, enterpriseId);
+  const meta = await colRef.doc(ENTITY_META_DOC_ID).get();
+  if (meta.exists) {
+    const snap = await colRef.get();
+    return snap.docs.filter((d) => !isReservedDocId(d.id)).map((d) => d.data());
+  }
+  const legacy = await colRef.doc(LEGACY_DATA_DOC_ID).get();
+  return legacy.exists ? legacy.data().data || fallbackData : fallbackData;
+}
+
+// Alias historique conservé pour les routes de lecture (GET /api/...).
+const syncWithFirestore = readCollection;
+
+async function getEntity(collection, id, enterpriseId = DEFAULT_ENTERPRISE_ID) {
+  assertFirestoreReady(collection);
+  const snap = await collectionRef(collection, enterpriseId).doc(String(id)).get();
+  return snap.exists ? snap.data() : null;
+}
+
+async function upsertEntity(collection, entity, enterpriseId = DEFAULT_ENTERPRISE_ID) {
+  assertFirestoreReady(collection);
+  await ensureCollectionMigrated(collection, enterpriseId);
+  await collectionRef(collection, enterpriseId).doc(String(entity.id)).set(entity);
+  return entity;
+}
+
+async function deleteEntity(collection, id, enterpriseId = DEFAULT_ENTERPRISE_ID) {
+  assertFirestoreReady(collection);
+  await ensureCollectionMigrated(collection, enterpriseId);
+  await collectionRef(collection, enterpriseId).doc(String(id)).delete();
+}
+
+// Remplace intégralement une collection (upsert de tout + suppression des
+// enregistrements absents). À n'utiliser que si l'appelant fournit bien
+// l'intégralité de la collection.
+async function replaceCollection(collection, entities, enterpriseId = DEFAULT_ENTERPRISE_ID) {
+  assertFirestoreReady(collection);
+  await ensureCollectionMigrated(collection, enterpriseId);
+  const colRef = collectionRef(collection, enterpriseId);
+  const list = (Array.isArray(entities) ? entities : []).filter(
+    (e) => e && e.id !== undefined && e.id !== null
+  );
+  const keep = new Set(list.map((e) => String(e.id)));
   try {
-    await adminDb.collection("app_data").doc(enterpriseId).collection(collection).doc("data").set({
-      data,
-      updatedAt: new Date().toISOString(),
-    });
-    return { success: true };
+    const existing = await colRef.get();
+    for (const docSnap of existing.docs) {
+      if (!isReservedDocId(docSnap.id) && !keep.has(docSnap.id)) {
+        await docSnap.ref.delete();
+      }
+    }
   } catch (err) {
-    logger.error(`Firestore write error for ${collection}`, { error: err.message });
-    throw err;
+    // Scan best-effort : si la lecture échoue, on applique au moins les upserts.
+    logger.warn(`replaceCollection scan failed for ${collection}: ${err.message}`);
+  }
+  for (const entity of list) {
+    await colRef.doc(String(entity.id)).set(entity);
   }
 }
 
@@ -845,16 +917,12 @@ app.get("/api/crops", async (req, res) => {
 app.post("/api/crops", async (req, res) => {
   try {
     const crop = CropSchema.parse(req.body);
-    const existing = serverCrops.find((c) => c.id === crop.id);
-    if (existing) {
-      const idx = serverCrops.findIndex((c) => c.id === crop.id);
-      serverCrops[idx] = { ...existing, ...crop };
-    } else {
-      serverCrops.push(crop);
-    }
+    const idx = serverCrops.findIndex((c) => c.id === crop.id);
+    if (idx === -1) serverCrops.push(crop);
+    else serverCrops[idx] = { ...serverCrops[idx], ...crop };
     const enterpriseId = resolveEnterpriseId(req);
+    await upsertEntity("crops", crop, enterpriseId);
     await Cache.invalidate(`crops_list_${enterpriseId}`);
-    await saveToFirestore("crops", serverCrops, enterpriseId);
     res.json({ success: true, crop });
   } catch (error) {
     logger.error("Error saving crop", { error: error.message });
@@ -869,12 +937,17 @@ app.put("/api/crops/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const patch = CropSchema.partial().parse(req.body);
-    const idx = serverCrops.findIndex((c) => c.id === id);
-    if (idx === -1) return res.status(404).json({ error: "Culture non trouvée" });
-    serverCrops[idx] = { ...serverCrops[idx], ...patch };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("crops", serverCrops, enterpriseId);
-    res.json({ success: true, crop: serverCrops[idx] });
+    const existing =
+      (await getEntity("crops", id, enterpriseId)) || serverCrops.find((c) => c.id === id);
+    if (!existing) return res.status(404).json({ error: "Culture non trouvée" });
+    const merged = { ...existing, ...patch };
+    const idx = serverCrops.findIndex((c) => c.id === id);
+    if (idx === -1) serverCrops.push(merged);
+    else serverCrops[idx] = merged;
+    await upsertEntity("crops", merged, enterpriseId);
+    await Cache.invalidate(`crops_list_${enterpriseId}`);
+    res.json({ success: true, crop: merged });
   } catch (error) {
     logger.error("Error updating crop", { error: error.message });
     res.status(400).json({ error: error.message || "Erreur de validation" });
@@ -884,9 +957,10 @@ app.put("/api/crops/:id", async (req, res) => {
 app.delete("/api/crops/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    serverCrops = serverCrops.filter((c) => c.id !== id);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("crops", serverCrops, enterpriseId);
+    await deleteEntity("crops", id, enterpriseId);
+    serverCrops = serverCrops.filter((c) => c.id !== id);
+    await Cache.invalidate(`crops_list_${enterpriseId}`);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting crop", { error: error.message });
@@ -915,16 +989,12 @@ app.get("/api/parcelles", async (req, res) => {
 app.post("/api/parcelles", async (req, res) => {
   try {
     const parcelle = ParcelleSchema.parse(req.body);
-    const existing = serverParcelles.find((p) => p.id === parcelle.id);
-    if (existing) {
-      const idx = serverParcelles.findIndex((p) => p.id === parcelle.id);
-      serverParcelles[idx] = { ...existing, ...parcelle };
-    } else {
-      serverParcelles.push(parcelle);
-    }
+    const idx = serverParcelles.findIndex((p) => p.id === parcelle.id);
+    if (idx === -1) serverParcelles.push(parcelle);
+    else serverParcelles[idx] = { ...serverParcelles[idx], ...parcelle };
     const enterpriseId = resolveEnterpriseId(req);
+    await upsertEntity("parcelles", parcelle, enterpriseId);
     await Cache.invalidate(`parcelles_list_${enterpriseId}`);
-    await saveToFirestore("parcelles", serverParcelles, enterpriseId);
     res.json({ success: true, parcelle });
   } catch (error) {
     logger.error("Error saving parcelle", { error: error.message });
@@ -939,12 +1009,17 @@ app.put("/api/parcelles/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const patch = ParcelleSchema.partial().parse(req.body);
-    const idx = serverParcelles.findIndex((p) => p.id === id);
-    if (idx === -1) return res.status(404).json({ error: "Parcelle non trouvée" });
-    serverParcelles[idx] = { ...serverParcelles[idx], ...patch };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("parcelles", serverParcelles, enterpriseId);
-    res.json({ success: true, parcelle: serverParcelles[idx] });
+    const existing =
+      (await getEntity("parcelles", id, enterpriseId)) || serverParcelles.find((p) => p.id === id);
+    if (!existing) return res.status(404).json({ error: "Parcelle non trouvée" });
+    const merged = { ...existing, ...patch };
+    const idx = serverParcelles.findIndex((p) => p.id === id);
+    if (idx === -1) serverParcelles.push(merged);
+    else serverParcelles[idx] = merged;
+    await upsertEntity("parcelles", merged, enterpriseId);
+    await Cache.invalidate(`parcelles_list_${enterpriseId}`);
+    res.json({ success: true, parcelle: merged });
   } catch (error) {
     logger.error("Error updating parcelle", { error: error.message });
     res.status(400).json({ error: error.message || "Erreur de validation" });
@@ -954,9 +1029,10 @@ app.put("/api/parcelles/:id", async (req, res) => {
 app.delete("/api/parcelles/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    serverParcelles = serverParcelles.filter((p) => p.id !== id);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("parcelles", serverParcelles, enterpriseId);
+    await deleteEntity("parcelles", id, enterpriseId);
+    serverParcelles = serverParcelles.filter((p) => p.id !== id);
+    await Cache.invalidate(`parcelles_list_${enterpriseId}`);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting parcelle", { error: error.message });
@@ -985,15 +1061,11 @@ app.get("/api/tasks", async (req, res) => {
 app.post("/api/tasks", async (req, res) => {
   try {
     const task = TaskSchema.parse(req.body);
-    const existing = serverTasks.find((t) => t.id === task.id);
-    if (existing) {
-      const idx = serverTasks.findIndex((t) => t.id === task.id);
-      serverTasks[idx] = { ...existing, ...task };
-    } else {
-      serverTasks.push(task);
-    }
+    const idx = serverTasks.findIndex((t) => t.id === task.id);
+    if (idx === -1) serverTasks.push(task);
+    else serverTasks[idx] = { ...serverTasks[idx], ...task };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("tasks", serverTasks, enterpriseId);
+    await upsertEntity("tasks", task, enterpriseId);
     res.json({ success: true, task });
   } catch (error) {
     logger.error("Error saving task", { error: error.message });
@@ -1008,12 +1080,16 @@ app.put("/api/tasks/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const patch = TaskSchema.partial().parse(req.body);
-    const idx = serverTasks.findIndex((t) => t.id === id);
-    if (idx === -1) return res.status(404).json({ error: "Tâche non trouvée" });
-    serverTasks[idx] = { ...serverTasks[idx], ...patch };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("tasks", serverTasks, enterpriseId);
-    res.json({ success: true, task: serverTasks[idx] });
+    const existing =
+      (await getEntity("tasks", id, enterpriseId)) || serverTasks.find((t) => t.id === id);
+    if (!existing) return res.status(404).json({ error: "Tâche non trouvée" });
+    const merged = { ...existing, ...patch };
+    const idx = serverTasks.findIndex((t) => t.id === id);
+    if (idx === -1) serverTasks.push(merged);
+    else serverTasks[idx] = merged;
+    await upsertEntity("tasks", merged, enterpriseId);
+    res.json({ success: true, task: merged });
   } catch (error) {
     logger.error("Error updating task", { error: error.message });
     res.status(400).json({ error: error.message || "Erreur de validation" });
@@ -1023,9 +1099,9 @@ app.put("/api/tasks/:id", async (req, res) => {
 app.delete("/api/tasks/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    serverTasks = serverTasks.filter((t) => t.id !== id);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("tasks", serverTasks, enterpriseId);
+    await deleteEntity("tasks", id, enterpriseId);
+    serverTasks = serverTasks.filter((t) => t.id !== id);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting task", { error: error.message });
@@ -1057,15 +1133,11 @@ app.use("/api/finances", writeLimiter);
 app.post("/api/finances", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const finance = FinanceSchema.parse(req.body);
-    const existing = serverFinances.find((f) => f.id === finance.id);
-    if (existing) {
-      const idx = serverFinances.findIndex((f) => f.id === finance.id);
-      serverFinances[idx] = { ...existing, ...finance };
-    } else {
-      serverFinances.push(finance);
-    }
+    const idx = serverFinances.findIndex((f) => f.id === finance.id);
+    if (idx === -1) serverFinances.push(finance);
+    else serverFinances[idx] = { ...serverFinances[idx], ...finance };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("finances", serverFinances, enterpriseId);
+    await upsertEntity("finances", finance, enterpriseId);
     res.json({ success: true, finance });
   } catch (error) {
     logger.error("Error saving finance", { error: error.message });
@@ -1079,9 +1151,9 @@ app.post("/api/finances", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) =>
 app.delete("/api/finances/:id", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
-    serverFinances = serverFinances.filter((f) => f.id !== id);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("finances", serverFinances, enterpriseId);
+    await deleteEntity("finances", id, enterpriseId);
+    serverFinances = serverFinances.filter((f) => f.id !== id);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting finance", { error: error.message });
@@ -1122,15 +1194,11 @@ app.use("/api/employees", writeLimiter);
 app.post("/api/employees", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const employee = EmployeeSchema.parse(req.body);
-    const existing = serverEmployees.find((e) => e.id === employee.id);
-    if (existing) {
-      const idx = serverEmployees.findIndex((e) => e.id === employee.id);
-      serverEmployees[idx] = { ...existing, ...employee };
-    } else {
-      serverEmployees.push(employee);
-    }
+    const idx = serverEmployees.findIndex((e) => e.id === employee.id);
+    if (idx === -1) serverEmployees.push(employee);
+    else serverEmployees[idx] = { ...serverEmployees[idx], ...employee };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("employees", serverEmployees, enterpriseId);
+    await upsertEntity("employees", employee, enterpriseId);
     res.json({ success: true, employee });
   } catch (error) {
     logger.error("Error saving employee", { error: error.message });
@@ -1145,12 +1213,16 @@ app.put("/api/employees/:id", requireRole(...ROLE_BUREAU_ADMIN), async (req, res
   try {
     const { id } = req.params;
     const patch = EmployeeSchema.partial().parse(req.body);
-    const idx = serverEmployees.findIndex((e) => e.id === id);
-    if (idx === -1) return res.status(404).json({ error: "Employé non trouvé" });
-    serverEmployees[idx] = { ...serverEmployees[idx], ...patch };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("employees", serverEmployees, enterpriseId);
-    res.json({ success: true, employee: serverEmployees[idx] });
+    const existing =
+      (await getEntity("employees", id, enterpriseId)) || serverEmployees.find((e) => e.id === id);
+    if (!existing) return res.status(404).json({ error: "Employé non trouvé" });
+    const merged = { ...existing, ...patch };
+    const idx = serverEmployees.findIndex((e) => e.id === id);
+    if (idx === -1) serverEmployees.push(merged);
+    else serverEmployees[idx] = merged;
+    await upsertEntity("employees", merged, enterpriseId);
+    res.json({ success: true, employee: merged });
   } catch (error) {
     logger.error("Error updating employee", { error: error.message });
     res.status(400).json({ error: error.message || "Erreur de validation" });
@@ -1160,9 +1232,9 @@ app.put("/api/employees/:id", requireRole(...ROLE_BUREAU_ADMIN), async (req, res
 app.delete("/api/employees/:id", requireRole(...ROLE_ADMIN_ONLY), async (req, res) => {
   try {
     const { id } = req.params;
-    serverEmployees = serverEmployees.filter((e) => e.id !== id);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("employees", serverEmployees, enterpriseId);
+    await deleteEntity("employees", id, enterpriseId);
+    serverEmployees = serverEmployees.filter((e) => e.id !== id);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting employee", { error: error.message });
@@ -1191,15 +1263,11 @@ app.get("/api/cheptel", async (req, res) => {
 app.post("/api/cheptel", async (req, res) => {
   try {
     const group = CheptelSchema.parse(req.body);
-    const existing = serverCheptel.find((c) => c.id === group.id);
-    if (existing) {
-      const idx = serverCheptel.findIndex((c) => c.id === group.id);
-      serverCheptel[idx] = { ...existing, ...group };
-    } else {
-      serverCheptel.push(group);
-    }
+    const idx = serverCheptel.findIndex((c) => c.id === group.id);
+    if (idx === -1) serverCheptel.push(group);
+    else serverCheptel[idx] = { ...serverCheptel[idx], ...group };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("cheptel", serverCheptel, enterpriseId);
+    await upsertEntity("cheptel", group, enterpriseId);
     res.json({ success: true, group });
   } catch (error) {
     logger.error("Error saving cheptel", { error: error.message });
@@ -1214,12 +1282,16 @@ app.put("/api/cheptel/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const patch = CheptelSchema.partial().parse(req.body);
-    const idx = serverCheptel.findIndex((c) => c.id === id);
-    if (idx === -1) return res.status(404).json({ error: "Groupe d'élevage non trouvé" });
-    serverCheptel[idx] = { ...serverCheptel[idx], ...patch };
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("cheptel", serverCheptel, enterpriseId);
-    res.json({ success: true, group: serverCheptel[idx] });
+    const existing =
+      (await getEntity("cheptel", id, enterpriseId)) || serverCheptel.find((c) => c.id === id);
+    if (!existing) return res.status(404).json({ error: "Groupe d'élevage non trouvé" });
+    const merged = { ...existing, ...patch };
+    const idx = serverCheptel.findIndex((c) => c.id === id);
+    if (idx === -1) serverCheptel.push(merged);
+    else serverCheptel[idx] = merged;
+    await upsertEntity("cheptel", merged, enterpriseId);
+    res.json({ success: true, group: merged });
   } catch (error) {
     logger.error("Error updating cheptel", { error: error.message });
     res.status(400).json({ error: error.message || "Erreur de validation" });
@@ -1229,9 +1301,9 @@ app.put("/api/cheptel/:id", async (req, res) => {
 app.delete("/api/cheptel/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    serverCheptel = serverCheptel.filter((c) => c.id !== id);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("cheptel", serverCheptel, enterpriseId);
+    await deleteEntity("cheptel", id, enterpriseId);
+    serverCheptel = serverCheptel.filter((c) => c.id !== id);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting cheptel", { error: error.message });
@@ -1263,7 +1335,7 @@ app.post("/api/elevage/production", async (req, res) => {
     const log = ElevageProductionSchema.parse(req.body);
     serverElevageProduction.push(log);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("elevage_production", serverElevageProduction, enterpriseId);
+    await upsertEntity("elevage_production", log, enterpriseId);
     res.json({ success: true, log });
   } catch (error) {
     logger.error("Error saving elevage production", { error: error.message });
@@ -1277,9 +1349,9 @@ app.post("/api/elevage/production", async (req, res) => {
 app.delete("/api/elevage/production/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    serverElevageProduction = serverElevageProduction.filter((l) => l.id !== id);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("elevage_production", serverElevageProduction, enterpriseId);
+    await deleteEntity("elevage_production", id, enterpriseId);
+    serverElevageProduction = serverElevageProduction.filter((l) => l.id !== id);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting elevage production", { error: error.message });
@@ -1307,7 +1379,7 @@ app.post("/api/elevage/health", async (req, res) => {
     const log = ElevageHealthSchema.parse(req.body);
     serverElevageHealth.push(log);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("elevage_health", serverElevageHealth, enterpriseId);
+    await upsertEntity("elevage_health", log, enterpriseId);
     res.json({ success: true, log });
   } catch (error) {
     logger.error("Error saving elevage health", { error: error.message });
@@ -1321,9 +1393,9 @@ app.post("/api/elevage/health", async (req, res) => {
 app.delete("/api/elevage/health/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    serverElevageHealth = serverElevageHealth.filter((l) => l.id !== id);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("elevage_health", serverElevageHealth, enterpriseId);
+    await deleteEntity("elevage_health", id, enterpriseId);
+    serverElevageHealth = serverElevageHealth.filter((l) => l.id !== id);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting elevage health", { error: error.message });
@@ -1349,16 +1421,12 @@ app.post("/api/treatments", async (req, res) => {
   try {
     const treatment = TreatmentSchema.parse(req.body || {});
 
-    const existing = serverTreatments.find((t) => t.id === treatment.id);
-    if (existing) {
-      const idx = serverTreatments.findIndex((t) => t.id === treatment.id);
-      serverTreatments[idx] = { ...existing, ...treatment };
-    } else {
-      serverTreatments.push(treatment);
-    }
+    const idx = serverTreatments.findIndex((t) => t.id === treatment.id);
+    if (idx === -1) serverTreatments.push(treatment);
+    else serverTreatments[idx] = { ...serverTreatments[idx], ...treatment };
 
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("treatments", serverTreatments, enterpriseId);
+    await upsertEntity("treatments", treatment, enterpriseId);
     res.json({ success: true, treatment });
   } catch (error) {
     if (error instanceof z.ZodError) return validationFailed(res, error);
@@ -1375,7 +1443,7 @@ app.post("/api/treatments/sync", async (req, res) => {
     const { treatments } = TreatmentsSyncSchema.parse(req.body || {});
     serverTreatments = treatments;
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("treatments", serverTreatments, enterpriseId);
+    await replaceCollection("treatments", treatments, enterpriseId);
     res.json({ success: true, message: "Traitements synchronisés en mémoire", treatments });
   } catch (error) {
     if (error instanceof z.ZodError) return validationFailed(res, error);
@@ -1402,16 +1470,12 @@ app.post("/api/crop-profits", requireRole(...ROLE_BUREAU_ADMIN), async (req, res
   try {
     const profit = CropProfitSchema.parse(req.body || {});
 
-    const existing = serverCropProfits.find((p) => p.id === profit.id);
-    if (existing) {
-      const idx = serverCropProfits.findIndex((p) => p.id === profit.id);
-      serverCropProfits[idx] = { ...existing, ...profit };
-    } else {
-      serverCropProfits.push(profit);
-    }
+    const idx = serverCropProfits.findIndex((p) => p.id === profit.id);
+    if (idx === -1) serverCropProfits.push(profit);
+    else serverCropProfits[idx] = { ...serverCropProfits[idx], ...profit };
 
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("crop_profits", serverCropProfits, enterpriseId);
+    await upsertEntity("crop_profits", profit, enterpriseId);
     res.json({ success: true, profit });
   } catch (error) {
     if (error instanceof z.ZodError) return validationFailed(res, error);
@@ -1428,7 +1492,7 @@ app.post("/api/crop-profits/sync", requireRole(...ROLE_BUREAU_ADMIN), async (req
     const { cropProfits } = CropProfitsSyncSchema.parse(req.body || {});
     serverCropProfits = cropProfits;
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("crop_profits", serverCropProfits, enterpriseId);
+    await replaceCollection("crop_profits", cropProfits, enterpriseId);
     res.json({
       success: true,
       message: "Analyses de rentabilité synchronisées en mémoire",
@@ -1470,7 +1534,7 @@ app.post("/api/messages", async (req, res) => {
     };
     serverMessages.push(newMsg);
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("messages", serverMessages, enterpriseId);
+    await upsertEntity("messages", newMsg, enterpriseId);
     res.json({ success: true, message: newMsg });
   } catch (error) {
     logger.error("Error saving message", { error: error.message });
@@ -1497,7 +1561,7 @@ app.post("/api/stocks", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
     const { stocks } = StocksPayloadSchema.parse(req.body || {});
     serverStocks = stocks;
     const enterpriseId = resolveEnterpriseId(req);
-    await saveToFirestore("stocks", serverStocks, enterpriseId);
+    await replaceCollection("stocks", stocks, enterpriseId);
     res.json({ success: true, message: "Stocks synchronisés", stocks });
   } catch (error) {
     if (error instanceof z.ZodError) return validationFailed(res, error);
@@ -2046,11 +2110,16 @@ app.post("/api/sync/item", async (req, res) => {
       }
     }
 
+    let persistMode = null;
+    let persistPayload = null;
+
     if (type === "SAVE" || type === "SAVE_ALL") {
       const items = typeof action.data === "string" ? safeJson(action.data) : (action.data || action.items);
       if (!applySave(collection, items)) {
         return res.status(400).json({ ok: false, error: "données invalides" });
       }
+      persistMode = "replace";
+      persistPayload = items;
     } else if (type === "UPDATE" || type === "CREATE") {
       const item = action.data;
       if (!item || !item.id) {
@@ -2062,21 +2131,27 @@ app.post("/api/sync/item", async (req, res) => {
       if (idx === -1) current.push(item);
       else current[idx] = { ...current[idx], ...item };
       entry.set(current);
+      persistMode = "upsert";
+      persistPayload = item;
     } else if (type === "DELETE") {
       const id = action.data?.id || action.id;
       const entry = SYNCABLE_MEMORY[collection];
       const current = Array.isArray(entry.get()) ? entry.get() : [];
       entry.set(current.filter((x) => x && x.id !== id));
+      persistMode = "delete";
+      persistPayload = id;
     } else {
       return res.status(400).json({ ok: false, error: `Type inconnu: ${type}` });
     }
 
-    const enterpriseId = req.user?.enterpriseId || action.enterpriseId || "ka_farm";
+    const enterpriseId = req.user?.enterpriseId || action.enterpriseId || DEFAULT_ENTERPRISE_ID;
 
-    // Best-effort : persister en Firestore si disponible, sinon tant pis.
+    // Best-effort : persister en Firestore (un document par entité).
     if (!getFirestoreUnavailableMessage()) {
       try {
-        await saveToFirestore(collection, SYNCABLE_MEMORY[collection].get(), enterpriseId);
+        if (persistMode === "replace") await replaceCollection(collection, persistPayload, enterpriseId);
+        else if (persistMode === "upsert") await upsertEntity(collection, persistPayload, enterpriseId);
+        else if (persistMode === "delete") await deleteEntity(collection, persistPayload, enterpriseId);
         return res.json({ ok: true, persisted: true });
       } catch (err) {
         logger.warn(`Sync save best-effort failed for ${collection}: ${err.message}`);
@@ -2126,6 +2201,8 @@ app.post("/api/sync", async (req, res) => {
       }
 
       try {
+        let persistMode = null;
+        let persistPayload = null;
         if (type === "SAVE" || type === "SAVE_ALL") {
           const raw = action.data || action.items;
           const items = typeof raw === "string" ? safeJson(raw) : raw;
@@ -2134,6 +2211,8 @@ app.post("/api/sync", async (req, res) => {
             continue;
           }
           applySave(collection, items);
+          persistMode = "replace";
+          persistPayload = items;
         } else if ((type === "UPDATE" || type === "CREATE") && action.data) {
           const item = action.data;
           const entry = SYNCABLE_MEMORY[collection];
@@ -2142,19 +2221,25 @@ app.post("/api/sync", async (req, res) => {
           if (idx === -1) current.push(item);
           else current[idx] = { ...current[idx], ...item };
           entry.set(current);
+          persistMode = "upsert";
+          persistPayload = item;
         } else if (type === "DELETE" && (action.data?.id || action.id)) {
           const id = action.data?.id || action.id;
           const entry = SYNCABLE_MEMORY[collection];
           const current = Array.isArray(entry.get()) ? entry.get() : [];
           entry.set(current.filter((x) => x && x.id !== id));
+          persistMode = "delete";
+          persistPayload = id;
         }
 
         const enterpriseId =
-          req.user?.enterpriseId || action.enterpriseId || "ka_farm";
+          req.user?.enterpriseId || action.enterpriseId || DEFAULT_ENTERPRISE_ID;
         let persisted = false;
-        if (!getFirestoreUnavailableMessage()) {
+        if (!getFirestoreUnavailableMessage() && persistMode) {
           try {
-            await saveToFirestore(collection, SYNCABLE_MEMORY[collection].get(), enterpriseId);
+            if (persistMode === "replace") await replaceCollection(collection, persistPayload, enterpriseId);
+            else if (persistMode === "upsert") await upsertEntity(collection, persistPayload, enterpriseId);
+            else if (persistMode === "delete") await deleteEntity(collection, persistPayload, enterpriseId);
             persisted = true;
           } catch (err) {
             logger.warn(`Sync batch save failed ${collection}: ${err.message}`);
