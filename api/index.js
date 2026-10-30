@@ -20,6 +20,7 @@ import {
   TreatmentsSyncSchema,
   CropProfitsSyncSchema,
   LoginSchema,
+  ProvisionSchema,
   SyncActionSchema,
   validationDetails,
 } from "../js/modules/api-validation.js";
@@ -34,6 +35,7 @@ import {
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import { randomBytes } from "node:crypto";
 
 // Schémas de validation partagés avec le serveur de développement : voir
 // js/modules/api-validation.js (source unique du contrat d'entrée).
@@ -47,16 +49,25 @@ function isProduction() {
   return process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
 }
 
+// Secret JWT local. En développement sans JWT_SECRET, on génère un secret
+// ALÉATOIRE par processus : plus de constante publique connue (l'ancien secret
+// de repli codé en dur permettait de forger un token super_admin). Les jetons
+// émis ne survivent pas à un redémarrage du serveur, ce qui est sans
+// conséquence en local.
+let devJwtSecret = null;
+
 function getJwtSecret() {
   const configuredSecret = (process.env.JWT_SECRET || "").trim();
   if (configuredSecret) return configuredSecret;
 
   if (!isProduction()) {
-    // Solution de repli pour le développement avec avertissement explicite
-    console.warn(
-      "[SECURITY WARNING] Using insecure JWT fallback for development. Set JWT_SECRET in production."
-    );
-    return "ka-farm-dev-only-secret-change-in-production";
+    if (!devJwtSecret) {
+      devJwtSecret = randomBytes(48).toString("hex");
+      console.warn(
+        "[SECURITY WARNING] JWT_SECRET non défini : secret aléatoire généré pour cette instance (développement uniquement)."
+      );
+    }
+    return devJwtSecret;
   }
 
   // Production : échec immédiat avec message clair
@@ -65,11 +76,13 @@ function getJwtSecret() {
   throw new Error(errorMsg);
 }
 
-// Garde de démarrage : en production, JWT_SECRET est obligatoire.
-// Le serveur refuse de démarrer sans un secret configuré.
+// En production, JWT_SECRET n'est plus bloquant au démarrage : sans lui, seul
+// le chemin JWT local est indisponible (requireAuth l'ignore puis valide l'ID
+// token Firebase). Lever ici coupait TOUTE l'API — y compris l'IA — sur une
+// variable dont le frontend n'a plus besoin.
 if (isProduction() && !(process.env.JWT_SECRET || "").trim()) {
-  throw new Error(
-    "JWT_SECRET environment variable is required in production. Refusing to start the server."
+  console.warn(
+    "[SECURITY WARNING] JWT_SECRET absent : authentification limitée aux ID tokens Firebase (JWT local désactivé)."
   );
 }
 
@@ -211,6 +224,14 @@ const DEFAULT_ENTERPRISE_ID = "ka_farm";
 const DEFAULT_ENTERPRISE_NAME = "KA Farm";
 const DEFAULT_ENTERPRISE_CODE = "KA-FARM";
 
+// Résolution centralisée du tenant courant. Le repli « ka_farm » ne couvre que
+// les comptes historiques / jetons sans enterpriseId ; les nouveaux comptes
+// sont provisionnés (cf. POST /api/auth/provision) et possèdent leur propre
+// tenant, ils ne dépendent donc plus de ce repli.
+function resolveEnterpriseId(req) {
+  return (req.user && req.user.enterpriseId) || DEFAULT_ENTERPRISE_ID;
+}
+
 // Cache en mémoire (TTL court) des profils rôles depuis Firestore users/{uid}
 // pour éviter 1 lecture Firestore par requête. 60s est amplement suffisant :
 // un changement de rôle n'a pas besoin d'être immédiat.
@@ -303,7 +324,7 @@ function requireAuth(req, res, next) {
   }
   if (jwtSecret) {
     try {
-      const decoded = jwt.verify(token, jwtSecret);
+      const decoded = jwt.verify(token, jwtSecret, { algorithms: ["HS256"] });
       req.user = decoded;
       logger.info("Authenticated via JWT local", {
         email: decoded.email,
@@ -475,7 +496,7 @@ app.post("/api/auth/login", async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role, enterpriseId: user.enterpriseId },
       jwtSecret,
-      { expiresIn: "7d" }
+      { expiresIn: "7d", algorithm: "HS256" }
     );
 
     return res.json({
@@ -498,6 +519,48 @@ app.post("/api/auth/login", async (req, res) => {
 // Renvoie l'utilisateur authentifié avec son rôle et son contexte exploitation.
 app.get("/api/auth/me", requireAuth, (req, res) => {
   res.json({ user: req.user });
+});
+
+// Provisionnement idempotent du doc Firestore users/{uid} à l'auto-inscription.
+// Réservé aux comptes Firebase (ID token). Le premier appel crée le tenant
+// (enterpriseId/enterpriseCode générés côté serveur) ; les appels suivants
+// renvoient le profil existant SANS l'écraser (pas de changement de rôle/tenant).
+app.post("/api/auth/provision", requireAuth, requireFirestoreReady, async (req, res) => {
+  try {
+    if (!req.user || !req.user.firebase || !req.user.uid) {
+      return res.status(403).json({ error: "Provisionnement réservé aux comptes Firebase" });
+    }
+
+    const parsed = ProvisionSchema.safeParse(req.body || {});
+    if (!parsed.success) return validationFailed(res, parsed.error);
+
+    const uid = req.user.uid;
+    const ref = adminDb.collection("users").doc(uid);
+    const snap = await ref.get();
+    if (snap.exists) {
+      // Invalide le cache de rôle pour que requireAuth relise le doc frais.
+      roleCache.delete(uid);
+      const existing = snap.data() || {};
+      return res.json({ user: { ...req.user, ...existing, provisioned: true, existing: true } });
+    }
+
+    const profile = {
+      role: parsed.data.role || DEFAULT_USER_ROLE,
+      name: parsed.data.name || req.user.name || "",
+      email: req.user.email || "",
+      enterpriseId: `ent_${randomBytes(8).toString("hex")}`,
+      enterpriseName: parsed.data.enterpriseName || "Mon Exploitation",
+      enterpriseCode: `KAF-${randomBytes(3).toString("hex").toUpperCase()}`,
+      updatedAt: new Date().toISOString(),
+    };
+    await ref.set(profile, { merge: true });
+    roleCache.delete(uid);
+
+    return res.json({ user: { ...req.user, ...profile, provisioned: true } });
+  } catch (error) {
+    logger.error("Provision error", { error: error.message });
+    return res.status(500).json({ error: "Erreur lors du provisionnement" });
+  }
 });
 
 // In-memory fallback stores
@@ -767,7 +830,7 @@ async function saveToFirestore(collection, data, enterpriseId = "ka_farm") {
 // ==================== CROPS ====================
 app.get("/api/crops", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await Cache.memo(
       `crops_list_${enterpriseId}`,
       async () => await syncWithFirestore("crops", serverCrops, enterpriseId),
@@ -775,7 +838,7 @@ app.get("/api/crops", async (req, res) => {
     );
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -789,14 +852,14 @@ app.post("/api/crops", async (req, res) => {
     } else {
       serverCrops.push(crop);
     }
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await Cache.invalidate(`crops_list_${enterpriseId}`);
     await saveToFirestore("crops", serverCrops, enterpriseId);
     res.json({ success: true, crop });
   } catch (error) {
     logger.error("Error saving crop", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -809,7 +872,7 @@ app.put("/api/crops/:id", async (req, res) => {
     const idx = serverCrops.findIndex((c) => c.id === id);
     if (idx === -1) return res.status(404).json({ error: "Culture non trouvée" });
     serverCrops[idx] = { ...serverCrops[idx], ...patch };
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("crops", serverCrops, enterpriseId);
     res.json({ success: true, crop: serverCrops[idx] });
   } catch (error) {
@@ -822,13 +885,13 @@ app.delete("/api/crops/:id", async (req, res) => {
   try {
     const { id } = req.params;
     serverCrops = serverCrops.filter((c) => c.id !== id);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("crops", serverCrops, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting crop", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la suppression" });
   }
@@ -837,7 +900,7 @@ app.delete("/api/crops/:id", async (req, res) => {
 // ==================== PARCELLES ====================
 app.get("/api/parcelles", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await Cache.memo(
       `parcelles_list_${enterpriseId}`,
       async () => await syncWithFirestore("parcelles", serverParcelles, enterpriseId),
@@ -845,7 +908,7 @@ app.get("/api/parcelles", async (req, res) => {
     );
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -859,14 +922,14 @@ app.post("/api/parcelles", async (req, res) => {
     } else {
       serverParcelles.push(parcelle);
     }
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await Cache.invalidate(`parcelles_list_${enterpriseId}`);
     await saveToFirestore("parcelles", serverParcelles, enterpriseId);
     res.json({ success: true, parcelle });
   } catch (error) {
     logger.error("Error saving parcelle", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -879,7 +942,7 @@ app.put("/api/parcelles/:id", async (req, res) => {
     const idx = serverParcelles.findIndex((p) => p.id === id);
     if (idx === -1) return res.status(404).json({ error: "Parcelle non trouvée" });
     serverParcelles[idx] = { ...serverParcelles[idx], ...patch };
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("parcelles", serverParcelles, enterpriseId);
     res.json({ success: true, parcelle: serverParcelles[idx] });
   } catch (error) {
@@ -892,13 +955,13 @@ app.delete("/api/parcelles/:id", async (req, res) => {
   try {
     const { id } = req.params;
     serverParcelles = serverParcelles.filter((p) => p.id !== id);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("parcelles", serverParcelles, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting parcelle", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la suppression" });
   }
@@ -907,7 +970,7 @@ app.delete("/api/parcelles/:id", async (req, res) => {
 // ==================== TASKS ====================
 app.get("/api/tasks", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await Cache.memo(
       `tasks_list_${enterpriseId}`,
       async () => await syncWithFirestore("tasks", serverTasks, enterpriseId),
@@ -915,7 +978,7 @@ app.get("/api/tasks", async (req, res) => {
     );
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -929,13 +992,13 @@ app.post("/api/tasks", async (req, res) => {
     } else {
       serverTasks.push(task);
     }
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("tasks", serverTasks, enterpriseId);
     res.json({ success: true, task });
   } catch (error) {
     logger.error("Error saving task", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -948,7 +1011,7 @@ app.put("/api/tasks/:id", async (req, res) => {
     const idx = serverTasks.findIndex((t) => t.id === id);
     if (idx === -1) return res.status(404).json({ error: "Tâche non trouvée" });
     serverTasks[idx] = { ...serverTasks[idx], ...patch };
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("tasks", serverTasks, enterpriseId);
     res.json({ success: true, task: serverTasks[idx] });
   } catch (error) {
@@ -961,13 +1024,13 @@ app.delete("/api/tasks/:id", async (req, res) => {
   try {
     const { id } = req.params;
     serverTasks = serverTasks.filter((t) => t.id !== id);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("tasks", serverTasks, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting task", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la suppression" });
   }
@@ -976,7 +1039,7 @@ app.delete("/api/tasks/:id", async (req, res) => {
 // ==================== FINANCES ====================
 app.get("/api/finances", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await Cache.memo(
       `finances_list_${enterpriseId}`,
       async () => await syncWithFirestore("finances", serverFinances, enterpriseId),
@@ -984,7 +1047,7 @@ app.get("/api/finances", async (req, res) => {
     );
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1001,13 +1064,13 @@ app.post("/api/finances", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) =>
     } else {
       serverFinances.push(finance);
     }
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("finances", serverFinances, enterpriseId);
     res.json({ success: true, finance });
   } catch (error) {
     logger.error("Error saving finance", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -1017,13 +1080,13 @@ app.delete("/api/finances/:id", requireRole(...ROLE_BUREAU_ADMIN), async (req, r
   try {
     const { id } = req.params;
     serverFinances = serverFinances.filter((f) => f.id !== id);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("finances", serverFinances, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting finance", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la suppression" });
   }
@@ -1032,7 +1095,7 @@ app.delete("/api/finances/:id", requireRole(...ROLE_BUREAU_ADMIN), async (req, r
 // ==================== EMPLOYEES ====================
 app.get("/api/employees", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await Cache.memo(
       `employees_list_${enterpriseId}`,
       async () => await syncWithFirestore("employees", serverEmployees, enterpriseId),
@@ -1049,7 +1112,7 @@ app.get("/api/employees", async (req, res) => {
     }
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1066,13 +1129,13 @@ app.post("/api/employees", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) =
     } else {
       serverEmployees.push(employee);
     }
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("employees", serverEmployees, enterpriseId);
     res.json({ success: true, employee });
   } catch (error) {
     logger.error("Error saving employee", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -1085,7 +1148,7 @@ app.put("/api/employees/:id", requireRole(...ROLE_BUREAU_ADMIN), async (req, res
     const idx = serverEmployees.findIndex((e) => e.id === id);
     if (idx === -1) return res.status(404).json({ error: "Employé non trouvé" });
     serverEmployees[idx] = { ...serverEmployees[idx], ...patch };
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("employees", serverEmployees, enterpriseId);
     res.json({ success: true, employee: serverEmployees[idx] });
   } catch (error) {
@@ -1098,13 +1161,13 @@ app.delete("/api/employees/:id", requireRole(...ROLE_ADMIN_ONLY), async (req, re
   try {
     const { id } = req.params;
     serverEmployees = serverEmployees.filter((e) => e.id !== id);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("employees", serverEmployees, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting employee", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la suppression" });
   }
@@ -1113,7 +1176,7 @@ app.delete("/api/employees/:id", requireRole(...ROLE_ADMIN_ONLY), async (req, re
 // ==================== ELEVAGE / CHEPTEL ====================
 app.get("/api/cheptel", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await Cache.memo(
       `cheptel_list_${enterpriseId}`,
       async () => await syncWithFirestore("cheptel", serverCheptel, enterpriseId),
@@ -1121,7 +1184,7 @@ app.get("/api/cheptel", async (req, res) => {
     );
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1135,13 +1198,13 @@ app.post("/api/cheptel", async (req, res) => {
     } else {
       serverCheptel.push(group);
     }
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("cheptel", serverCheptel, enterpriseId);
     res.json({ success: true, group });
   } catch (error) {
     logger.error("Error saving cheptel", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -1154,7 +1217,7 @@ app.put("/api/cheptel/:id", async (req, res) => {
     const idx = serverCheptel.findIndex((c) => c.id === id);
     if (idx === -1) return res.status(404).json({ error: "Groupe d'élevage non trouvé" });
     serverCheptel[idx] = { ...serverCheptel[idx], ...patch };
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("cheptel", serverCheptel, enterpriseId);
     res.json({ success: true, group: serverCheptel[idx] });
   } catch (error) {
@@ -1167,13 +1230,13 @@ app.delete("/api/cheptel/:id", async (req, res) => {
   try {
     const { id } = req.params;
     serverCheptel = serverCheptel.filter((c) => c.id !== id);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("cheptel", serverCheptel, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting cheptel", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la suppression" });
   }
@@ -1182,7 +1245,7 @@ app.delete("/api/cheptel/:id", async (req, res) => {
 // ==================== ELEVAGE PRODUCTION ====================
 app.get("/api/elevage/production", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await syncWithFirestore(
       "elevage_production",
       serverElevageProduction,
@@ -1191,7 +1254,7 @@ app.get("/api/elevage/production", async (req, res) => {
     const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
     res.json(sorted);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1199,13 +1262,13 @@ app.post("/api/elevage/production", async (req, res) => {
   try {
     const log = ElevageProductionSchema.parse(req.body);
     serverElevageProduction.push(log);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("elevage_production", serverElevageProduction, enterpriseId);
     res.json({ success: true, log });
   } catch (error) {
     logger.error("Error saving elevage production", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -1215,13 +1278,13 @@ app.delete("/api/elevage/production/:id", async (req, res) => {
   try {
     const { id } = req.params;
     serverElevageProduction = serverElevageProduction.filter((l) => l.id !== id);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("elevage_production", serverElevageProduction, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting elevage production", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la suppression" });
   }
@@ -1230,12 +1293,12 @@ app.delete("/api/elevage/production/:id", async (req, res) => {
 // ==================== ELEVAGE HEALTH ====================
 app.get("/api/elevage/health", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await syncWithFirestore("elevage_health", serverElevageHealth, enterpriseId);
     const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
     res.json(sorted);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1243,13 +1306,13 @@ app.post("/api/elevage/health", async (req, res) => {
   try {
     const log = ElevageHealthSchema.parse(req.body);
     serverElevageHealth.push(log);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("elevage_health", serverElevageHealth, enterpriseId);
     res.json({ success: true, log });
   } catch (error) {
     logger.error("Error saving elevage health", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -1259,13 +1322,13 @@ app.delete("/api/elevage/health/:id", async (req, res) => {
   try {
     const { id } = req.params;
     serverElevageHealth = serverElevageHealth.filter((l) => l.id !== id);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("elevage_health", serverElevageHealth, enterpriseId);
     res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting elevage health", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la suppression" });
   }
@@ -1274,11 +1337,11 @@ app.delete("/api/elevage/health/:id", async (req, res) => {
 // ==================== TREATMENTS ====================
 app.get("/api/treatments", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await syncWithFirestore("treatments", serverTreatments, enterpriseId);
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1294,14 +1357,14 @@ app.post("/api/treatments", async (req, res) => {
       serverTreatments.push(treatment);
     }
 
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("treatments", serverTreatments, enterpriseId);
     res.json({ success: true, treatment });
   } catch (error) {
     if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error saving treatment", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -1311,14 +1374,14 @@ app.post("/api/treatments/sync", async (req, res) => {
   try {
     const { treatments } = TreatmentsSyncSchema.parse(req.body || {});
     serverTreatments = treatments;
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("treatments", serverTreatments, enterpriseId);
     res.json({ success: true, message: "Traitements synchronisés en mémoire", treatments });
   } catch (error) {
     if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error syncing treatments", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la synchronisation" });
   }
@@ -1327,11 +1390,11 @@ app.post("/api/treatments/sync", async (req, res) => {
 // ==================== CROP PROFITS ====================
 app.get("/api/crop-profits", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await syncWithFirestore("crop_profits", serverCropProfits, enterpriseId);
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1347,14 +1410,14 @@ app.post("/api/crop-profits", requireRole(...ROLE_BUREAU_ADMIN), async (req, res
       serverCropProfits.push(profit);
     }
 
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("crop_profits", serverCropProfits, enterpriseId);
     res.json({ success: true, profit });
   } catch (error) {
     if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error saving crop profit", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -1364,7 +1427,7 @@ app.post("/api/crop-profits/sync", requireRole(...ROLE_BUREAU_ADMIN), async (req
   try {
     const { cropProfits } = CropProfitsSyncSchema.parse(req.body || {});
     serverCropProfits = cropProfits;
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("crop_profits", serverCropProfits, enterpriseId);
     res.json({
       success: true,
@@ -1375,7 +1438,7 @@ app.post("/api/crop-profits/sync", requireRole(...ROLE_BUREAU_ADMIN), async (req
     if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error syncing crop profits", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la synchronisation" });
   }
@@ -1384,11 +1447,11 @@ app.post("/api/crop-profits/sync", requireRole(...ROLE_BUREAU_ADMIN), async (req
 // ==================== MESSAGES ====================
 app.get("/api/messages", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await syncWithFirestore("messages", serverMessages, enterpriseId);
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1406,13 +1469,13 @@ app.post("/api/messages", async (req, res) => {
       isPrivate: !!isPrivate,
     };
     serverMessages.push(newMsg);
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("messages", serverMessages, enterpriseId);
     res.json({ success: true, message: newMsg });
   } catch (error) {
     logger.error("Error saving message", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(400).json({ error: error.message || "Erreur de validation" });
   }
@@ -1421,11 +1484,11 @@ app.post("/api/messages", async (req, res) => {
 // ==================== STOCKS ====================
 app.get("/api/stocks", async (req, res) => {
   try {
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     const data = await syncWithFirestore("stocks", serverStocks, enterpriseId);
     res.json(data);
   } catch (error) {
-    res.status(503).json({ error: error.message || "Service Firestore indisponible" });
+    res.status(503).json({ error: "Service Firestore indisponible" });
   }
 });
 
@@ -1433,14 +1496,14 @@ app.post("/api/stocks", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
     const { stocks } = StocksPayloadSchema.parse(req.body || {});
     serverStocks = stocks;
-    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    const enterpriseId = resolveEnterpriseId(req);
     await saveToFirestore("stocks", serverStocks, enterpriseId);
     res.json({ success: true, message: "Stocks synchronisés", stocks });
   } catch (error) {
     if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error saving stocks", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
-      return res.status(503).json({ error: error.message });
+      return res.status(503).json({ error: "Service Firestore indisponible" });
     }
     res.status(500).json({ error: "Erreur lors de la sauvegarde" });
   }
@@ -1596,7 +1659,7 @@ app.post("/api/gemini", async (req, res) => {
         errorDetails: error.errorDetails,
         stack: error.stack,
       });
-      return res.status(500).json({ error: error.message || "Erreur interne de l'API" });
+      return res.status(500).json({ error: "Erreur interne de l'API" });
     }
 });
 
@@ -1666,7 +1729,7 @@ app.post("/api/ai/openai", async (req, res) => {
     return res.json({ text, provider: "openai" });
   } catch (error) {
     logger.error("Error calling OpenAI API", { error: error.message });
-    return res.status(500).json({ error: error.message || "Erreur interne de l'API" });
+    return res.status(500).json({ error: "Erreur interne de l'API" });
   }
 });
 
@@ -1741,7 +1804,7 @@ app.post("/api/ai/claude", async (req, res) => {
     return res.json({ text, provider: "claude" });
   } catch (error) {
     logger.error("Error calling Claude API", { error: error.message });
-    return res.status(500).json({ error: error.message || "Erreur interne de l'API" });
+    return res.status(500).json({ error: "Erreur interne de l'API" });
   }
 });
 
@@ -1823,7 +1886,7 @@ app.post("/api/ai/stream", async (req, res) => {
     }
   } catch (error) {
     logger.error("Error in AI streaming", { error: error.message });
-    res.status(500).json({ error: error.message || "Erreur interne de l'API" });
+    res.status(500).json({ error: "Erreur interne de l'API" });
   }
 });
 
@@ -1872,7 +1935,7 @@ app.post("/api/ai/translate", async (req, res) => {
     return res.json({ text: response.text });
   } catch (error) {
     logger.error("Error translating", { error: error.message });
-    return res.status(500).json({ error: error.message || "Erreur de traduction" });
+    return res.status(500).json({ error: "Erreur de traduction" });
   }
 });
 

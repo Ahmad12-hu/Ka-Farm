@@ -224,6 +224,15 @@ export const LoginSchema = z
   })
   .passthrough();
 
+// Provisionnement du doc Firestore users/{uid} à l'auto-inscription.
+// Rôles volontairement limités à ceux exposés par le formulaire d'inscription :
+// un compte ne peut jamais s'octroyer « admin » / « super_admin ».
+export const ProvisionSchema = z.object({
+  name: freeText(255).optional(),
+  role: z.enum(["Terrain", "Bureau"]).optional(),
+  enterpriseName: freeText(255).optional(),
+});
+
 export const SyncActionSchema = z
   .object({
     collection: text(120, { required: true, message: "Collection requise", label: "Collection" }),

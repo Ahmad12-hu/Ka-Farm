@@ -225,17 +225,45 @@ export const Auth = {
       const token = await getIdToken(firebaseUser, true);
       setToken(token);
 
-      const enterpriseId = `ent_${Date.now()}`;
       const entName = (enterpriseName || "Mon Exploitation").trim() || "Mon Exploitation";
-      const entCode = `KAF-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const profile = profileFromFirebaseUser(firebaseUser, {
+      // Provisionnement serveur : crée le doc Firestore users/{uid} avec un
+      // tenant propre à l'exploitation (enterpriseId/enterpriseCode générés
+      // côté serveur). Best-effort : si l'appel échoue (hors-ligne), on retombe
+      // sur des valeurs locales et le serveur reprovisionnera plus tard.
+      let extra = {
         name,
         role: selectedRole,
-        enterpriseId,
+        enterpriseId: `ent_${Date.now()}`,
         enterpriseName: entName,
-        enterpriseCode: entCode,
-      });
+        enterpriseCode: `KAF-${Math.floor(1000 + Math.random() * 9000)}`,
+      };
+      try {
+        const response = await fetch("/api/auth/provision", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ name, role: selectedRole, enterpriseName: entName }),
+        });
+        if (response.ok) {
+          const payload = await response.json();
+          const u = payload && payload.user;
+          if (u) {
+            extra = {
+              name: u.name || name,
+              role: u.role || selectedRole,
+              enterpriseId: u.enterpriseId || extra.enterpriseId,
+              enterpriseName: u.enterpriseName || entName,
+              enterpriseCode: u.enterpriseCode || extra.enterpriseCode,
+            };
+          }
+        }
+      } catch (err) {
+        logger.warn("signup: provisionnement serveur indisponible", {
+          error: (err && err.message) || "",
+        });
+      }
+
+      const profile = profileFromFirebaseUser(firebaseUser, extra);
       KAStorage.setCurrentUser(profile, true);
 
       logger.info("User signed up via Firebase", {
@@ -244,7 +272,7 @@ export const Auth = {
         role: selectedRole,
       });
       ErrorHandler.showToast(
-        `Compte créé avec succès !\nExploitation : ${entName}\nCode Équipe : ${entCode}`,
+        `Compte créé avec succès !\nExploitation : ${profile.enterpriseName}\nCode Équipe : ${profile.enterpriseCode}`,
         "success"
       );
       window.location.assign(AUTH_API);
