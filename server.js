@@ -13,19 +13,24 @@ import helmet from "helmet";
 import cors from "cors";
 import { logger } from "./js/modules/logger.js";
 import {
-  validateData,
-  UserSchema,
-  ParcelleSchema,
+  validateBody,
   CropSchema,
-  TreatmentSchema,
-  FinanceSchema,
+  ParcelleSchema,
   EmployeeSchema,
-  StockSchema,
-  HarvestSchema,
-  SaleSchema,
+  FinanceSchema,
   TaskSchema,
-} from "./js/modules/validators.js";
-import { z } from "zod";
+  CheptelSchema,
+  ElevageProductionSchema,
+  ElevageHealthSchema,
+  MessageSchema,
+  TreatmentSchema,
+  CropProfitSchema,
+  StocksPayloadSchema,
+  TreatmentsSyncSchema,
+  CropProfitsSyncSchema,
+  AiRequestSchema,
+  TranslateSchema,
+} from "./js/modules/api-validation.js";
 
 dotenv.config();
 
@@ -111,12 +116,9 @@ async function startServer() {
     res.json(serverMessages);
   });
 
-  app.post("/api/messages", async (req, res) => {
+  app.post("/api/messages", validateBody(MessageSchema), async (req, res) => {
     try {
       const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
-      if (!text || !senderEmail) {
-        return res.status(400).json({ error: "Email et texte requis" });
-      }
 
       const newMsg = {
         id: id || "msg-" + Date.now(),
@@ -140,19 +142,8 @@ async function startServer() {
     res.json(serverTreatments);
   });
 
-  app.post("/api/treatments", async (req, res) => {
+  app.post("/api/treatments", validateBody(TreatmentSchema), async (req, res) => {
     const treatment = req.body;
-
-    // Validation avec Zod
-    const validation = validateData(TreatmentSchema, treatment);
-    if (!validation.success) {
-      logger.warn("Treatment validation failed", { errors: validation.errors });
-      return res.status(400).json({ error: "Données invalides", details: validation.errors });
-    }
-
-    if (!treatment || !treatment.id || !treatment.product_name) {
-      return res.status(400).json({ error: "ID et nom du produit requis" });
-    }
 
     const existing = serverTreatments.find((t) => t.id === treatment.id);
     if (existing) {
@@ -165,14 +156,10 @@ async function startServer() {
     res.json({ success: true, treatment });
   });
 
-  app.post("/api/treatments/sync", async (req, res) => {
+  app.post("/api/treatments/sync", validateBody(TreatmentsSyncSchema), async (req, res) => {
     const { treatments } = req.body;
-    if (treatments && Array.isArray(treatments)) {
-      serverTreatments = treatments;
-      res.json({ success: true, message: "Traitements synchronisés en mémoire", treatments });
-    } else {
-      res.status(400).json({ error: "Données de traitements invalides" });
-    }
+    serverTreatments = treatments;
+    res.json({ success: true, message: "Traitements synchronisés en mémoire", treatments });
   });
 
   // ==================== CROP PROFITABILITY ====================
@@ -180,11 +167,8 @@ async function startServer() {
     res.json(serverCropProfits);
   });
 
-  app.post("/api/crop-profits", async (req, res) => {
+  app.post("/api/crop-profits", validateBody(CropProfitSchema), async (req, res) => {
     const profit = req.body;
-    if (!profit || !profit.id || !profit.crop_name) {
-      return res.status(400).json({ error: "ID et nom de la culture requis" });
-    }
 
     const existing = serverCropProfits.find((p) => p.id === profit.id);
     if (existing) {
@@ -196,18 +180,14 @@ async function startServer() {
     res.json({ success: true, profit });
   });
 
-  app.post("/api/crop-profits/sync", async (req, res) => {
+  app.post("/api/crop-profits/sync", validateBody(CropProfitsSyncSchema), async (req, res) => {
     const { cropProfits } = req.body;
-    if (cropProfits && Array.isArray(cropProfits)) {
-      serverCropProfits = cropProfits;
-      res.json({
-        success: true,
-        message: "Analyses de rentabilité synchronisées en mémoire",
-        cropProfits,
-      });
-    } else {
-      res.status(400).json({ error: "Données de rentabilité invalides" });
-    }
+    serverCropProfits = cropProfits;
+    res.json({
+      success: true,
+      message: "Analyses de rentabilité synchronisées en mémoire",
+      cropProfits,
+    });
   });
 
   // ==================== STOCKS ====================
@@ -215,14 +195,10 @@ async function startServer() {
     res.json(serverStocks);
   });
 
-  app.post("/api/stocks", async (req, res) => {
+  app.post("/api/stocks", validateBody(StocksPayloadSchema), async (req, res) => {
     const { stocks } = req.body;
-    if (stocks && Array.isArray(stocks)) {
-      serverStocks = stocks;
-      res.json({ success: true, message: "Stocks synchronisés en mémoire", stocks });
-    } else {
-      res.status(400).json({ error: "Données de stock invalides" });
-    }
+    serverStocks = stocks;
+    res.json({ success: true, message: "Stocks synchronisés en mémoire", stocks });
   });
 
   // ==================== CROPS ====================
@@ -230,11 +206,8 @@ async function startServer() {
     res.json(serverCrops);
   });
 
-  app.post("/api/crops", async (req, res) => {
+  app.post("/api/crops", validateBody(CropSchema), async (req, res) => {
     const crop = req.body;
-    if (!crop || !crop.id || !crop.name) {
-      return res.status(400).json({ error: "ID et nom requis" });
-    }
 
     const existing = serverCrops.find((c) => c.id === crop.id);
     if (existing) {
@@ -251,19 +224,8 @@ async function startServer() {
     res.json(serverParcelles);
   });
 
-  app.post("/api/parcelles", async (req, res) => {
+  app.post("/api/parcelles", validateBody(ParcelleSchema), async (req, res) => {
     const parcelle = req.body;
-
-    // Validation with Zod
-    const validation = validateData(ParcelleSchema, parcelle);
-    if (!validation.success) {
-      logger.warn("Parcelle validation failed", { errors: validation.errors });
-      return res.status(400).json({ error: "Données invalides", details: validation.errors });
-    }
-
-    if (!parcelle || !parcelle.id || !parcelle.name) {
-      return res.status(400).json({ error: "ID et nom requis" });
-    }
 
     const existing = serverParcelles.find((p) => p.id === parcelle.id);
     if (existing) {
@@ -281,11 +243,8 @@ async function startServer() {
     res.json(serverTasks);
   });
 
-  app.post("/api/tasks", async (req, res) => {
+  app.post("/api/tasks", validateBody(TaskSchema), async (req, res) => {
     const task = req.body;
-    if (!task || !task.id || !task.title) {
-      return res.status(400).json({ error: "ID et titre requis" });
-    }
 
     const existing = serverTasks.find((t) => t.id === task.id);
     if (existing) {
@@ -302,11 +261,8 @@ async function startServer() {
     res.json(serverFinances);
   });
 
-  app.post("/api/finances", async (req, res) => {
+  app.post("/api/finances", validateBody(FinanceSchema), async (req, res) => {
     const finance = req.body;
-    if (!finance || !finance.id || !finance.description) {
-      return res.status(400).json({ error: "ID et description requis" });
-    }
 
     const existing = serverFinances.find((f) => f.id === finance.id);
     if (existing) {
@@ -323,11 +279,8 @@ async function startServer() {
     res.json(serverEmployees);
   });
 
-  app.post("/api/employees", async (req, res) => {
+  app.post("/api/employees", validateBody(EmployeeSchema), async (req, res) => {
     const employee = req.body;
-    if (!employee || !employee.id || !employee.name) {
-      return res.status(400).json({ error: "ID et nom requis" });
-    }
 
     const existing = serverEmployees.find((e) => e.id === employee.id);
     if (existing) {
@@ -344,11 +297,8 @@ async function startServer() {
     res.json(serverCheptel);
   });
 
-  app.post("/api/cheptel", async (req, res) => {
+  app.post("/api/cheptel", validateBody(CheptelSchema), async (req, res) => {
     const group = req.body;
-    if (!group || !group.id || !group.name) {
-      return res.status(400).json({ error: "ID et nom requis" });
-    }
 
     const existing = serverCheptel.find((c) => c.id === group.id);
     if (existing) {
@@ -366,11 +316,8 @@ async function startServer() {
     res.json(sorted);
   });
 
-  app.post("/api/elevage/production", async (req, res) => {
+  app.post("/api/elevage/production", validateBody(ElevageProductionSchema), async (req, res) => {
     const log = req.body;
-    if (!log || !log.id || !log.type) {
-      return res.status(400).json({ error: "ID et type requis" });
-    }
 
     serverElevageProduction.push(log);
     res.json({ success: true, log });
@@ -382,11 +329,8 @@ async function startServer() {
     res.json(sorted);
   });
 
-  app.post("/api/elevage/health", async (req, res) => {
+  app.post("/api/elevage/health", validateBody(ElevageHealthSchema), async (req, res) => {
     const log = req.body;
-    if (!log || !log.id || !log.intervention) {
-      return res.status(400).json({ error: "ID et intervention requis" });
-    }
 
     serverElevageHealth.push(log);
     res.json({ success: true, log });
@@ -466,12 +410,9 @@ async function startServer() {
   }
 
   // Route principale Gemini améliorée avec agents spécialisés + RAG
-  app.post("/api/gemini", async (req, res) => {
+  app.post("/api/gemini", validateBody(AiRequestSchema), async (req, res) => {
     try {
       const { prompt, history, image, systemPrompt, model, agentType = "advisor" } = req.body;
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt requis" });
-      }
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
@@ -542,12 +483,9 @@ async function startServer() {
   });
 
   // ==================== OPENAI FALLBACK ====================
-  app.post("/api/ai/openai", async (req, res) => {
+  app.post("/api/ai/openai", validateBody(AiRequestSchema), async (req, res) => {
     try {
       const { prompt, systemPrompt, history, image, model = "gpt-4o-mini" } = req.body;
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt requis" });
-      }
 
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
@@ -612,12 +550,9 @@ async function startServer() {
   });
 
   // ==================== CLAUDE FALLBACK ====================
-  app.post("/api/ai/claude", async (req, res) => {
+  app.post("/api/ai/claude", validateBody(AiRequestSchema), async (req, res) => {
     try {
       const { prompt, systemPrompt, history, image, model = "claude-3-5-haiku-latest" } = req.body;
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt requis" });
-      }
 
       const apiKey = process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
@@ -687,12 +622,9 @@ async function startServer() {
   });
 
   // ==================== STREAMING SSE ====================
-  app.post("/api/ai/stream", async (req, res) => {
+  app.post("/api/ai/stream", validateBody(AiRequestSchema), async (req, res) => {
     try {
       const { prompt, systemPrompt, history, image, language = "fr", agentType = "advisor" } = req.body;
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt requis" });
-      }
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
@@ -786,12 +718,9 @@ async function startServer() {
   });
 
   // ==================== TRADUCTION ====================
-  app.post("/api/ai/translate", async (req, res) => {
+  app.post("/api/ai/translate", validateBody(TranslateSchema), async (req, res) => {
     try {
       const { text, fromLang = "fr", toLang = "wo" } = req.body;
-      if (!text) {
-        return res.status(400).json({ error: "Texte requis" });
-      }
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {

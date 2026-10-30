@@ -4,6 +4,25 @@ import { GoogleGenAI } from "@google/genai";
 import { cert, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "../js/modules/logger.js";
+import {
+  CropSchema,
+  ParcelleSchema,
+  EmployeeSchema,
+  FinanceSchema,
+  TaskSchema,
+  CheptelSchema,
+  ElevageProductionSchema,
+  ElevageHealthSchema,
+  MessageSchema,
+  TreatmentSchema,
+  CropProfitSchema,
+  StocksPayloadSchema,
+  TreatmentsSyncSchema,
+  CropProfitsSyncSchema,
+  LoginSchema,
+  SyncActionSchema,
+  validationDetails,
+} from "../js/modules/api-validation.js";
 import { z } from "zod";
 import { Cache } from "../js/modules/cache.js";
 import { Crypto } from "../js/modules/crypto.js";
@@ -11,177 +30,12 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 
-// Validation schemas for API inputs
-const CropSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  name: z.string().min(1, "Nom requis"),
-  field: z.string().optional(),
-  sowingDate: z.string().optional(),
-  harvestDate: z.string().optional(),
-  status: z.string().optional(),
-  waterStatus: z.string().optional(),
-  fertilizerStatus: z.string().optional(),
-});
+// Schémas de validation partagés avec le serveur de développement : voir
+// js/modules/api-validation.js (source unique du contrat d'entrée).
 
-const ParcelleSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  name: z.string().min(1, "Nom requis"),
-  surface: z.number().optional(),
-  lat: z.number().optional(),
-  lng: z.number().optional(),
-  status: z.string().optional(),
-});
-
-const EmployeeSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  name: z.string().min(1, "Nom requis"),
-  phone: z.string().optional(),
-  role: z.string().optional(),
-  dailyRate: z.number().optional(),
-  status: z.string().optional(),
-});
-
-const FinanceSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  description: z.string().min(1, "Description requise"),
-  type: z.enum(["Revenu", "Dépense"]).optional(),
-  category: z.string().optional(),
-  amount: z.number().positive("Montant doit être positif").optional(),
-  date: z.string().optional(),
-});
-
-const TaskSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  title: z.string().min(1, "Titre requis"),
-  category: z.string().optional(),
-  dueDate: z.string().optional(),
-  assignee: z.string().optional(),
-  priority: z.string().optional(),
-  completed: z.boolean().optional(),
-});
-
-const CheptelSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  name: z.string().min(1, "Nom requis"),
-  type: z.string().optional(),
-  breed: z.string().optional(),
-  quantity: z.number().int().positive("Quantité doit être positive").optional(),
-  unit: z.string().optional(),
-  status: z.string().optional(),
-  purpose: z.string().optional(),
-});
-
-const ElevageProductionSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  date: z.string().min(1, "Date requise"),
-  type: z.string().min(1, "Type requis"),
-  quantity: z.number().positive("Quantité doit être positive").optional(),
-  unit: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const ElevageHealthSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  date: z.string().min(1, "Date requise"),
-  target: z.string().min(1, "Cible requise"),
-  intervention: z.string().min(1, "Intervention requise"),
-  practitioner: z.string().optional(),
-  cost: z.number().nonnegative("Coût doit être positif").optional(),
-  notes: z.string().optional(),
-});
-
-const MessageSchema = z.object({
-  id: z.string().optional(),
-  senderEmail: z.string().email("Email invalide").min(1, "Email requis"),
-  senderName: z.string().optional(),
-  text: z.string().min(1, "Message requis"),
-  timestamp: z.string().optional(),
-  isPrivate: z.boolean().optional(),
-});
-
-const TreatmentSchema = z
-  .object({
-    id: z.string().min(1, "ID requis"),
-    product_name: z.string().min(1, "Nom du produit requis").optional(),
-    productName: z.string().min(1, "Nom du produit requis").optional(),
-    parcel_id: z.string().optional(),
-    crop_id: z.string().optional(),
-    crop_name: z.string().optional(),
-    parcel_name: z.string().optional(),
-    category: z.string().optional(),
-    date_applied: z.string().optional(),
-    dar_days: z.number().optional(),
-    target: z.string().optional(),
-    notes: z.string().optional(),
-    harvest_ready: z.boolean().optional(),
-  })
-  .passthrough()
-  .refine((treatment) => Boolean(treatment.product_name || treatment.productName), {
-    message: "Nom du produit requis",
-    path: ["product_name"],
-  });
-
-const CropProfitSchema = z
-  .object({
-    id: z.string().min(1, "ID requis"),
-    crop_name: z.string().min(1, "Nom de la culture requis").optional(),
-    cropName: z.string().min(1, "Nom de la culture requis").optional(),
-    parcel_id: z.string().optional(),
-    parcel_name: z.string().optional(),
-    yield_kg: z.number().optional(),
-    price_per_kg: z.number().optional(),
-    revenue: z.number().optional(),
-    costs: z.number().optional(),
-    total_cost: z.number().optional(),
-    net_margin: z.number().optional(),
-    profitability_percent: z.number().optional(),
-    period: z.string().optional(),
-    notes: z.string().optional(),
-  })
-  .passthrough()
-  .refine((profit) => Boolean(profit.crop_name || profit.cropName), {
-    message: "Nom de la culture requis",
-    path: ["crop_name"],
-  });
-
-// Intrants — forme envoyée par le frontend (camelCase, catégories libres).
-const StockSchema = z
-  .object({
-    id: z.string().min(1, "ID requis"),
-    name: z.string().min(1, "Nom requis"),
-    category: z.string().optional(),
-    quantity: z.number().nonnegative("Quantité ne peut être négative").optional(),
-    maxQuantity: z.number().nonnegative("Capacité maximale invalide").optional(),
-    unit: z.string().optional(),
-  })
-  .passthrough();
-
-const StocksPayloadSchema = z.object({ stocks: z.array(StockSchema) }).passthrough();
-
-const TreatmentsSyncSchema = z
-  .object({
-    treatments: z.array(z.object({ id: z.string().min(1, "ID requis") }).passthrough()),
-  })
-  .passthrough();
-
-const CropProfitsSyncSchema = z
-  .object({
-    cropProfits: z.array(z.object({ id: z.string().min(1, "ID requis") }).passthrough()),
-  })
-  .passthrough();
-
-const LoginSchema = z.object({
-  email: z.string().trim().min(1, "Email requis").email("Email invalide"),
-  password: z.string().min(1, "Mot de passe requis"),
-  remember: z.boolean().optional(),
-});
-
-const SyncActionSchema = z
-  .object({
-    collection: z.string().min(1, "Collection requise"),
-    type: z.string().optional(),
-  })
-  .passthrough();
+function validationFailed(res, error) {
+  return res.status(400).json({ error: "Données invalides", details: validationDetails(error) });
+}
 
 // Aide pour vérifier si nous sommes en mode production
 function isProduction() {
@@ -288,18 +142,6 @@ function requireFirestoreReady(req, res, next) {
   }
 
   next();
-}
-
-// Réponses 400 homogènes pour les charges utiles rejetées par Zod.
-function validationDetails(error) {
-  return error.issues.map((issue) => ({
-    field: issue.path.join("."),
-    message: issue.message,
-  }));
-}
-
-function validationFailed(res, error) {
-  return res.status(400).json({ error: "Données invalides", details: validationDetails(error) });
 }
 
 const app = express();
