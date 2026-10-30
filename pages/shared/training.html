@@ -487,6 +487,18 @@
   <script type="module" src="/js/router.js"></script>
   <script type="module" src="/js/app.js"></script>
   <script>
+    // Ajoute le jeton Firebase stocké au login (api-client.js) aux en-têtes :
+    // sans lui, /api/gemini répond 401 « Token requis ».
+    function withAuth(headers) {
+      try {
+        const token =
+          localStorage.getItem("kafarm_token") || localStorage.getItem("ka_farm_token");
+        return token ? { ...headers, Authorization: `Bearer ${token}` } : headers;
+      } catch {
+        return headers;
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       // 1. Data repository for Senegal crops training modules
       const CROP_GUIDES_FR = {
@@ -2011,7 +2023,7 @@
 
             const response = await fetch("/api/gemini", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: withAuth({ "Content-Type": "application/json" }),
               body: JSON.stringify({
                 prompt: completePrompt,
                 history: chatHistory.slice(0, -1),

@@ -1,5 +1,6 @@
 import { KAStorage } from "/js/storage.js";
 import { Toast } from "/js/components/toast.js";
+import { authHeaders } from "/js/services/api-client.js";
 
 window.tryAccessDefault = () => {
   const user = KAStorage.getCurrentUser();
@@ -86,7 +87,7 @@ if (chatForm && chatInput && chatMessages) {
     try {
       const response = await fetch("/api/gemini", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ prompt, history: [] }),
       });
 

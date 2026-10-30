@@ -12,7 +12,7 @@
 //              conservés localement ; la source de vérité serveur reste le doc
 //              Firestore `users/{uid}` provisionné côté admin/seed).
 //   - logout : signOut → purge token + profil local.
-//   - Session : onAuthStateChanged restaure token + profil si localStorage est
+//   - Session : onIdTokenChanged restaure token + profil si localStorage est
 //              vide (couverture des cas cookie/localStorage vidé).
 //
 // Source de vérité du rôle :
@@ -25,7 +25,7 @@
 
 import { auth } from "./firebase/firebase.js";
 import {
-  onAuthStateChanged,
+  onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -283,10 +283,13 @@ export const Auth = {
 // Restauration de session : si Firebase confirme un utilisateur connecté alors
 // que le profil local est absent (ou appartient à un autre uid), on le
 // ré-hydrate et on resynchronise le token.
+// onIdTokenChanged (et non onAuthStateChanged) : il se déclenche AUSSI à chaque
+// renouvellement d'ID token (~1 h), ce qui évite de garder un jeton expiré dans
+// localStorage et donc des 401 sur /api/gemini et /api/ai/*.
 let authStateBound = false;
 if (typeof window !== "undefined" && !authStateBound) {
   authStateBound = true;
-  onAuthStateChanged(auth, async (firebaseUser) => {
+  onIdTokenChanged(auth, async (firebaseUser) => {
     try {
       if (firebaseUser) {
         const token = await getIdToken(firebaseUser, false);
@@ -301,7 +304,7 @@ if (typeof window !== "undefined" && !authStateBound) {
         KAStorage.setCurrentUser(null);
       }
     } catch (err) {
-      logger.warn("onAuthStateChanged handler error", {
+      logger.warn("onIdTokenChanged handler error", {
         error: (err && err.message) || "",
       });
     }

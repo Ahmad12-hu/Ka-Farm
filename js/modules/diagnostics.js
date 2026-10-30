@@ -2,6 +2,7 @@
 import { KAStorage } from "../storage.js";
 import { logger } from "./logger.js";
 import { ErrorHandler } from "./error-handler.js";
+import { authHeaders } from "../services/api-client.js";
 
 let diagnostics = [];
 let diagnosticHistory = [];
@@ -1670,7 +1671,7 @@ export const DiagnosticsModule = {
 
       const response = await fetch("/api/gemini", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           prompt: fullPrompt,
           image: aiImageBase64, // The backend needs to handle this

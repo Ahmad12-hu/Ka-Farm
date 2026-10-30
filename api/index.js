@@ -26,6 +26,11 @@ import {
 import { z } from "zod";
 import { Cache } from "../js/modules/cache.js";
 import { Crypto } from "../js/modules/crypto.js";
+import {
+  createGeminiClientFactory,
+  geminiKeyFor,
+  GEMINI_KEYS_MISSING_ERROR,
+} from "../js/modules/gemini-keys.js";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
@@ -1485,16 +1490,22 @@ function buildFarmContext(agentType) {
   }
 }
 
-// Helper pour appeler Gemini avec retry
-async function callGeminiWithRetry(ai, model, contents, systemInstruction) {
-    const modelsToTry = [model, "gemini-3.6-flash", "gemini-3.5-flash-lite"];
-  let response = null;
+const getGeminiClient = createGeminiClientFactory(GoogleGenAI);
+
+// Helper pour appeler Gemini avec retry. Chaque modèle de la liste de repli
+// reprend la clé de sa famille (flash / pro).
+async function callGeminiWithRetry(getClient, model, contents, systemInstruction) {
+  const modelsToTry = [...new Set([model, "gemini-3.6-flash", "gemini-3.5-flash-lite"])].filter(
+    Boolean
+  );
   let lastError = null;
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     for (const m of modelsToTry) {
+      const ai = getClient(m);
+      if (!ai) continue;
       try {
-        response = await ai.models.generateContent({
+        const response = await ai.models.generateContent({
           model: m,
           contents,
           config: {
@@ -1522,19 +1533,10 @@ app.post("/api/gemini", async (req, res) => {
       return res.status(400).json({ error: "Prompt requis" });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "Clé GEMINI_API_KEY non configurée" });
+    const requestedModel = model || "gemini-3.6-flash";
+    if (!geminiKeyFor(requestedModel)) {
+      return res.status(500).json({ error: GEMINI_KEYS_MISSING_ERROR });
     }
-
-    const ai = new GoogleGenAI({
-      apiKey: apiKey,
-      httpOptions: {
-        headers: {
-          "User-Agent": "aistudio-build",
-        },
-      },
-    });
 
     // Utiliser le prompt système fourni ou celui de l'agent
     let systemInstruction = systemPrompt || AI_SYSTEM_PROMPTS[agentType] || AI_SYSTEM_PROMPTS.advisor;
@@ -1577,7 +1579,12 @@ app.post("/api/gemini", async (req, res) => {
       ? [...contents, { role: "user", parts: requestParts }]
       : requestParts;
 
-      const response = await callGeminiWithRetry(ai, model || "gemini-3.6-flash", finalContents, systemInstruction);
+    const response = await callGeminiWithRetry(
+      getGeminiClient,
+      requestedModel,
+      finalContents,
+      systemInstruction
+    );
 
     return res.json({ text: response.text });
     } catch (error) {
@@ -1746,19 +1753,11 @@ app.post("/api/ai/stream", async (req, res) => {
       return res.status(400).json({ error: "Prompt requis" });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "Clé GEMINI_API_KEY non configurée" });
+    const streamModel = "gemini-3.6-flash";
+    const ai = getGeminiClient(streamModel);
+    if (!ai) {
+      return res.status(500).json({ error: GEMINI_KEYS_MISSING_ERROR });
     }
-
-    const ai = new GoogleGenAI({
-      apiKey: apiKey,
-      httpOptions: {
-        headers: {
-          "User-Agent": "aistudio-build",
-        },
-      },
-    });
 
     let systemInstruction = systemPrompt || AI_SYSTEM_PROMPTS[agentType] || AI_SYSTEM_PROMPTS.advisor;
     if (language === "wo") {
@@ -1802,7 +1801,7 @@ app.post("/api/ai/stream", async (req, res) => {
 
     try {
         const stream = await ai.models.generateContentStream({
-          model: "gemini-3.6-flash",
+          model: streamModel,
         contents: finalContents,
         config: {
           systemInstruction,
@@ -1846,32 +1845,24 @@ app.post("/api/ai/translate", async (req, res) => {
       return res.status(400).json({ error: "Texte requis" });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "Clé GEMINI_API_KEY non configurée" });
+    const translateModel = "gemini-3.6-flash";
+    const ai = getGeminiClient(translateModel);
+    if (!ai) {
+      return res.status(500).json({ error: GEMINI_KEYS_MISSING_ERROR });
     }
 
-    const ai = new GoogleGenAI({
-      apiKey: apiKey,
-      httpOptions: {
-        headers: {
-          "User-Agent": "aistudio-build",
+    const response = await ai.models.generateContent({
+      model: translateModel,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `Traduis ce texte du ${fromLang} au ${toLang} : "${text}". Réponds UNIQUEMENT avec la traduction, sans explications.`,
+            },
+          ],
         },
-      },
-    });
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: `Traduis ce texte du ${fromLang} au ${toLang} : "${text}". Réponds UNIQUEMENT avec la traduction, sans explications.`,
-              },
-            ],
-          },
-        ],
+      ],
       config: {
         systemInstruction: "Tu es un traducteur expert. Traduis fidèlement le texte fourni.",
         temperature: 0.3,

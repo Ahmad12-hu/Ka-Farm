@@ -4,7 +4,7 @@
 // On mocke :
 //   - ../js/firebase/firebase.js : exporte un `auth` factice (pas d'init SDK réelle) ;
 //   - firebase/auth : signInWithEmailAndPassword, createUser..., signOut,
-//     getIdToken, onAuthStateChanged (contrôlés par les tests) ;
+//     getIdToken, onIdTokenChanged (contrôlés par les tests) ;
 //   - ../js/storage.js : stub KAStorage (setCurrentUser/getCurrentUser) ;
 //   - logger & error-handler : silencieux/contrôlés.
 //
@@ -20,7 +20,7 @@ jest.mock("firebase/auth", () => ({
   updateProfile: jest.fn(),
   signOut: jest.fn(async () => {}),
   getIdToken: jest.fn(async () => "id-token-ABC"),
-  onAuthStateChanged: jest.fn((authObj, cb) => {
+  onIdTokenChanged: jest.fn((authObj, cb) => {
     authObj.__cb = cb;
     return () => {};
   }),
@@ -178,7 +178,7 @@ test("login réussi : set token + hydratation serveur + profil persévé", async
     );
   });
 
-  test("onAuthStateChanged : restaure token + profil quand le profil local est vide", async () => {
+  test("onIdTokenChanged : restaure token + profil quand le profil local est vide", async () => {
     const authObj = require("../js/firebase/firebase.js").auth;
     const cb = authObj.__cb;
     expect(typeof cb).toBe("function");
