@@ -44,8 +44,14 @@ manifests/
 *.temp
 .nyc_output/
 
+# Artefacts de debug locaux (ne pas versionner)
+_*.txt
+_*.mjs
+_*.cmd
+
 .vercel
 .env*
+!.env.example
 dist/
 node_modules
 
