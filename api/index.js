@@ -99,36 +99,89 @@ const MessageSchema = z.object({
   isPrivate: z.boolean().optional(),
 });
 
-const TreatmentSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  product_name: z.string().min(1, "Nom du produit requis"),
-  parcel_id: z.string().optional(),
-  crop_id: z.string().optional(),
-  crop_name: z.string().optional(),
-  parcel_name: z.string().optional(),
-  category: z.string().optional(),
-  date_applied: z.string().optional(),
-  dar_days: z.number().optional(),
-  target: z.string().optional(),
-  notes: z.string().optional(),
-  harvest_ready: z.boolean().optional(),
+const TreatmentSchema = z
+  .object({
+    id: z.string().min(1, "ID requis"),
+    product_name: z.string().min(1, "Nom du produit requis").optional(),
+    productName: z.string().min(1, "Nom du produit requis").optional(),
+    parcel_id: z.string().optional(),
+    crop_id: z.string().optional(),
+    crop_name: z.string().optional(),
+    parcel_name: z.string().optional(),
+    category: z.string().optional(),
+    date_applied: z.string().optional(),
+    dar_days: z.number().optional(),
+    target: z.string().optional(),
+    notes: z.string().optional(),
+    harvest_ready: z.boolean().optional(),
+  })
+  .passthrough()
+  .refine((treatment) => Boolean(treatment.product_name || treatment.productName), {
+    message: "Nom du produit requis",
+    path: ["product_name"],
+  });
+
+const CropProfitSchema = z
+  .object({
+    id: z.string().min(1, "ID requis"),
+    crop_name: z.string().min(1, "Nom de la culture requis").optional(),
+    cropName: z.string().min(1, "Nom de la culture requis").optional(),
+    parcel_id: z.string().optional(),
+    parcel_name: z.string().optional(),
+    yield_kg: z.number().optional(),
+    price_per_kg: z.number().optional(),
+    revenue: z.number().optional(),
+    costs: z.number().optional(),
+    total_cost: z.number().optional(),
+    net_margin: z.number().optional(),
+    profitability_percent: z.number().optional(),
+    period: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .passthrough()
+  .refine((profit) => Boolean(profit.crop_name || profit.cropName), {
+    message: "Nom de la culture requis",
+    path: ["crop_name"],
+  });
+
+// Intrants — forme envoyée par le frontend (camelCase, catégories libres).
+const StockSchema = z
+  .object({
+    id: z.string().min(1, "ID requis"),
+    name: z.string().min(1, "Nom requis"),
+    category: z.string().optional(),
+    quantity: z.number().nonnegative("Quantité ne peut être négative").optional(),
+    maxQuantity: z.number().nonnegative("Capacité maximale invalide").optional(),
+    unit: z.string().optional(),
+  })
+  .passthrough();
+
+const StocksPayloadSchema = z.object({ stocks: z.array(StockSchema) }).passthrough();
+
+const TreatmentsSyncSchema = z
+  .object({
+    treatments: z.array(z.object({ id: z.string().min(1, "ID requis") }).passthrough()),
+  })
+  .passthrough();
+
+const CropProfitsSyncSchema = z
+  .object({
+    cropProfits: z.array(z.object({ id: z.string().min(1, "ID requis") }).passthrough()),
+  })
+  .passthrough();
+
+const LoginSchema = z.object({
+  email: z.string().trim().min(1, "Email requis").email("Email invalide"),
+  password: z.string().min(1, "Mot de passe requis"),
+  remember: z.boolean().optional(),
 });
 
-const CropProfitSchema = z.object({
-  id: z.string().min(1, "ID requis"),
-  crop_name: z.string().min(1, "Nom de la culture requis"),
-  parcel_id: z.string().optional(),
-  parcel_name: z.string().optional(),
-  yield_kg: z.number().optional(),
-  price_per_kg: z.number().optional(),
-  revenue: z.number().optional(),
-  costs: z.number().optional(),
-  total_cost: z.number().optional(),
-  net_margin: z.number().optional(),
-  profitability_percent: z.number().optional(),
-  period: z.string().optional(),
-  notes: z.string().optional(),
-});
+const SyncActionSchema = z
+  .object({
+    collection: z.string().min(1, "Collection requise"),
+    type: z.string().optional(),
+  })
+  .passthrough();
 
 // Aide pour vérifier si nous sommes en mode production
 function isProduction() {
@@ -235,6 +288,18 @@ function requireFirestoreReady(req, res, next) {
   }
 
   next();
+}
+
+// Réponses 400 homogènes pour les charges utiles rejetées par Zod.
+function validationDetails(error) {
+  return error.issues.map((issue) => ({
+    field: issue.path.join("."),
+    message: issue.message,
+  }));
+}
+
+function validationFailed(res, error) {
+  return res.status(400).json({ error: "Données invalides", details: validationDetails(error) });
 }
 
 const app = express();
@@ -538,10 +603,9 @@ app.use(["/api/sync", "/api/sync/item"], requireAuth);
 // ==================== AUTH ====================
 app.post("/api/auth/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email et mot de passe requis" });
-    }
+    const parsed = LoginSchema.safeParse(req.body || {});
+    if (!parsed.success) return validationFailed(res, parsed.error);
+    const { email, password } = parsed.data;
 
     const jwtSecret = getJwtSecret();
     if (!jwtSecret) {
@@ -1373,10 +1437,7 @@ app.get("/api/treatments", async (req, res) => {
 
 app.post("/api/treatments", async (req, res) => {
   try {
-    const treatment = req.body;
-    if (!treatment || !treatment.id || !treatment.product_name) {
-      return res.status(400).json({ error: "ID et nom du produit requis" });
-    }
+    const treatment = TreatmentSchema.parse(req.body || {});
 
     const existing = serverTreatments.find((t) => t.id === treatment.id);
     if (existing) {
@@ -1390,6 +1451,7 @@ app.post("/api/treatments", async (req, res) => {
     await saveToFirestore("treatments", serverTreatments, enterpriseId);
     res.json({ success: true, treatment });
   } catch (error) {
+    if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error saving treatment", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
       return res.status(503).json({ error: error.message });
@@ -1400,16 +1462,13 @@ app.post("/api/treatments", async (req, res) => {
 
 app.post("/api/treatments/sync", async (req, res) => {
   try {
-    const { treatments } = req.body;
-    if (treatments && Array.isArray(treatments)) {
-      serverTreatments = treatments;
-      const enterpriseId = req.user?.enterpriseId || "ka_farm";
-      await saveToFirestore("treatments", serverTreatments, enterpriseId);
-      res.json({ success: true, message: "Traitements synchronisés en mémoire", treatments });
-    } else {
-      res.status(400).json({ error: "Données de traitements invalides" });
-    }
+    const { treatments } = TreatmentsSyncSchema.parse(req.body || {});
+    serverTreatments = treatments;
+    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    await saveToFirestore("treatments", serverTreatments, enterpriseId);
+    res.json({ success: true, message: "Traitements synchronisés en mémoire", treatments });
   } catch (error) {
+    if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error syncing treatments", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
       return res.status(503).json({ error: error.message });
@@ -1431,10 +1490,7 @@ app.get("/api/crop-profits", async (req, res) => {
 
 app.post("/api/crop-profits", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
-    const profit = req.body;
-    if (!profit || !profit.id || !profit.crop_name) {
-      return res.status(400).json({ error: "ID et nom de la culture requis" });
-    }
+    const profit = CropProfitSchema.parse(req.body || {});
 
     const existing = serverCropProfits.find((p) => p.id === profit.id);
     if (existing) {
@@ -1448,6 +1504,7 @@ app.post("/api/crop-profits", requireRole(...ROLE_BUREAU_ADMIN), async (req, res
     await saveToFirestore("crop_profits", serverCropProfits, enterpriseId);
     res.json({ success: true, profit });
   } catch (error) {
+    if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error saving crop profit", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
       return res.status(503).json({ error: error.message });
@@ -1458,20 +1515,17 @@ app.post("/api/crop-profits", requireRole(...ROLE_BUREAU_ADMIN), async (req, res
 
 app.post("/api/crop-profits/sync", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
-    const { cropProfits } = req.body;
-    if (cropProfits && Array.isArray(cropProfits)) {
-      serverCropProfits = cropProfits;
-      const enterpriseId = req.user?.enterpriseId || "ka_farm";
-      await saveToFirestore("crop_profits", serverCropProfits, enterpriseId);
-      res.json({
-        success: true,
-        message: "Analyses de rentabilité synchronisées en mémoire",
-        cropProfits,
-      });
-    } else {
-      res.status(400).json({ error: "Données de rentabilité invalides" });
-    }
+    const { cropProfits } = CropProfitsSyncSchema.parse(req.body || {});
+    serverCropProfits = cropProfits;
+    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    await saveToFirestore("crop_profits", serverCropProfits, enterpriseId);
+    res.json({
+      success: true,
+      message: "Analyses de rentabilité synchronisées en mémoire",
+      cropProfits,
+    });
   } catch (error) {
+    if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error syncing crop profits", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
       return res.status(503).json({ error: error.message });
@@ -1530,16 +1584,13 @@ app.get("/api/stocks", async (req, res) => {
 
 app.post("/api/stocks", requireRole(...ROLE_BUREAU_ADMIN), async (req, res) => {
   try {
-    const { stocks } = req.body;
-    if (stocks && Array.isArray(stocks)) {
-      serverStocks = stocks;
-      const enterpriseId = req.user?.enterpriseId || "ka_farm";
-      await saveToFirestore("stocks", serverStocks, enterpriseId);
-      res.json({ success: true, message: "Stocks synchronisés", stocks });
-    } else {
-      res.status(400).json({ error: "Données de stock invalides" });
-    }
+    const { stocks } = StocksPayloadSchema.parse(req.body || {});
+    serverStocks = stocks;
+    const enterpriseId = req.user?.enterpriseId || "ka_farm";
+    await saveToFirestore("stocks", serverStocks, enterpriseId);
+    res.json({ success: true, message: "Stocks synchronisés", stocks });
   } catch (error) {
+    if (error instanceof z.ZodError) return validationFailed(res, error);
     logger.error("Error saving stocks", { error: error.message });
     if (error.message.includes("Firestore") || error.message.includes("Firebase Admin")) {
       return res.status(503).json({ error: error.message });
@@ -2083,9 +2134,9 @@ function applySave(collection, items) {
 // Route de synchronisation (réception d'une action unique).
 app.post("/api/sync/item", async (req, res) => {
   try {
-    const action = req.body || {};
+    const action = SyncActionSchema.parse(req.body || {});
     const { collection, type } = action;
-    if (!collection || !SYNCABLE_MEMORY[collection]) {
+    if (!SYNCABLE_MEMORY[collection]) {
       return res.status(400).json({ ok: false, error: "Collection inconnue" });
     }
 
@@ -2138,6 +2189,11 @@ app.post("/api/sync/item", async (req, res) => {
 
     return res.json({ ok: true, persisted: false });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "Données invalides", details: validationDetails(error) });
+    }
     logger.error("Sync route error", { error: error.message });
     // Dégradation : ne jamais casser le frontend, répondre ok au mieux.
     return res.status(400).json({ ok: false, error: error.message || "Erreur" });
