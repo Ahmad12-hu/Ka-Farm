@@ -15,8 +15,7 @@
     <link rel="apple-touch-icon" href="/assets/logo.svg" />
 
     <!-- Tailwind CSS CDN & Lucide Icons -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Custom separated Stylesheets -->
     <link rel="stylesheet" href="/css/styles.css" />
@@ -34,22 +33,6 @@
           document.documentElement.classList.remove("dark");
         }
       } catch (e) {}
-
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                dark: "#06130B",
-                slate: "#0B2112",
-                green: "#10B981",
-                hover: "#059669",
-              },
-            },
-          },
-        },
-      };
     </script>
   </head>
 

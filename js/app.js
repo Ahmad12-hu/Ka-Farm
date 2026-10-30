@@ -294,16 +294,6 @@ export const App = {
         .catch((err) => console.error("SW registration failed:", err));
     }
 
-    // Initialiser le stockage hors ligne
-    if (window.offlineStorage) {
-      window.offlineStorage.init();
-    }
-
-    // Initialiser le gestionnaire de synchronisation
-    if (window.syncManager) {
-      window.syncManager.init();
-    }
-
     // S'assurer que le stockage est initialisé et que la synchronisation cloud par instantanés est active sur toutes les pages
     KAStorage.init();
 

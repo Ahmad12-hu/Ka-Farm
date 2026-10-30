@@ -5,8 +5,18 @@
   --color-brand-slate: #0b2112;
   --color-brand-green: #10b981;
   --color-brand-hover: #059669;
-  --color-slate-850: #1e293b;
 }
+
+/* Dark mode piloté par la classe `.dark` sur <html> (comportement historique
+   fourni par le CDN Tailwind via `darkMode: "class"`). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Classes utilitaires construites dynamiquement en JS (couleur interpolée), que
+   le scan statique ne peut pas détecter : on force leur génération. Le CDN Play
+   les gérait au runtime ; sans lui, il faut les lister ici. */
+@source inline("{bg,text,border}-{emerald,amber,rose,blue,slate}-500");
+@source inline("{bg,border}-{emerald,amber,rose,blue,slate}-500/{10,20}");
+
 
 /* KA Farm - Feuille de style globale */
 
