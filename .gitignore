@@ -49,6 +49,10 @@ _*.txt
 _*.mjs
 _*.cmd
 
+# Canaux de saisie de secrets locaux (jamais commités)
+new-gemini-key.txt
+new-*.txt
+
 .vercel
 .env*
 !.env.example
