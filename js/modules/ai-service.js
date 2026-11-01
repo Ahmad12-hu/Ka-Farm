@@ -5,6 +5,7 @@
 import { logger } from "./logger.js";
 import { ErrorHandler } from "./error-handler.js";
 import { KAStorage } from "../storage.js";
+import { authHeaders } from "../services/api-client.js";
 
 // ====================================================================
 // CONFIGURATION
@@ -143,7 +144,7 @@ function buildRAGPrompt(agentType, userPrompt) {
 async function callGemini(prompt, systemPrompt, history, image, streaming = false) {
   const response = await fetch("/api/gemini", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       prompt,
       systemPrompt,
@@ -160,7 +161,7 @@ async function callGemini(prompt, systemPrompt, history, image, streaming = fals
 async function callOpenAI(prompt, systemPrompt, history, image) {
   const response = await fetch("/api/ai/openai", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       prompt,
       systemPrompt,
@@ -175,7 +176,7 @@ async function callOpenAI(prompt, systemPrompt, history, image) {
 async function callClaude(prompt, systemPrompt, history, image) {
   const response = await fetch("/api/ai/claude", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       prompt,
       systemPrompt,
@@ -255,7 +256,7 @@ export const AIService = {
     
     return fetch("/api/ai/stream", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         prompt: enhancedPrompt,
         systemPrompt,

@@ -3,6 +3,7 @@ import { KAStorage, CropsStorage } from "../storage.js";
 import { logger } from "./logger.js";
 import { ErrorHandler } from "./error-handler.js";
 import { UserManager } from "../user-manager.js";
+import { authHeaders } from "../services/api-client.js";
 
 let liveStream = null;
 let currentSanitaryBase64 = "";
@@ -1133,7 +1134,7 @@ export const CropsModule = {
 
       const response = await fetch("/api/gemini", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           prompt: "Diagnostique cette image de culture.",
           image: currentSanitaryBase64,

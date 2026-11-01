@@ -13,19 +13,36 @@ import helmet from "helmet";
 import cors from "cors";
 import { logger } from "./js/modules/logger.js";
 import {
-  validateData,
-  UserSchema,
-  ParcelleSchema,
+  validateBody,
   CropSchema,
-  TreatmentSchema,
-  FinanceSchema,
+  ParcelleSchema,
   EmployeeSchema,
-  StockSchema,
-  HarvestSchema,
-  SaleSchema,
+  FinanceSchema,
   TaskSchema,
-} from "./js/modules/validators.js";
-import { z } from "zod";
+  CheptelSchema,
+  ElevageProductionSchema,
+  ElevageHealthSchema,
+  MessageSchema,
+  TreatmentSchema,
+  CropProfitSchema,
+  StocksPayloadSchema,
+  TreatmentsSyncSchema,
+  CropProfitsSyncSchema,
+  AiRequestSchema,
+  TranslateSchema,
+} from "./js/modules/api-validation.js";
+import {
+  createGeminiClientFactory,
+  geminiKeyFor,
+  GEMINI_KEYS_MISSING_ERROR,
+} from "./js/modules/gemini-keys.js";
+import {
+  AI_SYSTEM_PROMPTS,
+  buildFarmContext,
+  callGeminiWithRetry,
+  getAgentDisplayName,
+  getAgentDescription,
+} from "./js/modules/ai-shared.js";
 
 dotenv.config();
 
@@ -111,12 +128,9 @@ async function startServer() {
     res.json(serverMessages);
   });
 
-  app.post("/api/messages", async (req, res) => {
+  app.post("/api/messages", validateBody(MessageSchema), async (req, res) => {
     try {
       const { id, senderEmail, senderName, text, timestamp, isPrivate } = req.body;
-      if (!text || !senderEmail) {
-        return res.status(400).json({ error: "Email et texte requis" });
-      }
 
       const newMsg = {
         id: id || "msg-" + Date.now(),
@@ -140,19 +154,8 @@ async function startServer() {
     res.json(serverTreatments);
   });
 
-  app.post("/api/treatments", async (req, res) => {
+  app.post("/api/treatments", validateBody(TreatmentSchema), async (req, res) => {
     const treatment = req.body;
-
-    // Validation avec Zod
-    const validation = validateData(TreatmentSchema, treatment);
-    if (!validation.success) {
-      logger.warn("Treatment validation failed", { errors: validation.errors });
-      return res.status(400).json({ error: "Données invalides", details: validation.errors });
-    }
-
-    if (!treatment || !treatment.id || !treatment.product_name) {
-      return res.status(400).json({ error: "ID et nom du produit requis" });
-    }
 
     const existing = serverTreatments.find((t) => t.id === treatment.id);
     if (existing) {
@@ -165,14 +168,10 @@ async function startServer() {
     res.json({ success: true, treatment });
   });
 
-  app.post("/api/treatments/sync", async (req, res) => {
+  app.post("/api/treatments/sync", validateBody(TreatmentsSyncSchema), async (req, res) => {
     const { treatments } = req.body;
-    if (treatments && Array.isArray(treatments)) {
-      serverTreatments = treatments;
-      res.json({ success: true, message: "Traitements synchronisés en mémoire", treatments });
-    } else {
-      res.status(400).json({ error: "Données de traitements invalides" });
-    }
+    serverTreatments = treatments;
+    res.json({ success: true, message: "Traitements synchronisés en mémoire", treatments });
   });
 
   // ==================== CROP PROFITABILITY ====================
@@ -180,11 +179,8 @@ async function startServer() {
     res.json(serverCropProfits);
   });
 
-  app.post("/api/crop-profits", async (req, res) => {
+  app.post("/api/crop-profits", validateBody(CropProfitSchema), async (req, res) => {
     const profit = req.body;
-    if (!profit || !profit.id || !profit.crop_name) {
-      return res.status(400).json({ error: "ID et nom de la culture requis" });
-    }
 
     const existing = serverCropProfits.find((p) => p.id === profit.id);
     if (existing) {
@@ -196,18 +192,14 @@ async function startServer() {
     res.json({ success: true, profit });
   });
 
-  app.post("/api/crop-profits/sync", async (req, res) => {
+  app.post("/api/crop-profits/sync", validateBody(CropProfitsSyncSchema), async (req, res) => {
     const { cropProfits } = req.body;
-    if (cropProfits && Array.isArray(cropProfits)) {
-      serverCropProfits = cropProfits;
-      res.json({
-        success: true,
-        message: "Analyses de rentabilité synchronisées en mémoire",
-        cropProfits,
-      });
-    } else {
-      res.status(400).json({ error: "Données de rentabilité invalides" });
-    }
+    serverCropProfits = cropProfits;
+    res.json({
+      success: true,
+      message: "Analyses de rentabilité synchronisées en mémoire",
+      cropProfits,
+    });
   });
 
   // ==================== STOCKS ====================
@@ -215,14 +207,10 @@ async function startServer() {
     res.json(serverStocks);
   });
 
-  app.post("/api/stocks", async (req, res) => {
+  app.post("/api/stocks", validateBody(StocksPayloadSchema), async (req, res) => {
     const { stocks } = req.body;
-    if (stocks && Array.isArray(stocks)) {
-      serverStocks = stocks;
-      res.json({ success: true, message: "Stocks synchronisés en mémoire", stocks });
-    } else {
-      res.status(400).json({ error: "Données de stock invalides" });
-    }
+    serverStocks = stocks;
+    res.json({ success: true, message: "Stocks synchronisés en mémoire", stocks });
   });
 
   // ==================== CROPS ====================
@@ -230,11 +218,8 @@ async function startServer() {
     res.json(serverCrops);
   });
 
-  app.post("/api/crops", async (req, res) => {
+  app.post("/api/crops", validateBody(CropSchema), async (req, res) => {
     const crop = req.body;
-    if (!crop || !crop.id || !crop.name) {
-      return res.status(400).json({ error: "ID et nom requis" });
-    }
 
     const existing = serverCrops.find((c) => c.id === crop.id);
     if (existing) {
@@ -251,19 +236,8 @@ async function startServer() {
     res.json(serverParcelles);
   });
 
-  app.post("/api/parcelles", async (req, res) => {
+  app.post("/api/parcelles", validateBody(ParcelleSchema), async (req, res) => {
     const parcelle = req.body;
-
-    // Validation with Zod
-    const validation = validateData(ParcelleSchema, parcelle);
-    if (!validation.success) {
-      logger.warn("Parcelle validation failed", { errors: validation.errors });
-      return res.status(400).json({ error: "Données invalides", details: validation.errors });
-    }
-
-    if (!parcelle || !parcelle.id || !parcelle.name) {
-      return res.status(400).json({ error: "ID et nom requis" });
-    }
 
     const existing = serverParcelles.find((p) => p.id === parcelle.id);
     if (existing) {
@@ -281,11 +255,8 @@ async function startServer() {
     res.json(serverTasks);
   });
 
-  app.post("/api/tasks", async (req, res) => {
+  app.post("/api/tasks", validateBody(TaskSchema), async (req, res) => {
     const task = req.body;
-    if (!task || !task.id || !task.title) {
-      return res.status(400).json({ error: "ID et titre requis" });
-    }
 
     const existing = serverTasks.find((t) => t.id === task.id);
     if (existing) {
@@ -302,11 +273,8 @@ async function startServer() {
     res.json(serverFinances);
   });
 
-  app.post("/api/finances", async (req, res) => {
+  app.post("/api/finances", validateBody(FinanceSchema), async (req, res) => {
     const finance = req.body;
-    if (!finance || !finance.id || !finance.description) {
-      return res.status(400).json({ error: "ID et description requis" });
-    }
 
     const existing = serverFinances.find((f) => f.id === finance.id);
     if (existing) {
@@ -323,11 +291,8 @@ async function startServer() {
     res.json(serverEmployees);
   });
 
-  app.post("/api/employees", async (req, res) => {
+  app.post("/api/employees", validateBody(EmployeeSchema), async (req, res) => {
     const employee = req.body;
-    if (!employee || !employee.id || !employee.name) {
-      return res.status(400).json({ error: "ID et nom requis" });
-    }
 
     const existing = serverEmployees.find((e) => e.id === employee.id);
     if (existing) {
@@ -344,11 +309,8 @@ async function startServer() {
     res.json(serverCheptel);
   });
 
-  app.post("/api/cheptel", async (req, res) => {
+  app.post("/api/cheptel", validateBody(CheptelSchema), async (req, res) => {
     const group = req.body;
-    if (!group || !group.id || !group.name) {
-      return res.status(400).json({ error: "ID et nom requis" });
-    }
 
     const existing = serverCheptel.find((c) => c.id === group.id);
     if (existing) {
@@ -366,11 +328,8 @@ async function startServer() {
     res.json(sorted);
   });
 
-  app.post("/api/elevage/production", async (req, res) => {
+  app.post("/api/elevage/production", validateBody(ElevageProductionSchema), async (req, res) => {
     const log = req.body;
-    if (!log || !log.id || !log.type) {
-      return res.status(400).json({ error: "ID et type requis" });
-    }
 
     serverElevageProduction.push(log);
     res.json({ success: true, log });
@@ -382,110 +341,28 @@ async function startServer() {
     res.json(sorted);
   });
 
-  app.post("/api/elevage/health", async (req, res) => {
+  app.post("/api/elevage/health", validateBody(ElevageHealthSchema), async (req, res) => {
     const log = req.body;
-    if (!log || !log.id || !log.intervention) {
-      return res.status(400).json({ error: "ID et intervention requis" });
-    }
 
     serverElevageHealth.push(log);
     res.json({ success: true, log });
   });
 
   // ==================== GEMINI AI ====================
-  // Prompts système spécialisés par agent
-  const AI_SYSTEM_PROMPTS = {
-    advisor: `Tu es KA-Farm Agro-Advisor, un conseiller horticole et maraîcher expert d'Afrique de l'Ouest (Sénégal), chaleureux, pragmatique, direct et scientifique. Tu réponds en français. Tu es spécialisé exclusivement dans le maraîchage (cultures de légumes, fines herbes, fruits de jardin, pépinières, irrigation goutte-à-goutte ou aspersion, maladies horticoles comme la mineuse de la tomate Tuta absoluta, le mildiou, l'oïdium, les thrips, et l'usage de biopesticides locaux comme le neem ou le piment). Tu aides à diagnostiquer les ravageurs et maladies des légumes, planifier les pépinières maraîchères et le repiquage, optimiser l'arrosage et les amendements (compost organique, fumier) de manière écologique et agroécologique. Donne des réponses concises, claires, structurées et adaptées aux conditions locales ouest-africaines.`,
+  // Prompts d'agents, contexte RAG, appel Gemini avec repli et libellés :
+  // voir js/modules/ai-shared.js (source unique partagée avec api/index.js).
 
-    plantDoctor: `Tu es KA-Farm Doctor Plante, un expert phytosanitaire horticole spécialisé dans le diagnostic visuel des maladies et carences des légumes en Afrique de l'Ouest (Sénégal). Analyse cette photo de culture et fournis un diagnostic structuré en français avec : 1) Nom probable de la maladie/carence (si identifiable), 2) Niveau de gravité (Faible/Moyen/Élevé/Critique), 3) Action de traitement recommandée (produit bio ou chimique, dosage, fréquence), 4) Prévention. Sois direct, scientifique et adapté aux conditions locales. Si l'image n'est pas claire ou ne montre pas de problème visible, indique-le honnêtement.`,
-
-    livestock: `Tu es KA-Farm Conseiller Élevage, expert en production animale en Afrique de l'Ouest. Spécialisé dans : bovins, ovins, caprins, volailles au Sénégal. Conseils sur : alimentation, santé animale, reproduction, logement, prophylaxie. Réponds en français avec des solutions locales et abordables.`,
-
-    finance: `Tu es KA-Farm Analyste Financier Agricole, expert en gestion financière des exploitations agricoles. Aide à : analyser la rentabilité des cultures, optimiser les dépenses, prévoir les revenus, conseiller sur les prix du marché (marchés sénégalais), suggestions de diversification. Réponds en français avec des chiffres concrets adaptés au contexte sénégalais.`,
-
-    irrigation: `Tu es KA-Farm Expert Irrigation & Météo, spécialisé en gestion de l'eau pour l'agriculture sahélienne. Conseils sur : irrigation goutte-à-goutte, aspersion, calendrier d'arrosage selon les saisons, gestion de la sécheresse, optimisation de l'eau, drainage. Réponds en français avec des solutions adaptées au climat sénégalais.`,
-
-    soil: `Tu es KA-Farm Expert Sol & Compost, spécialisé en agroécologie et fertilité des sols au Sénégal. Conseils sur : fabrication de compost, fumier, amendements organiques, rotation des cultures, analyse du sol (sableux, limoneux, argileux), couverture végétale. Réponds en français avec des techniques locales et écologiques.`,
-
-    personal: `Tu es KA-Farm Assistant Personnel Agricole. Tu aides l'agriculteur à organiser son travail quotidien : planification des tâches, rappels, suivi des cultures, gestion du temps. Sois amical, motivateur et pratique. Réponds en français.`,
-
-    wolofAdvisor: `Ña ng ci KA-Farm Agro-Advisor, jàngoro bu am solo ci mbey mi ci Sénégal. Maa ngiy faj ay jàngoro yu mel ni: mbey, garab, àndi ndox, ay jàkka, ay garab yu bon. Maa ngiy wax ci Wolof ak Français. Na nga may ay mbir yu am solo ci sa mbey mi.`,
-  };
-
-  // Helper pour construire le contexte RAG de l'exploitation
-  function buildFarmContext(agentType) {
-    try {
-      const context = [];
-      if (["advisor", "plantDoctor", "finance"].includes(agentType) && serverCrops.length) {
-        context.push(`Cultures actuelles: ${serverCrops.slice(0, 5).map(c => `${c.name} (${c.field || '?'}) - ${c.status || '?'}`).join(', ')}`);
-      }
-      if (["livestock"].includes(agentType) && serverCheptel.length) {
-        context.push(`Cheptel: ${serverCheptel.map(c => `${c.name}: ${c.quantity} ${c.unit || 'têtes'} (${c.status || '?'})`).join(', ')}`);
-      }
-      if (["finance"].includes(agentType) && serverFinances.length) {
-        const revenus = serverFinances.filter(f => f.type === 'Revenu').reduce((a, b) => a + (b.amount || 0), 0);
-        const depenses = serverFinances.filter(f => f.type === 'Dépense').reduce((a, b) => a + (b.amount || 0), 0);
-        context.push(`Finances: Revenus ${revenus}F, Dépenses ${depenses}F`);
-      }
-      if (["irrigation"].includes(agentType) && serverParcelles.length) {
-        context.push(`Parcelles: ${serverParcelles.map(p => `${p.name} (${p.surface}m², ${p.type_sol || '?'})`).join(', ')}`);
-      }
-      return context.length ? `\n\n--- CONTEXTE DE VOTRE EXPLOITATION ---\n${context.join('\n')}` : "";
-    } catch (e) {
-      return "";
-    }
-  }
-
-  // Helper pour appeler Gemini avec retry
-  async function callGeminiWithRetry(ai, model, contents, systemInstruction) {
-    const modelsToTry = [model, "gemini-3.6-flash", "gemini-3.5-flash-lite"];
-    let response = null;
-    let lastError = null;
-
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      for (const m of modelsToTry) {
-        try {
-          response = await ai.models.generateContent({
-            model: m,
-            contents,
-            config: {
-              systemInstruction,
-              temperature: 0.7,
-            },
-          });
-          if (response && response.text) {
-            return response;
-          }
-        } catch (err) {
-          lastError = err;
-          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
-        }
-      }
-    }
-    throw lastError || new Error("Impossible de générer une réponse de l'IA après plusieurs tentatives");
-  }
+  const getGeminiClient = createGeminiClientFactory(GoogleGenAI);
 
   // Route principale Gemini améliorée avec agents spécialisés + RAG
-  app.post("/api/gemini", async (req, res) => {
+  app.post("/api/gemini", validateBody(AiRequestSchema), async (req, res) => {
     try {
       const { prompt, history, image, systemPrompt, model, agentType = "advisor" } = req.body;
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt requis" });
-      }
 
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: "Clé GEMINI_API_KEY non configurée" });
+      const requestedModel = model || "gemini-3.6-flash";
+      if (!geminiKeyFor(requestedModel)) {
+        return res.status(500).json({ error: GEMINI_KEYS_MISSING_ERROR });
       }
-
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            "User-Agent": "aistudio-build",
-          },
-        },
-      });
 
       let systemInstruction = systemPrompt || AI_SYSTEM_PROMPTS[agentType] || AI_SYSTEM_PROMPTS.advisor;
 
@@ -493,7 +370,12 @@ async function startServer() {
         systemInstruction = AI_SYSTEM_PROMPTS.plantDoctor;
       }
 
-      const ragContext = buildFarmContext(agentType);
+      const ragContext = buildFarmContext(agentType, {
+        crops: serverCrops,
+        cheptel: serverCheptel,
+        finances: serverFinances,
+        parcelles: serverParcelles,
+      });
       const enhancedPrompt = ragContext ? `${prompt}${ragContext}` : prompt;
 
       const contents = [];
@@ -525,7 +407,12 @@ async function startServer() {
         ? [...contents, { role: "user", parts: requestParts }]
         : requestParts;
 
-      const response = await callGeminiWithRetry(ai, model || "gemini-3.6-flash", finalContents, systemInstruction);
+      const response = await callGeminiWithRetry(
+        getGeminiClient,
+        requestedModel,
+        finalContents,
+        systemInstruction
+      );
 
       return res.json({ text: response.text });
     } catch (error) {
@@ -542,12 +429,9 @@ async function startServer() {
   });
 
   // ==================== OPENAI FALLBACK ====================
-  app.post("/api/ai/openai", async (req, res) => {
+  app.post("/api/ai/openai", validateBody(AiRequestSchema), async (req, res) => {
     try {
       const { prompt, systemPrompt, history, image, model = "gpt-4o-mini" } = req.body;
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt requis" });
-      }
 
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
@@ -612,12 +496,9 @@ async function startServer() {
   });
 
   // ==================== CLAUDE FALLBACK ====================
-  app.post("/api/ai/claude", async (req, res) => {
+  app.post("/api/ai/claude", validateBody(AiRequestSchema), async (req, res) => {
     try {
       const { prompt, systemPrompt, history, image, model = "claude-3-5-haiku-latest" } = req.body;
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt requis" });
-      }
 
       const apiKey = process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
@@ -687,26 +568,15 @@ async function startServer() {
   });
 
   // ==================== STREAMING SSE ====================
-  app.post("/api/ai/stream", async (req, res) => {
+  app.post("/api/ai/stream", validateBody(AiRequestSchema), async (req, res) => {
     try {
       const { prompt, systemPrompt, history, image, language = "fr", agentType = "advisor" } = req.body;
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt requis" });
-      }
 
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: "Clé GEMINI_API_KEY non configurée" });
+      const streamModel = "gemini-3.6-flash";
+      const ai = getGeminiClient(streamModel);
+      if (!ai) {
+        return res.status(500).json({ error: GEMINI_KEYS_MISSING_ERROR });
       }
-
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            "User-Agent": "aistudio-build",
-          },
-        },
-      });
 
       let systemInstruction = systemPrompt || AI_SYSTEM_PROMPTS[agentType] || AI_SYSTEM_PROMPTS.advisor;
       if (language === "wo") {
@@ -749,7 +619,7 @@ async function startServer() {
 
       try {
         const stream = await ai.models.generateContentStream({
-          model: "gemini-3.6-flash",
+          model: streamModel,
           contents: finalContents,
           config: {
             systemInstruction,
@@ -786,29 +656,18 @@ async function startServer() {
   });
 
   // ==================== TRADUCTION ====================
-  app.post("/api/ai/translate", async (req, res) => {
+  app.post("/api/ai/translate", validateBody(TranslateSchema), async (req, res) => {
     try {
       const { text, fromLang = "fr", toLang = "wo" } = req.body;
-      if (!text) {
-        return res.status(400).json({ error: "Texte requis" });
-      }
 
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: "Clé GEMINI_API_KEY non configurée" });
+      const translateModel = "gemini-3.6-flash";
+      const ai = getGeminiClient(translateModel);
+      if (!ai) {
+        return res.status(500).json({ error: GEMINI_KEYS_MISSING_ERROR });
       }
-
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            "User-Agent": "aistudio-build",
-          },
-        },
-      });
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: translateModel,
         contents: [
           {
             role: "user",
@@ -831,35 +690,6 @@ async function startServer() {
       return res.status(500).json({ error: error.message || "Erreur de traduction" });
     }
   });
-
-  // Helpers pour les noms d'agents
-  function getAgentDisplayName(id) {
-    const names = {
-      advisor: "Conseiller Horticole IA",
-      plantDoctor: "Docteur Plante IA",
-      livestock: "Conseiller Élevage IA",
-      finance: "Analyste Financier IA",
-      irrigation: "Expert Irrigation IA",
-      soil: "Expert Sol & Compost IA",
-      personal: "Assistant Personnel IA",
-      wolofAdvisor: "Conseiller en Wolof",
-    };
-    return names[id] || `Agent ${id}`;
-  }
-
-  function getAgentDescription(id) {
-    const descs = {
-      advisor: "Conseils maraîchage, maladies, traitements bio",
-      plantDoctor: "Diagnostic visuel des maladies des plantes",
-      livestock: "Soins, alimentation et reproduction animale",
-      finance: "Rentabilité, budget et analyse financière",
-      irrigation: "Gestion de l'eau et calendrier d'arrosage",
-      soil: "Compost, amendements et fertilité des sols",
-      personal: "Organisation des tâches et suivi quotidien",
-      wolofAdvisor: "Nga wax ci Wolof, mbey mi ci Sénégal",
-    };
-    return descs[id] || "";
-  }
 
   // ==================== WEATHER ====================
   app.get("/api/weather", async (req, res) => {

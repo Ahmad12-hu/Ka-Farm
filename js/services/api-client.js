@@ -32,6 +32,23 @@ export function getAuthToken() {
 }
 
 /**
+ * Construit des en-têtes HTTP en ajoutant le jeton Bearer s'il existe.
+ * Utile pour les appels qui lisent la `Response` eux-mêmes (SSE, IA) et ne
+ * peuvent donc pas passer par `apiFetch`.
+ *
+ * @param {object} [extra] en-têtes supplémentaires (ex. Content-Type)
+ * @returns {object} en-têtes prêts pour fetch
+ */
+export function authHeaders(extra = {}) {
+  const headers = { ...extra };
+  const token = getAuthToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+/**
  * Effectue une requête fetch vers l'API avec gestion d'erreur sécurisée et
  * token optionnel.
  *
@@ -127,6 +144,7 @@ export async function fetchCollection(collection, fallback = []) {
 if (typeof window !== "undefined") {
   window.apiClient = {
     getAuthToken,
+    authHeaders,
     apiFetch,
     pushToServer,
     fetchCollection,

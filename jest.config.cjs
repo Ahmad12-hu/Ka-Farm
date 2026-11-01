@@ -13,6 +13,17 @@ module.exports = {
     '!**/dist/**'
   ],
   coverageDirectory: 'coverage',
+  // Plancher anti-régression (à relever progressivement). La couverture est
+  // encore faible car les gros modules UI (diagnostics, compost, rotation…)
+  // ne sont pas testés : on empêche la baisse plutôt que de bloquer la CI.
+  coverageThreshold: {
+    global: {
+      statements: 14,
+      branches: 10,
+      functions: 10,
+      lines: 15,
+    },
+  },
   verbose: true,
   testTimeout: 10000,
   transformIgnorePatterns: [

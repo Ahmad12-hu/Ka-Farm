@@ -3,6 +3,7 @@ import { KAStorage } from "../storage.js";
 import { logger } from "./logger.js";
 import { ErrorHandler } from "./error-handler.js";
 import { AIService } from "./ai-service.js";
+import { authHeaders } from "../services/api-client.js";
 
 let chatHistory = [];
 let currentAgent = "advisor";
@@ -18,7 +19,7 @@ export const NotificationsModule = {
 
   async loadAgents() {
     try {
-      const res = await fetch("/api/ai/agents");
+      const res = await fetch("/api/ai/agents", { headers: authHeaders() });
       if (res.ok) {
         const agents = await res.json();
         const select = document.getElementById("advisor-agent-select");

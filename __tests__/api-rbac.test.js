@@ -30,6 +30,7 @@ jest.mock("firebase-admin/firestore", () => {
         doc: jest.fn(() => ({
           get: jest.fn(() => Promise.resolve({ exists: false })),
           set: jest.fn(() => Promise.resolve()),
+          delete: jest.fn(() => Promise.resolve()),
         })),
       })),
     })),

@@ -12,7 +12,7 @@
 //              conservés localement ; la source de vérité serveur reste le doc
 //              Firestore `users/{uid}` provisionné côté admin/seed).
 //   - logout : signOut → purge token + profil local.
-//   - Session : onAuthStateChanged restaure token + profil si localStorage est
+//   - Session : onIdTokenChanged restaure token + profil si localStorage est
 //              vide (couverture des cas cookie/localStorage vidé).
 //
 // Source de vérité du rôle :
@@ -25,7 +25,7 @@
 
 import { auth } from "./firebase/firebase.js";
 import {
-  onAuthStateChanged,
+  onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -89,9 +89,24 @@ const FIREBASE_AUTH_ERROR_MESSAGES = {
   "auth/internal-error": "Erreur interne. Veuillez réessayer.",
 };
 
+// Codes serveur Identity Toolkit (exposés par le SDK via error.message) que le
+// SDK ne traduit pas toujours en error.code. On les détecte pour afficher une
+// cause claire au lieu du message générique.
+const FIREBASE_SERVER_ERROR_MESSAGES = {
+  CONFIGURATION_NOT_FOUND:
+    "Configuration Firebase introuvable : le projet Firebase référencé n'existe pas ou l'API Identity Toolkit est désactivée. Vérifiez firebase-applet-config.json.",
+  OPERATION_NOT_ALLOWED:
+    "La connexion Email/Mot de passe est désactivée : activez-la dans la console Firebase (Authentication → Sign-in method → Email/Password).",
+};
+
 function getFriendlyAuthError(error) {
   const code = (error && error.code) || "";
+  const message = (error && error.message) || "";
+  const serverCode = Object.keys(FIREBASE_SERVER_ERROR_MESSAGES).find((k) =>
+    message.includes(k)
+  );
   return (
+    (serverCode && FIREBASE_SERVER_ERROR_MESSAGES[serverCode]) ||
     FIREBASE_AUTH_ERROR_MESSAGES[code] ||
     "Erreur lors de l'opération. Veuillez réessayer."
   );
@@ -210,17 +225,45 @@ export const Auth = {
       const token = await getIdToken(firebaseUser, true);
       setToken(token);
 
-      const enterpriseId = `ent_${Date.now()}`;
       const entName = (enterpriseName || "Mon Exploitation").trim() || "Mon Exploitation";
-      const entCode = `KAF-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const profile = profileFromFirebaseUser(firebaseUser, {
+      // Provisionnement serveur : crée le doc Firestore users/{uid} avec un
+      // tenant propre à l'exploitation (enterpriseId/enterpriseCode générés
+      // côté serveur). Best-effort : si l'appel échoue (hors-ligne), on retombe
+      // sur des valeurs locales et le serveur reprovisionnera plus tard.
+      let extra = {
         name,
         role: selectedRole,
-        enterpriseId,
+        enterpriseId: `ent_${Date.now()}`,
         enterpriseName: entName,
-        enterpriseCode: entCode,
-      });
+        enterpriseCode: `KAF-${Math.floor(1000 + Math.random() * 9000)}`,
+      };
+      try {
+        const response = await fetch("/api/auth/provision", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ name, role: selectedRole, enterpriseName: entName }),
+        });
+        if (response.ok) {
+          const payload = await response.json();
+          const u = payload && payload.user;
+          if (u) {
+            extra = {
+              name: u.name || name,
+              role: u.role || selectedRole,
+              enterpriseId: u.enterpriseId || extra.enterpriseId,
+              enterpriseName: u.enterpriseName || entName,
+              enterpriseCode: u.enterpriseCode || extra.enterpriseCode,
+            };
+          }
+        }
+      } catch (err) {
+        logger.warn("signup: provisionnement serveur indisponible", {
+          error: (err && err.message) || "",
+        });
+      }
+
+      const profile = profileFromFirebaseUser(firebaseUser, extra);
       KAStorage.setCurrentUser(profile, true);
 
       logger.info("User signed up via Firebase", {
@@ -229,7 +272,7 @@ export const Auth = {
         role: selectedRole,
       });
       ErrorHandler.showToast(
-        `Compte créé avec succès !\nExploitation : ${entName}\nCode Équipe : ${entCode}`,
+        `Compte créé avec succès !\nExploitation : ${profile.enterpriseName}\nCode Équipe : ${profile.enterpriseCode}`,
         "success"
       );
       window.location.assign(AUTH_API);
@@ -268,10 +311,13 @@ export const Auth = {
 // Restauration de session : si Firebase confirme un utilisateur connecté alors
 // que le profil local est absent (ou appartient à un autre uid), on le
 // ré-hydrate et on resynchronise le token.
+// onIdTokenChanged (et non onAuthStateChanged) : il se déclenche AUSSI à chaque
+// renouvellement d'ID token (~1 h), ce qui évite de garder un jeton expiré dans
+// localStorage et donc des 401 sur /api/gemini et /api/ai/*.
 let authStateBound = false;
 if (typeof window !== "undefined" && !authStateBound) {
   authStateBound = true;
-  onAuthStateChanged(auth, async (firebaseUser) => {
+  onIdTokenChanged(auth, async (firebaseUser) => {
     try {
       if (firebaseUser) {
         const token = await getIdToken(firebaseUser, false);
@@ -286,7 +332,7 @@ if (typeof window !== "undefined" && !authStateBound) {
         KAStorage.setCurrentUser(null);
       }
     } catch (err) {
-      logger.warn("onAuthStateChanged handler error", {
+      logger.warn("onIdTokenChanged handler error", {
         error: (err && err.message) || "",
       });
     }

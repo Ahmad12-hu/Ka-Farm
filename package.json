@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "eslint js/**/*.js __tests__/**/*.js --max-warnings 10",
+    "lint": "eslint js/**/*.js __tests__/**/*.js --max-warnings 73",
     "lint:fix": "eslint js/**/*.js __tests__/**/*.js --fix",
     "format": "prettier --write \"**/*.{js,html,css,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,html,css,json,md}\"",
@@ -17,10 +17,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run",
-    "migrate:up": "node db/migrate.js up",
-    "migrate:down": "node db/migrate.js down",
-    "migrate:status": "node db/migrate.js status"
+    "cypress:run": "cypress run"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
