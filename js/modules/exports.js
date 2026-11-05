@@ -1,5 +1,6 @@
 // KA Farm - Module d'export CSV/PDF
 import { KAStorage } from "../storage.js";
+import { StocksStorage } from "../storage/stocks.js";
 import { UserManager } from "../user-manager.js";
 import { ErrorHandler } from "./error-handler.js";
 import { ALL_USER_ROLES } from "../constants/roles.js";
@@ -81,7 +82,7 @@ export function exportStocksCSV() {
     return;
   }
 
-  const stocks = KAStorage.getStocks();
+  const stocks = StocksStorage.getStocks();
   if (stocks.length === 0) {
     ErrorHandler.showToast("Aucun stock à exporter.", "warning");
     return;
@@ -235,7 +236,7 @@ export async function exportStocksPDF() {
     return;
   }
 
-  const stocks = KAStorage.getStocks();
+  const stocks = StocksStorage.getStocks();
   if (stocks.length === 0) {
     ErrorHandler.showToast("Aucun stock à exporter.", "warning");
     return;

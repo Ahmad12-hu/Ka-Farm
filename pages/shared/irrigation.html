@@ -66,7 +66,7 @@
               </p>
             </div>
             <button
-              onclick="document.getElementById('watering-modal').classList.remove('hidden')"
+              onclick="window.openNewWateringModal()"
               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
             >
               <i data-lucide="plus" class="h-3.5 w-3.5"></i> Nouveau tour d'eau
@@ -574,6 +574,24 @@
               <!-- Dynamically populated -->
             </div>
           </div>
+
+          <div
+            class="p-6 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left space-y-3 shadow-sm"
+          >
+            <div
+              class="flex items-center gap-2 border-b border-slate-100 dark:border-[#143E23]/20 pb-2"
+            >
+              <i data-lucide="history" class="h-4 w-4 text-sky-400"></i>
+              <h3
+                class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider"
+              >
+                Journal des arrosages réalisés
+              </h3>
+            </div>
+            <div id="watering-log-container" class="space-y-2 max-h-80 overflow-y-auto">
+              <!-- Historique des arrosages complétés -->
+            </div>
+          </div>
         </div>
       </main>
     </div>
@@ -601,6 +619,7 @@
         </div>
 
         <form id="watering-form" class="space-y-4 text-xs font-semibold">
+          <input type="hidden" id="water-id" />
           <div class="space-y-1">
             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider"
               >Culture ou Parcelle</label
@@ -647,12 +666,25 @@
             </div>
           </div>
 
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+              >Volume prévu (litres, facultatif)</label
+            >
+            <input
+              type="number"
+              id="water-volume"
+              min="1"
+              step="any"
+              placeholder="Ex. 250"
+              class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none"
+            />
+          </div>
+
           <button
             type="submit"
-            onclick="document.getElementById('watering-modal').classList.add('hidden')"
             class="w-full bg-sky-600 hover:bg-sky-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg text-xs"
           >
-            Planifier le tour d'irrigation
+            Enregistrer le tour d'irrigation
           </button>
         </form>
       </div>

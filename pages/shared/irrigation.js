@@ -9,6 +9,12 @@ const defaultWatering = [
   { id: "W-6", crop: "Choux Cabus", day: "Mercredi", time: "Matin", done: false },
 ];
 
+const escapeHtml = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (character) => {
+    const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    return entities[character];
+  });
+
 function getWatering() {
   const saved = localStorage.getItem("ka_farm_watering");
   if (!saved) {
@@ -20,6 +26,14 @@ function getWatering() {
 
 function saveWatering(data) {
   localStorage.setItem("ka_farm_watering", JSON.stringify(data));
+}
+
+function getWateringLog() {
+  return JSON.parse(localStorage.getItem("ka_farm_watering_log") || "[]");
+}
+
+function saveWateringLog(log) {
+  localStorage.setItem("ka_farm_watering_log", JSON.stringify(log.slice(0, 200)));
 }
 
 function renderDaysHeader() {
@@ -90,13 +104,20 @@ function renderWateringTasks() {
               <span>📅 ${it.day}</span>
               <span>•</span>
               <span class="text-sky-400">${icon}</span>
+              ${it.volumeLitres ? `<span>• ${Number(it.volumeLitres).toLocaleString("fr-FR")} L</span>` : ""}
+              ${it.done && it.completedAt ? `<span>• Réalisé le ${new Date(it.completedAt).toLocaleDateString("fr-FR")}</span>` : ""}
             </div>
           </div>
         </div>
 
+        <div class="flex items-center gap-1">
+          <button type="button" onclick="window.editWatering('${it.id}')" aria-label="Modifier l'arrosage" class="text-sky-500 hover:bg-sky-500/10 p-1.5 rounded-lg transition-all cursor-pointer">
+            <i data-lucide="pencil" class="h-4 w-4"></i>
+          </button>
         <button onclick="window.deleteWatering('${it.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#143E23]/25 transition-all cursor-pointer">
           <i data-lucide="trash-2" class="h-4 w-4"></i>
         </button>
+        </div>
       </div>
     `;
     })
@@ -107,15 +128,72 @@ function renderWateringTasks() {
   }
 }
 
+function renderWateringLog() {
+  const container = document.getElementById("watering-log-container");
+  if (!container) return;
+  const entries = getWateringLog().slice(0, 20);
+  if (entries.length === 0) {
+    container.innerHTML =
+      '<p class="text-xs text-slate-400 font-semibold">Aucun arrosage réalisé n’a encore été consigné.</p>';
+    return;
+  }
+  container.innerHTML = entries
+    .map(
+      (entry) => `
+      <div class="flex flex-wrap justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-[#061109]/30 border border-slate-100 dark:border-[#143E23]/20">
+        <div>
+          <p class="text-xs font-black text-slate-800 dark:text-slate-200">${escapeHtml(entry.crop)}</p>
+          <p class="text-[9px] text-slate-400 font-bold">${new Date(entry.completedAt).toLocaleString("fr-FR")} · ${entry.day} · ${entry.time}</p>
+        </div>
+        <span class="text-xs font-black text-sky-500">${entry.volumeLitres ? `${Number(entry.volumeLitres).toLocaleString("fr-FR")} L` : "Volume non précisé"}</span>
+      </div>
+    `
+    )
+    .join("");
+}
+
 window.toggleWateringDone = (id) => {
   const items = getWatering();
   const idx = items.findIndex((it) => it.id === id);
   if (idx !== -1) {
-    items[idx].done = !items[idx].done;
+    const nowDone = !items[idx].done;
+    items[idx].done = nowDone;
+    if (nowDone) {
+      items[idx].completedAt = new Date().toISOString();
+      const log = getWateringLog();
+      log.unshift({
+        id: `WL-${Date.now()}`,
+        wateringId: items[idx].id,
+        crop: items[idx].crop,
+        day: items[idx].day,
+        time: items[idx].time,
+        volumeLitres: items[idx].volumeLitres || null,
+        completedAt: items[idx].completedAt,
+      });
+      saveWateringLog(log);
+    }
     saveWatering(items);
     renderWateringTasks();
     renderDaysHeader();
+    renderWateringLog();
   }
+};
+
+window.editWatering = (id) => {
+  const item = getWatering().find((watering) => watering.id === id);
+  if (!item) return;
+  document.getElementById("water-id").value = item.id;
+  document.getElementById("water-crop").value = item.crop;
+  document.getElementById("water-day").value = item.day;
+  document.getElementById("water-time").value = item.time;
+  document.getElementById("water-volume").value = item.volumeLitres || "";
+  document.getElementById("watering-modal").classList.remove("hidden");
+};
+
+window.openNewWateringModal = () => {
+  document.getElementById("watering-form").reset();
+  document.getElementById("water-id").value = "";
+  document.getElementById("watering-modal").classList.remove("hidden");
 };
 
 window.deleteWatering = (id) => {
@@ -128,23 +206,45 @@ window.deleteWatering = (id) => {
 
 document.getElementById("watering-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  const crop = document.getElementById("water-crop").value;
+  const crop = document.getElementById("water-crop").value.trim();
   const day = document.getElementById("water-day").value;
   const time = document.getElementById("water-time").value;
+  const volumeLitres = Number(document.getElementById("water-volume").value);
+  const id = document.getElementById("water-id").value;
 
-  if (!crop) return;
+  if (
+    !crop ||
+    (document.getElementById("water-volume").value &&
+      (!Number.isFinite(volumeLitres) || volumeLitres <= 0))
+  ) {
+    if (window.ErrorHandler)
+      window.ErrorHandler.showToast(
+        "Renseignez une culture et un volume positif s'il est indiqué.",
+        "error"
+      );
+    return;
+  }
 
   const items = getWatering();
-  items.push({
-    id: `W-${Date.now()}`,
-    crop,
-    day,
-    time,
-    done: false,
-  });
+  if (id) {
+    const item = items.find((watering) => watering.id === id);
+    if (!item) return;
+    Object.assign(item, { crop, day, time, volumeLitres: volumeLitres || null });
+  } else {
+    items.push({
+      id: `W-${Date.now()}`,
+      crop,
+      day,
+      time,
+      volumeLitres: volumeLitres || null,
+      done: false,
+    });
+  }
 
   saveWatering(items);
   document.getElementById("watering-form").reset();
+  document.getElementById("water-id").value = "";
+  document.getElementById("watering-modal").classList.add("hidden");
   renderWateringTasks();
   renderDaysHeader();
   if (window.ErrorHandler) {
@@ -378,7 +478,8 @@ window.updateET0Calculations = () => {
   // Calculate total volume needed in Litres: ETc * surface (since 1 mm = 1 L/m²)
   // Add safety margins for sandy soil
   let volumeLitres = etc * surface;
-  if (solKey === "sableux") volumeLitres *= 1.15; // 15% leaching loss allowance
+  if (solKey === "sableux")
+    volumeLitres *= 1.15; // 15% leaching loss allowance
   else if (solKey === "lateritique") volumeLitres *= 1.05; // 5% perte lessivage modérée
   volumeLitres = Math.round(volumeLitres);
   volumeSuggest.textContent = `${volumeLitres.toLocaleString("fr-FR")} Litres`;
@@ -450,6 +551,7 @@ window.onCityChange = (cityKey) => {
 // Start
 renderDaysHeader();
 renderWateringTasks();
+renderWateringLog();
 window.onCityChange("thies");
 
 // ==================== INTEGRATION CALCULATEUR D'IRRIGATION ====================

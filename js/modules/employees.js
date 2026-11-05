@@ -1,5 +1,6 @@
 // KA Farm - Gestion des Employés Module
 import { KAStorage } from "../storage.js";
+import { EmployeesStorage } from "../storage/employees.js";
 import { ErrorHandler } from "./error-handler.js";
 
 let employees = [];
@@ -20,26 +21,26 @@ export const EmployeesModule = {
    */
   init() {
     try {
+      const today = new Date().toISOString().slice(0, 10);
       employees = KAStorage.getEmployees();
-      attendance = KAStorage.getAttendance();
-      payments = KAStorage.getEmployeePayments();
+      attendance = EmployeesStorage.getAttendance();
+      payments = EmployeesStorage.getEmployeePayments();
       tasks = KAStorage.getTasks();
 
       if (employees.length > 0) {
         selectedEmployeeId = employees[0].id;
       }
 
-      // Set default date for attendance pointage to today (2026-06-26)
       const attDateEl = document.getElementById("attendance-date");
-      if (attDateEl) {
-        attDateEl.value = "2026-06-26"; // Default farm operations date
+      if (attDateEl && !attDateEl.value) {
+        attDateEl.value = today;
       }
 
       // Set default dates for calculator
       const calcStart = document.getElementById("calc-start-date");
       const calcEnd = document.getElementById("calc-end-date");
-      if (calcStart) calcStart.value = "2026-06-01";
-      if (calcEnd) calcEnd.value = "2026-06-26";
+      if (calcStart && !calcStart.value) calcStart.value = `${today.slice(0, 7)}-01`;
+      if (calcEnd && !calcEnd.value) calcEnd.value = today;
 
       this.render();
       this.setupListeners();
@@ -63,8 +64,8 @@ export const EmployeesModule = {
    */
   render() {
     employees = KAStorage.getEmployees();
-    attendance = KAStorage.getAttendance();
-    payments = KAStorage.getEmployeePayments();
+    attendance = EmployeesStorage.getAttendance();
+    payments = EmployeesStorage.getEmployeePayments();
     tasks = KAStorage.getTasks();
 
     this.renderStats();
@@ -93,7 +94,8 @@ export const EmployeesModule = {
     }
 
     // Presence today
-    const selectedDate = document.getElementById("attendance-date")?.value || "2026-06-26";
+    const selectedDate =
+      document.getElementById("attendance-date")?.value || new Date().toISOString().slice(0, 10);
     const dayAttendance = attendance.filter((a) => a.date === selectedDate);
     const presentCount = dayAttendance.filter(
       (a) => a.status === "Présent" || a.status === "Demi-journée"
@@ -248,9 +250,15 @@ export const EmployeesModule = {
               <p class="font-black text-slate-800 dark:text-slate-100 truncate ${t.completed ? "line-through" : ""}">${t.title}</p>
               <p class="text-[9px] text-[#819888] font-bold">Échéance : ${t.dueDate}</p>
             </div>
-            <div>
+            <div class="flex items-center gap-1">
+              <button onclick="window.openEditTaskModal('${t.id}')" class="p-1.5 rounded-lg border border-sky-500/20 text-sky-500 hover:bg-sky-500/10 transition-all cursor-pointer" aria-label="Modifier la tâche">
+                <i data-lucide="pencil" class="h-3.5 w-3.5"></i>
+              </button>
               <button onclick="window.toggleTaskStatusFromEmployees('${t.id}')" class="p-1.5 rounded-lg border transition-all cursor-pointer ${t.completed ? "bg-emerald-600/10 border-emerald-500/30 text-emerald-400" : "bg-[#0D2615] border-[#143E23] text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30"}">
                 <i data-lucide="${t.completed ? "check-square" : "square"}" class="h-4 w-4"></i>
+              </button>
+              <button onclick="window.deleteTeamTask('${t.id}')" class="p-1.5 rounded-lg border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer" aria-label="Supprimer la tâche">
+                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
               </button>
             </div>
           `;
@@ -275,7 +283,8 @@ export const EmployeesModule = {
 
     tableBody.innerHTML = "";
 
-    const selectedDate = document.getElementById("attendance-date")?.value || "2026-06-26";
+    const selectedDate =
+      document.getElementById("attendance-date")?.value || new Date().toISOString().slice(0, 10);
     const activeEmployees = employees.filter((e) => e.status === "Actif");
 
     if (activeEmployees.length === 0) {
@@ -370,7 +379,7 @@ export const EmployeesModule = {
         "p-3 bg-[#0D2615]/30 border border-[#143E23]/20 hover:border-emerald-500/30 hover:bg-[#0D2615]/50 rounded-2xl text-left space-y-1 transition-all cursor-pointer";
 
       div.innerHTML = `
-        <p class="text-[10px] font-black text-[#819888] uppercase tracking-wider">${d === "2026-06-26" ? "Aujourd'hui" : d}</p>
+        <p class="text-[10px] font-black text-[#819888] uppercase tracking-wider">${d === new Date().toISOString().slice(0, 10) ? "Aujourd'hui" : d}</p>
         <div class="text-sm font-black text-slate-800 dark:text-white">${presentCount} / ${totalCount}</div>
         <p class="text-[9px] font-bold text-emerald-500">${pct}% présence</p>
       `;
@@ -625,12 +634,29 @@ export const EmployeesModule = {
       const category = document.getElementById("form-task-category").value;
       const priority = document.getElementById("form-task-priority").value;
       const dueDate = document.getElementById("form-task-duedate").value;
+      const taskId = document.getElementById("form-task-id").value;
 
       const emp = employees.find((e) => e.id === selectedEmployeeId);
-      if (!emp) return;
+      if (!emp || !title || !dueDate) {
+        ErrorHandler.showToast("Renseignez le titre, la date et un ouvrier actif.", "error");
+        return;
+      }
 
       // Load actual tasks from storage
       const currentTasks = KAStorage.getTasks();
+      if (taskId) {
+        const existingTask = currentTasks.find((task) => task.id === taskId);
+        if (!existingTask) return;
+        Object.assign(existingTask, { title, category, priority, dueDate });
+        KAStorage.saveTasks(currentTasks);
+        this.closeAssignTaskModal();
+        this.render();
+        if (window.App && typeof window.App.updateBadges === "function") {
+          window.App.updateBadges();
+        }
+        ErrorHandler.showToast("Tâche mise à jour.", "success");
+        return;
+      }
 
       // Generate unique T- ID
       const nextNum =
@@ -674,10 +700,11 @@ export const EmployeesModule = {
    */
   submitAttendancePointage() {
     try {
-      const selectedDate = document.getElementById("attendance-date")?.value || "2026-06-26";
+      const selectedDate =
+        document.getElementById("attendance-date")?.value || new Date().toISOString().slice(0, 10);
       const activeEmployees = employees.filter((e) => e.status === "Actif");
 
-      const currentAttendance = KAStorage.getAttendance();
+      const currentAttendance = EmployeesStorage.getAttendance();
 
       activeEmployees.forEach((emp) => {
         const selectedStatus =
@@ -705,7 +732,7 @@ export const EmployeesModule = {
         }
       });
 
-      KAStorage.saveAttendance(currentAttendance);
+      EmployeesStorage.saveAttendance(currentAttendance);
       this.render();
 
       // Alert toast
@@ -749,7 +776,7 @@ export const EmployeesModule = {
       };
 
       payments.push(newPayment);
-      KAStorage.saveEmployeePayments(payments);
+      EmployeesStorage.saveEmployeePayments(payments);
 
       // Synchronize with finances if selected
       if (syncFinance) {
@@ -808,6 +835,7 @@ export const EmployeesModule = {
     if (modal) {
       modal.classList.add("hidden");
       document.getElementById("assign-task-form").reset();
+      document.getElementById("form-task-id").value = "";
     }
   },
 
@@ -875,12 +903,40 @@ window.closeEditEmployeeModal = () => {
 window.openAssignTaskModal = () => {
   const modal = document.getElementById("assign-task-modal");
   if (modal) {
+    document.getElementById("assign-task-form").reset();
+    document.getElementById("form-task-id").value = "";
     modal.classList.remove("hidden");
     // Default deadline to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     document.getElementById("form-task-duedate").value = tomorrow.toISOString().split("T")[0];
   }
+};
+
+window.openEditTaskModal = (id) => {
+  const task = KAStorage.getTasks().find((item) => item.id === id);
+  if (!task) return;
+  const assignee = employees.find(
+    (employee) => employee.name.toLowerCase().trim() === task.assignee.toLowerCase().trim()
+  );
+  if (assignee) selectedEmployeeId = assignee.id;
+  document.getElementById("form-task-id").value = task.id;
+  document.getElementById("form-task-title").value = task.title;
+  document.getElementById("form-task-category").value = task.category;
+  document.getElementById("form-task-priority").value = task.priority;
+  document.getElementById("form-task-duedate").value = task.dueDate;
+  const modal = document.getElementById("assign-task-modal");
+  if (modal) modal.classList.remove("hidden");
+};
+
+window.deleteTeamTask = (id) => {
+  if (!confirm("Supprimer cette tâche de l'équipe ?")) return;
+  KAStorage.saveTasks(KAStorage.getTasks().filter((task) => task.id !== id));
+  EmployeesModule.render();
+  if (window.App && typeof window.App.updateBadges === "function") {
+    window.App.updateBadges();
+  }
+  ErrorHandler.showToast("Tâche supprimée.", "success");
 };
 
 window.closeAssignTaskModal = () => {
@@ -922,8 +978,12 @@ window.toggleTaskStatusFromEmployees = (id) => {
     const idx = currentTasks.findIndex((t) => t.id === id);
     if (idx !== -1) {
       currentTasks[idx].completed = !currentTasks[idx].completed;
+      currentTasks[idx].completedAt = currentTasks[idx].completed ? new Date().toISOString() : null;
       KAStorage.saveTasks(currentTasks);
       EmployeesModule.render();
+      if (window.App && typeof window.App.updateBadges === "function") {
+        window.App.updateBadges();
+      }
       ErrorHandler.showToast("Statut de tâche mis à jour.", "success");
     }
   } catch (err) {
@@ -999,7 +1059,7 @@ window.openPaymentModal = () => {
   document.getElementById("form-pay-amount").value = netDue;
   document.getElementById("form-pay-start-date").value = startDate;
   document.getElementById("form-pay-end-date").value = endDate;
-  document.getElementById("form-pay-date").value = "2026-06-26"; // Default current operation date
+  document.getElementById("form-pay-date").value = new Date().toISOString().slice(0, 10);
 
   const modal = document.getElementById("payment-modal");
   if (modal) modal.classList.remove("hidden");
@@ -1019,7 +1079,8 @@ document.addEventListener("ka_data_updated", (e) => {
     e.detail &&
     (e.detail.key === "ka_farm_employees" ||
       e.detail.key === "ka_farm_attendance" ||
-      e.detail.key === "ka_farm_employee_payments")
+      e.detail.key === "ka_farm_employee_payments" ||
+      e.detail.key === "ka_farm_tasks")
   ) {
     EmployeesModule.render();
   }

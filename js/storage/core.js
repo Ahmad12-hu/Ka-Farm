@@ -520,7 +520,14 @@ export const KAStorage = {
     const finances = this.getFinances();
     const totalRevenu = finances
       .filter((f) => f.type === "Revenu")
-      .reduce((sum, f) => sum + (f.amount || 0), 0);
+      .reduce(
+        (sum, f) =>
+          sum +
+          (Object.prototype.hasOwnProperty.call(f, "paidAmount")
+            ? Number(f.paidAmount) || 0
+            : Number(f.amount) || 0),
+        0
+      );
     const totalDepense = finances
       .filter((f) => f.type === "Dépense")
       .reduce((sum, f) => sum + (f.amount || 0), 0);
@@ -538,4 +545,4 @@ export const KAStorage = {
   saveTasks(tasks) {
     this.set("ka_farm_tasks", tasks);
   },
-  };
+};

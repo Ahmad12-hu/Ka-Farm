@@ -1,7 +1,19 @@
 // KA Farm - Stocks & Inputs Management Module
-import { KAStorage } from "../storage.js";
+import { CropsStorage } from "../storage/crops.js";
+import { StocksStorage } from "../storage/stocks.js";
 import { logger } from "./logger.js";
 import { ErrorHandler } from "./error-handler.js";
+
+const getAlertThreshold = (stock) =>
+  Number.isFinite(Number(stock.alertThreshold))
+    ? Number(stock.alertThreshold)
+    : Number(stock.maxQuantity || 0) * 0.2;
+
+const escapeHtml = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (character) => {
+    const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    return entities[character];
+  });
 
 export const StocksModule = {
   isOfflineSimulated: localStorage.getItem("ka_stocks_offline_simulated") === "true",
@@ -96,8 +108,18 @@ export const StocksModule = {
       if (!response.ok) throw new Error("Erreur de serveur");
       const remoteStocks = await response.json();
 
-      // Update local storage cache
-      KAStorage.saveStocks(remoteStocks);
+      const localStocks = StocksStorage.getStocks();
+      if (remoteStocks.length === 0 && localStocks.length > 0) {
+        this.renderStocks();
+        return;
+      }
+      const stocksWithLocalThresholds = remoteStocks.map((stock) => {
+        const localStock = localStocks.find((item) => item.id === stock.id);
+        return localStock?.alertThreshold === undefined
+          ? stock
+          : { ...stock, alertThreshold: localStock.alertThreshold };
+      });
+      StocksStorage.saveStocks(stocksWithLocalThresholds);
       this.renderStocks();
     } catch (e) {
       ErrorHandler.log(e, "StocksModule.refreshStocksFromServer", "warn");
@@ -107,7 +129,7 @@ export const StocksModule = {
 
   async saveAndSyncStocks(stocks) {
     // Save to local cache first
-    KAStorage.saveStocks(stocks);
+    StocksStorage.saveStocks(stocks);
     this.renderStocks();
 
     const isOffline = this.isOfflineSimulated || !navigator.onLine;
@@ -135,7 +157,7 @@ export const StocksModule = {
 
   async syncOfflineChanges() {
     if (localStorage.getItem("ka_stocks_pending_sync") === "true") {
-      const stocks = KAStorage.getStocks();
+      const stocks = StocksStorage.getStocks();
       try {
         const response = await fetch("/api/stocks", {
           method: "POST",
@@ -189,7 +211,7 @@ export const StocksModule = {
     const container = document.getElementById("stocks-container");
     if (!container) return;
 
-    const stocks = KAStorage.getStocks();
+    const stocks = StocksStorage.getStocks();
     const searchQuery = (document.getElementById("stock-search-input")?.value || "")
       .toLowerCase()
       .trim();
@@ -209,7 +231,7 @@ export const StocksModule = {
 
     // Calculate overall stats
     const totalItems = stocks.length;
-    const lowStocks = stocks.filter((s) => s.quantity <= s.maxQuantity * 0.2);
+    const lowStocks = stocks.filter((s) => s.quantity <= getAlertThreshold(s));
     const lowCount = lowStocks.length;
 
     let totalPercentSum = 0;
@@ -310,14 +332,21 @@ export const StocksModule = {
           `;
             }
 
+            const alertThreshold = getAlertThreshold(s);
+            const isLow = Number(s.quantity) <= alertThreshold;
+
             return `
-          <div class="flex flex-col items-center gap-2 group cursor-pointer" onclick="window.openAdjustModal('${s.id}', '${s.name.replace(/'/g, "\\'")}', ${s.quantity}, '${s.unit}')">
+          <div class="flex flex-col items-center gap-2 group cursor-pointer relative" onclick="window.openAdjustModal('${s.id}', '${s.name.replace(/'/g, "\\'")}', ${s.quantity}, '${s.unit}')">
             <div class="w-16 h-20 relative">
               ${itemSvg}
+              <button type="button" onclick="event.stopPropagation(); window.deleteStockItem('${s.id}')" aria-label="Supprimer ${s.name}" class="absolute -top-2 -right-2 p-1 rounded-full bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23] text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                <i data-lucide="trash-2" class="h-3 w-3"></i>
+              </button>
             </div>
             <div class="text-center">
               <p class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-500 transition-colors truncate w-24">${s.name}</p>
               <p class="text-[10px] font-mono text-slate-500 dark:text-slate-400">${s.quantity.toLocaleString("fr-FR")} ${s.unit}</p>
+              <p class="text-[9px] font-bold ${isLow ? "text-rose-500" : "text-slate-400"}">Alerte à ${alertThreshold.toLocaleString("fr-FR")} ${s.unit}</p>
             </div>
           </div>
         `;
@@ -344,7 +373,32 @@ export const StocksModule = {
     const historyContainer = document.getElementById("stock-usage-history");
     if (!historyContainer) return;
 
-    const treatments = KAStorage.getTreatments();
+    const treatments = CropsStorage.getTreatments();
+    const movementsContainer = document.getElementById("stock-movement-history");
+    if (movementsContainer) {
+      const movements = StocksStorage.getMovements()
+        .filter(
+          (movement) => (movement.stockName || "").toLowerCase() === productName.toLowerCase()
+        )
+        .slice(0, 10);
+      movementsContainer.innerHTML =
+        movements.length === 0
+          ? '<p class="p-3 text-center bg-slate-50 dark:bg-[#0D2615]/20 rounded-lg text-xs text-slate-400 font-semibold">Aucun mouvement de stock enregistré.</p>'
+          : movements
+              .map((movement) => {
+                const isEntry = movement.direction === "entrée";
+                const date = new Date(movement.recordedAt).toLocaleString("fr-FR");
+                return `<div class="p-2.5 bg-slate-50 dark:bg-[#0D2615]/20 rounded-lg border border-slate-100 dark:border-[#143E23]/30">
+                  <div class="flex justify-between gap-2 text-xs">
+                    <span class="font-bold ${isEntry ? "text-emerald-500" : "text-amber-500"}">${isEntry ? "Entrée" : "Sortie"} · ${date}</span>
+                    <span class="font-mono font-bold ${isEntry ? "text-emerald-500" : "text-rose-500"}">${isEntry ? "+" : "-"}${Number(movement.quantity).toLocaleString("fr-FR")} ${movement.unit}</span>
+                  </div>
+                  <p class="text-[9px] text-slate-400 font-semibold mt-0.5">${escapeHtml(movement.note || "Sans note")} · ${Number(movement.quantityBefore).toLocaleString("fr-FR")} → ${Number(movement.quantityAfter).toLocaleString("fr-FR")} ${movement.unit}</p>
+                </div>`;
+              })
+              .join("");
+    }
+
     const usageHistory = treatments
       .filter(
         (t) => (t.productName || t.product_name || "").toLowerCase() === productName.toLowerCase()
@@ -407,7 +461,7 @@ export const StocksModule = {
     };
 
     window.exportStocksCSV = () => {
-      const stocks = KAStorage.getStocks();
+      const stocks = StocksStorage.getStocks();
       if (stocks.length === 0) {
         ErrorHandler.showToast("Aucun produit enregistré en stock !", "error");
         return;
@@ -448,7 +502,7 @@ export const StocksModule = {
     };
 
     window.exportStocksPDF = () => {
-      const stocks = KAStorage.getStocks();
+      const stocks = StocksStorage.getStocks();
       if (stocks.length === 0) {
         ErrorHandler.showToast("Aucun produit enregistré en stock !", "error");
         return;
@@ -462,7 +516,7 @@ export const StocksModule = {
 
       // Statistics
       const totalItems = stocks.length;
-      const lowStocks = stocks.filter((s) => s.quantity <= s.maxQuantity * 0.2);
+      const lowStocks = stocks.filter((s) => s.quantity <= getAlertThreshold(s));
       const lowCount = lowStocks.length;
       let totalPercentSum = 0;
       stocks.forEach((s) => {
@@ -486,7 +540,7 @@ export const StocksModule = {
           const percent = s.maxQuantity > 0 ? Math.round((s.quantity / s.maxQuantity) * 100) : 0;
           let badgeStyle = "background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;";
           let statusText = "OPTIMAL";
-          if (percent <= 20) {
+          if (Number(s.quantity) <= getAlertThreshold(s)) {
             badgeStyle = "background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5;";
             statusText = "ALERTE BAS";
           } else if (percent <= 50) {
@@ -608,7 +662,7 @@ export const StocksModule = {
             </div>
             <div class="report-card" style="border: 1px solid #cbd5e1; background: #f8fafc;">
               <h4 style="margin: 0 0 8px 0; text-transform: uppercase; font-size: 9px; color: #047857; letter-spacing: 0.5px;">Contrôle des Seuils</h4>
-              <p style="margin: 4px 0;">🚨 <strong>Alertes de rupture (&lt;20%) :</strong> <strong style="color: ${lowCount > 0 ? "#dc2626" : "#10b981"}; font-weight: bold;">${lowCount} produit(s)</strong></p>
+              <p style="margin: 4px 0;">🚨 <strong>Produits sous leur seuil d'alerte :</strong> <strong style="color: ${lowCount > 0 ? "#dc2626" : "#10b981"}; font-weight: bold;">${lowCount} produit(s)</strong></p>
               <p style="margin: 4px 0;">📈 <strong>Capacité de réserve globale occupée :</strong> <strong>${avgPercent}%</strong></p>
             </div>
           </div>
@@ -693,18 +747,47 @@ export const StocksModule = {
         const unit = document.getElementById("new-stock-unit").value;
         const qty = parseFloat(document.getElementById("new-stock-qty").value);
         const max = parseFloat(document.getElementById("new-stock-max").value);
+        const thresholdInput = document.getElementById("new-stock-alert-threshold");
+        const threshold = thresholdInput?.value.trim() ? Number(thresholdInput.value) : max * 0.2;
 
-        if (!name || isNaN(qty) || isNaN(max)) return;
+        if (
+          !name.trim() ||
+          !Number.isFinite(qty) ||
+          qty < 0 ||
+          !Number.isFinite(max) ||
+          max <= 0 ||
+          qty > max ||
+          !Number.isFinite(threshold) ||
+          threshold < 0 ||
+          threshold > max
+        ) {
+          ErrorHandler.showToast("Vérifiez le nom, les quantités et le seuil d'alerte.", "error");
+          return;
+        }
 
-        const stocks = KAStorage.getStocks();
+        const stocks = StocksStorage.getStocks();
+        const id = `S-${Date.now()}`;
         stocks.push({
-          id: `S-${Date.now()}`,
-          name,
+          id,
+          name: name.trim(),
           category,
           quantity: qty,
           maxQuantity: max,
+          alertThreshold: threshold,
           unit,
         });
+        if (qty > 0) {
+          StocksStorage.recordMovement({
+            stockId: id,
+            stockName: name.trim(),
+            direction: "entrée",
+            quantity: qty,
+            unit,
+            quantityBefore: 0,
+            quantityAfter: qty,
+            note: "Stock initial",
+          });
+        }
 
         this.saveAndSyncStocks(stocks);
         formNewStock.reset();
@@ -726,13 +809,16 @@ export const StocksModule = {
       const itemNameEl = document.getElementById("adjust-item-name");
       const itemCurrentEl = document.getElementById("adjust-item-current");
       const unitDisplay = document.getElementById("adjust-unit-display");
+      const thresholdInput = document.getElementById("adjust-alert-threshold");
 
       if (!modal || !itemIdInput || !itemNameEl || !itemCurrentEl || !unitDisplay) return;
 
+      const stock = StocksStorage.getStocks().find((item) => item.id === id);
       itemIdInput.value = id;
       itemNameEl.textContent = name;
       itemCurrentEl.textContent = `Niveau de stock actuel : ${currentQty.toLocaleString("fr-FR")} ${unit}`;
       unitDisplay.textContent = unit;
+      if (thresholdInput) thresholdInput.value = stock ? getAlertThreshold(stock) : "";
 
       // Reset inputs
       document.getElementById("adjust-amount").value = "";
@@ -754,16 +840,33 @@ export const StocksModule = {
         const opType = document.getElementById("adjust-op-type").value;
         const amt = parseFloat(document.getElementById("adjust-amount").value);
         const note = document.getElementById("adjust-note").value;
+        const thresholdInput = document.getElementById("adjust-alert-threshold");
+        const threshold = thresholdInput ? Number(thresholdInput.value) : null;
 
-        if (!id || isNaN(amt) || amt <= 0) return;
+        if (!id || !Number.isFinite(amt) || amt <= 0) {
+          ErrorHandler.showToast("La quantité doit être supérieure à zéro.", "error");
+          return;
+        }
+        if (thresholdInput && (!Number.isFinite(threshold) || threshold < 0)) {
+          ErrorHandler.showToast("Le seuil d'alerte doit être positif ou nul.", "error");
+          return;
+        }
 
-        const stocks = KAStorage.getStocks();
+        const stocks = StocksStorage.getStocks();
         const itemIndex = stocks.findIndex((s) => s.id === id);
 
         if (itemIndex === -1) return;
 
         const item = stocks[itemIndex];
         const isAdd = opType === "add";
+        const nextMax = isAdd ? Math.max(item.maxQuantity, item.quantity + amt) : item.maxQuantity;
+        if (thresholdInput && threshold > nextMax) {
+          ErrorHandler.showToast(
+            "Le seuil d'alerte ne peut pas dépasser la capacité maximale.",
+            "error"
+          );
+          return;
+        }
 
         if (!isAdd && item.quantity < amt) {
           ErrorHandler.showToast(
@@ -783,6 +886,17 @@ export const StocksModule = {
         } else {
           item.quantity = Math.max(0, item.quantity - amt);
         }
+        if (thresholdInput) item.alertThreshold = threshold;
+        StocksStorage.recordMovement({
+          stockId: item.id,
+          stockName: item.name,
+          direction: isAdd ? "entrée" : "sortie",
+          quantity: amt,
+          unit: item.unit,
+          quantityBefore: prevQty,
+          quantityAfter: item.quantity,
+          note: note.trim(),
+        });
 
         // Save and re-render
         this.saveAndSyncStocks(stocks);
@@ -805,7 +919,7 @@ export const StocksModule = {
     window.deleteStockItem = (id) => {
       if (!confirm("Voulez-vous vraiment supprimer cet intrant de la base de données ?")) return;
 
-      const stocks = KAStorage.getStocks().filter((s) => s.id !== id);
+      const stocks = StocksStorage.getStocks().filter((s) => s.id !== id);
       this.saveAndSyncStocks(stocks);
 
       if (window.App && typeof window.App.updateBadges === "function") {

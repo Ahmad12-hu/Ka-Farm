@@ -66,7 +66,7 @@
               </p>
             </div>
             <button
-              onclick="document.getElementById('task-form-modal').classList.remove('hidden')"
+              onclick="window.openNewTaskModal()"
               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-2"
             >
               <i data-lucide="plus" class="h-3.5 w-3.5"></i> Planifier une tâche
@@ -105,6 +105,7 @@
         </div>
 
         <form id="personal-task-form" class="space-y-4 text-xs font-semibold">
+          <input type="hidden" id="personal-task-id" />
           <div class="space-y-1">
             <label
               class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
@@ -151,10 +152,9 @@
 
           <button
             type="submit"
-            onclick="document.getElementById('task-form-modal').classList.add('hidden')"
             class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-950/20 text-xs"
           >
-            Créer la tâche d'entretien
+            Enregistrer la tâche
           </button>
         </form>
       </div>

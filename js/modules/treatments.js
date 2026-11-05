@@ -1,5 +1,7 @@
 // KA Farm - Carnet Phytosanitaire & DAR Module
 import { KAStorage } from "../storage.js";
+import { CropsStorage } from "../storage/crops.js";
+import { StocksStorage } from "../storage/stocks.js";
 import { ErrorHandler } from "./error-handler.js";
 
 let treatments = [];
@@ -89,7 +91,7 @@ const CATEGORY_LABELS = {
 export const TreatmentsModule = {
   init() {
     try {
-      treatments = KAStorage.getTreatments();
+      treatments = CropsStorage.getTreatments();
       parcelles = KAStorage.getParcelles();
       crops = KAStorage.getCrops();
 
@@ -427,7 +429,7 @@ window.submitAddTreatment = (e) => {
   }
 
   // --- Stock Deduction Logic ---
-  const stocks = KAStorage.getStocks();
+  const stocks = StocksStorage.getStocks();
   const stockItemIndex = stocks.findIndex(
     (s) => s.name.toLowerCase() === productName.toLowerCase()
   );
@@ -448,8 +450,19 @@ window.submitAddTreatment = (e) => {
       );
       return;
     }
+    const quantityBefore = stocks[stockItemIndex].quantity;
     stocks[stockItemIndex].quantity -= quantityToDeduct;
-    KAStorage.saveStocks(stocks);
+    StocksStorage.saveStocks(stocks);
+    StocksStorage.recordMovement({
+      stockId: stockItem.id,
+      stockName: stockItem.name,
+      direction: "sortie",
+      quantity: quantityToDeduct,
+      unit: stockItem.unit,
+      quantityBefore,
+      quantityAfter: stocks[stockItemIndex].quantity,
+      note: `Traitement : ${target || "application"}`,
+    });
   } else {
     // If product not in stock, ask user if they want to proceed
     if (
@@ -502,7 +515,7 @@ window.submitAddTreatment = (e) => {
   newTreatment.harvestReady = diffDays >= dar;
 
   treatments.push(newTreatment);
-  KAStorage.set("ka_farm_treatments", treatments);
+  CropsStorage.saveTreatments(treatments);
 
   TreatmentsModule.render();
   window.closeAddTreatmentModal();
@@ -556,7 +569,7 @@ window.deleteTreatment = (id) => {
   ErrorHandler.showToast("Traitement supprimé avec succès", "success");
 
   treatments = treatments.filter((t) => t.id !== id);
-  KAStorage.set("ka_farm_treatments", treatments);
+  CropsStorage.saveTreatments(treatments);
 
   TreatmentsModule.render();
 };

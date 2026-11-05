@@ -33,6 +33,7 @@ const stockEls = (html = "") => {
       <input id="new-stock-unit">
       <input id="new-stock-qty">
       <input id="new-stock-max">
+      <input id="new-stock-alert-threshold">
     </form>
     <div id="add-stock-modal" class="hidden"></div>
     <div id="adjust-stock-modal" class="hidden">
@@ -41,6 +42,7 @@ const stockEls = (html = "") => {
       <span id="adjust-item-current"></span>
       <span id="adjust-unit-display"></span>
       <input id="adjust-amount">
+      <input id="adjust-alert-threshold">
       <input id="adjust-note">
       <select id="adjust-op-type"><option value="add" selected></option></select>
     </div>
@@ -54,9 +56,7 @@ describe("StocksModule", () => {
     localStorage.clear();
     localStorage.setItem("ka_farm_stocks", JSON.stringify([]));
     window.confirm = jest.fn(() => true);
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ ok: true, json: async () => [], status: 200 })
-    );
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: async () => [], status: 200 }));
   });
 
   test("devrait initialiser le module sans erreur", async () => {
@@ -87,7 +87,14 @@ describe("StocksModule", () => {
     localStorage.setItem(
       "ka_farm_stocks",
       JSON.stringify([
-        { id: "S-1", name: "Engrais NPK", category: "Engrais", quantity: 50, maxQuantity: 100, unit: "kg" },
+        {
+          id: "S-1",
+          name: "Engrais NPK",
+          category: "Engrais",
+          quantity: 50,
+          maxQuantity: 100,
+          unit: "kg",
+        },
       ])
     );
     stockEls();
@@ -100,13 +107,28 @@ describe("StocksModule", () => {
 
     const saved = JSON.parse(localStorage.getItem("ka_farm_stocks"));
     expect(saved[0].quantity).toBe(80); // 50 + 30
+    const movements = JSON.parse(localStorage.getItem("ka_farm_stock_movements"));
+    expect(movements[0]).toMatchObject({
+      stockId: "S-1",
+      direction: "entrée",
+      quantity: 30,
+      quantityBefore: 50,
+      quantityAfter: 80,
+    });
   });
 
   test("devrait supprimer un article du stock", () => {
     localStorage.setItem(
       "ka_farm_stocks",
       JSON.stringify([
-        { id: "S-1", name: "Engrais NPK", category: "Engrais", quantity: 50, maxQuantity: 100, unit: "kg" },
+        {
+          id: "S-1",
+          name: "Engrais NPK",
+          category: "Engrais",
+          quantity: 50,
+          maxQuantity: 100,
+          unit: "kg",
+        },
       ])
     );
     stockEls();
@@ -121,8 +143,22 @@ describe("StocksModule", () => {
     localStorage.setItem(
       "ka_farm_stocks",
       JSON.stringify([
-        { id: "S-1", name: "Engrais NPK", category: "Engrais", quantity: 50, maxQuantity: 100, unit: "kg" },
-        { id: "S-2", name: "Semences Tomate", category: "Semences", quantity: 2, maxQuantity: 10, unit: "kg" },
+        {
+          id: "S-1",
+          name: "Engrais NPK",
+          category: "Engrais",
+          quantity: 50,
+          maxQuantity: 100,
+          unit: "kg",
+        },
+        {
+          id: "S-2",
+          name: "Semences Tomate",
+          category: "Semences",
+          quantity: 2,
+          maxQuantity: 10,
+          unit: "kg",
+        },
       ])
     );
     stockEls();
@@ -141,8 +177,22 @@ describe("StocksModule", () => {
     localStorage.setItem(
       "ka_farm_stocks",
       JSON.stringify([
-        { id: "S-1", name: "Engrais NPK", category: "Engrais", quantity: 5, maxQuantity: 100, unit: "kg" }, // <= 20% => bas
-        { id: "S-2", name: "Semences Tomate", category: "Semences", quantity: 100, maxQuantity: 200, unit: "kg" },
+        {
+          id: "S-1",
+          name: "Engrais NPK",
+          category: "Engrais",
+          quantity: 5,
+          maxQuantity: 100,
+          unit: "kg",
+        }, // <= 20% => bas
+        {
+          id: "S-2",
+          name: "Semences Tomate",
+          category: "Semences",
+          quantity: 100,
+          maxQuantity: 200,
+          unit: "kg",
+        },
       ])
     );
     stockEls();
@@ -152,5 +202,35 @@ describe("StocksModule", () => {
 
     // Huit intrants avec quantité <= 20% de la capacité => 1 alerte
     expect(document.getElementById("stocks-alert-count").textContent).toBe("1");
+  });
+
+  test("devrait utiliser le seuil d'alerte configuré", () => {
+    localStorage.setItem(
+      "ka_farm_stocks",
+      JSON.stringify([
+        {
+          id: "S-1",
+          name: "Seuil bas",
+          quantity: 15,
+          maxQuantity: 100,
+          alertThreshold: 20,
+          unit: "kg",
+        },
+        {
+          id: "S-2",
+          name: "Seuil haut",
+          quantity: 15,
+          maxQuantity: 100,
+          alertThreshold: 10,
+          unit: "kg",
+        },
+      ])
+    );
+    stockEls();
+
+    StocksModule.renderStocks();
+
+    expect(document.getElementById("stocks-alert-count").textContent).toBe("1");
+    expect(document.getElementById("stocks-container").innerHTML).toContain("Alerte à 20 kg");
   });
 });

@@ -53,4 +53,16 @@ export const StocksStorage = {
   saveStocks(stocks) {
     KAStorage.set("ka_farm_stocks", stocks);
   },
+  getMovements() {
+    return KAStorage.get("ka_farm_stock_movements", []);
+  },
+  recordMovement(movement) {
+    const movements = this.getMovements();
+    movements.unshift({
+      ...movement,
+      id: movement.id || `SM-${Date.now()}`,
+      recordedAt: movement.recordedAt || new Date().toISOString(),
+    });
+    KAStorage.set("ka_farm_stock_movements", movements.slice(0, 500));
+  },
 };

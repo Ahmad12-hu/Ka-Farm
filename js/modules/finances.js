@@ -94,6 +94,10 @@ export const FinancesModule = {
 
         const amountColor = isRevenu ? "text-emerald-500 font-bold" : "text-rose-500 font-bold";
         const sign = isRevenu ? "+" : "-";
+        const paymentSummary =
+          isRevenu && Object.prototype.hasOwnProperty.call(f, "paidAmount")
+            ? `<span class="block text-[9px] text-slate-400 font-sans font-semibold">Encaissé ${(Number(f.paidAmount) || 0).toLocaleString("fr-FR")} / ${Number(f.amount).toLocaleString("fr-FR")} F</span>`
+            : "";
 
         return `
         <tr class="border-b border-slate-50 dark:border-slate-800/40 hover:bg-slate-50/50 dark:hover:bg-[#061109]/30 transition-colors">
@@ -103,7 +107,7 @@ export const FinancesModule = {
           </td>
           <td class="py-3.5 text-slate-500 font-bold">${f.category}</td>
           <td class="py-3.5 text-slate-450 font-semibold">${f.date}</td>
-          <td class="py-3.5 ${amountColor} font-black font-mono">${sign}${f.amount.toLocaleString("fr-FR")} F</td>
+          <td class="py-3.5 ${amountColor} font-black font-mono">${sign}${f.amount.toLocaleString("fr-FR")} F${paymentSummary}</td>
           <td class="py-3.5 text-right">
             <div class="flex items-center justify-end gap-1.5">
               <button onclick="window.shareFinanceWhatsApp('${f.id}')" class="text-emerald-500 hover:text-emerald-400 p-1 rounded-lg transition-colors cursor-pointer" title="Partager le reçu sur WhatsApp">

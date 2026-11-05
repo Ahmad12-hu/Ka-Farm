@@ -1,5 +1,6 @@
 // KA Farm - Shared Core Application Layout Controller
 import { KAStorage } from "./storage.js";
+import { StocksStorage } from "./storage/stocks.js";
 import { UserManager } from "./user-manager.js";
 import { WolofAudio } from "./wolof-audio.js";
 import { ErrorHandler } from "./modules/error-handler.js";
@@ -965,8 +966,10 @@ export const App = {
     }
 
     // Mettre à jour le badge des stocks en affichant le nombre d'articles en faible quantité
-    const stocks = KAStorage.getStocks();
-    const lowStocksCount = stocks.filter((s) => s.quantity <= s.maxQuantity * 0.2).length;
+    const stocks = StocksStorage.getStocks();
+    const lowStocksCount = stocks.filter(
+      (s) => s.quantity <= (s.alertThreshold ?? s.maxQuantity * 0.2)
+    ).length;
     const stocksBadge = document.getElementById("stocks-badge");
     if (stocksBadge) {
       if (lowStocksCount > 0) {
