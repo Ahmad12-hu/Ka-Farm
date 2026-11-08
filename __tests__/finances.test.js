@@ -1,5 +1,6 @@
 // KA Farm - Tests pour le module Finances
 import { FinancesModule } from "../js/modules/finances.js";
+import { KAStorage } from "../js/storage.js";
 
 // Mocks globaux
 window.confirm = jest.fn(() => true);
@@ -116,13 +117,30 @@ describe("FinancesModule", () => {
     );
   });
 
+  test("devrait comptabiliser les ventes selon les encaissements sans altérer les anciennes ventes", () => {
+    localStorage.setItem(
+      "ka_farm_finances",
+      JSON.stringify([
+        { id: "F-1", type: "Revenu", amount: 10000, paidAmount: 2500 },
+        { id: "F-2", type: "Revenu", amount: 5000, paidAmount: 0 },
+        { id: "F-3", type: "Revenu", amount: 3000 },
+        { id: "F-4", type: "Dépense", amount: 1000 },
+      ])
+    );
+
+    expect(KAStorage.getFinanceStats()).toEqual({
+      totalRevenu: 5500,
+      totalDepense: 1000,
+      solde: 4500,
+    });
+  });
+
   test("devrait ajouter une transaction financière via le formulaire", () => {
     finEls("");
     document.getElementById("form-fin-desc").value = "Vente tomates";
     document.getElementById("form-fin-type").innerHTML =
       '<option value="Revenu" selected></option>';
-    document.getElementById("form-fin-cat").innerHTML =
-      '<option value="Vente" selected></option>';
+    document.getElementById("form-fin-cat").innerHTML = '<option value="Vente" selected></option>';
     document.getElementById("form-fin-amount").value = "50000";
     document.getElementById("form-fin-date").value = "2026-06-15";
 
@@ -139,7 +157,14 @@ describe("FinancesModule", () => {
     localStorage.setItem(
       "ka_farm_finances",
       JSON.stringify([
-        { id: "F-123", description: "Test", type: "Revenu", category: "Vente", amount: 1000, date: "2026-06-15" },
+        {
+          id: "F-123",
+          description: "Test",
+          type: "Revenu",
+          category: "Vente",
+          amount: 1000,
+          date: "2026-06-15",
+        },
       ])
     );
     finEls("");
@@ -155,8 +180,22 @@ describe("FinancesModule", () => {
     localStorage.setItem(
       "ka_farm_finances",
       JSON.stringify([
-        { id: "F-1", description: "Vente Parcelle Nord", type: "Revenu", amount: 100000, parcelId: "P-001", cropName: "Tomate" },
-        { id: "F-2", description: "Dépense Parcelle Nord", type: "Dépense", amount: 50000, parcelId: "P-001", cropName: "Tomate" },
+        {
+          id: "F-1",
+          description: "Vente Parcelle Nord",
+          type: "Revenu",
+          amount: 100000,
+          parcelId: "P-001",
+          cropName: "Tomate",
+        },
+        {
+          id: "F-2",
+          description: "Dépense Parcelle Nord",
+          type: "Dépense",
+          amount: 50000,
+          parcelId: "P-001",
+          cropName: "Tomate",
+        },
       ])
     );
     finEls("");
@@ -173,8 +212,20 @@ describe("FinancesModule", () => {
     localStorage.setItem(
       "ka_farm_finances",
       JSON.stringify([
-        { id: "F-1", description: "Vente tomates", type: "Revenu", amount: 200000, cropName: "Tomate Mongal F1" },
-        { id: "F-2", description: "Achat semences tomates", type: "Dépense", amount: 80000, cropName: "Tomate Mongal F1" },
+        {
+          id: "F-1",
+          description: "Vente tomates",
+          type: "Revenu",
+          amount: 200000,
+          cropName: "Tomate Mongal F1",
+        },
+        {
+          id: "F-2",
+          description: "Achat semences tomates",
+          type: "Dépense",
+          amount: 80000,
+          cropName: "Tomate Mongal F1",
+        },
       ])
     );
     finEls("");

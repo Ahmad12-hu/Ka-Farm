@@ -135,7 +135,7 @@
               </div>
             </div>
             <button
-              onclick="document.getElementById('sale-form-modal').classList.remove('hidden')"
+              onclick="window.openNewSaleModal()"
               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-2"
             >
               <i data-lucide="plus" class="h-3.5 w-3.5"></i> Nouvelle Vente
@@ -207,6 +207,7 @@
         </div>
 
         <form id="personal-sale-form" class="space-y-4 text-xs font-semibold">
+          <input type="hidden" id="personal-sale-id" />
           <div class="space-y-1">
             <label
               class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
@@ -247,6 +248,8 @@
                 type="number"
                 id="personal-sale-amount"
                 required
+                min="1"
+                step="1"
                 placeholder="Ex: 45000"
                 class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none"
               />
@@ -266,12 +269,108 @@
             />
           </div>
 
+          <div class="space-y-1">
+            <label
+              class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+              >Montant déjà encaissé (FCFA)</label
+            >
+            <input
+              type="number"
+              id="personal-sale-paid"
+              min="0"
+              step="1"
+              value="0"
+              required
+              class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label
+              class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+              >Moyen de paiement initial</label
+            >
+            <select
+              id="personal-sale-method"
+              class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none"
+            >
+              <option>Espèces</option>
+              <option>Mobile Money</option>
+              <option>Virement</option>
+              <option>Autre</option>
+            </select>
+          </div>
+
           <button
             type="submit"
-            onclick="document.getElementById('sale-form-modal').classList.add('hidden')"
             class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-950/20 text-xs"
           >
-            Enregistrer la vente maraîchère
+            Enregistrer la vente
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div
+      id="sale-collection-modal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 hidden"
+    >
+      <div
+        class="w-full max-w-md bg-white dark:bg-[#0B2112] border border-slate-200 dark:border-[#143E23]/60 rounded-3xl p-6 space-y-4"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-black text-slate-800 dark:text-white">Nouvel encaissement</h3>
+          <button
+            type="button"
+            onclick="document.getElementById('sale-collection-modal').classList.add('hidden')"
+            aria-label="Fermer"
+            class="text-slate-400"
+          >
+            <i data-lucide="x" class="h-5 w-5"></i>
+          </button>
+        </div>
+        <p id="collection-remaining" class="text-xs font-bold text-amber-500"></p>
+        <form id="sale-collection-form" class="space-y-3">
+          <input type="hidden" id="collection-sale-id" />
+          <label class="block text-[10px] font-bold uppercase text-slate-500"
+            >Montant encaissé (FCFA)</label
+          >
+          <input
+            id="collection-amount"
+            type="number"
+            min="1"
+            step="1"
+            required
+            class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-xs"
+          />
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Date</label>
+              <input
+                id="collection-date"
+                type="date"
+                required
+                class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2.5 text-xs"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Moyen</label>
+              <select
+                id="collection-method"
+                class="w-full bg-slate-50 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-3 py-2.5 text-xs"
+              >
+                <option>Espèces</option>
+                <option>Mobile Money</option>
+                <option>Virement</option>
+                <option>Autre</option>
+              </select>
+            </div>
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl text-xs"
+          >
+            Enregistrer l'encaissement
           </button>
         </form>
       </div>

@@ -509,7 +509,7 @@
                     <input
                       type="date"
                       id="calc-start-date"
-                      value="2026-06-01"
+                      value=""
                       class="w-full bg-[#0D2615] border border-[#1A4525] rounded-xl px-3 py-2 text-slate-200 outline-none cursor-pointer"
                     />
                   </div>
@@ -521,7 +521,7 @@
                     <input
                       type="date"
                       id="calc-end-date"
-                      value="2026-06-26"
+                      value=""
                       class="w-full bg-[#0D2615] border border-[#1A4525] rounded-xl px-3 py-2 text-slate-200 outline-none cursor-pointer"
                     />
                   </div>
@@ -882,6 +882,7 @@
         </div>
 
         <form id="assign-task-form" class="space-y-4 text-xs font-semibold">
+          <input type="hidden" id="form-task-id" />
           <div class="space-y-1">
             <label
               class="block text-[10px] font-bold text-slate-400 dark:text-[#819888] uppercase tracking-wider"

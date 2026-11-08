@@ -1,5 +1,6 @@
 // KA Farm - Module des statistiques et de la vue d'ensemble du tableau de bord
 import { KAStorage } from "../storage.js";
+import { StocksStorage } from "../storage/stocks.js";
 import { ErrorHandler } from "./error-handler.js";
 
 export const DashboardModule = {
@@ -29,7 +30,7 @@ export const DashboardModule = {
       return;
     }
     const nurseries = KAStorage.getNurseries();
-    const stocks = KAStorage.getStocks();
+    const stocks = StocksStorage.getStocks();
     const finances = KAStorage.getFinances();
 
     // 1. Quantités
@@ -135,7 +136,9 @@ export const DashboardModule = {
     // 5. Critical Low Stocks summary list
     const stockListContainer = document.getElementById("dash-stock-list");
     if (stockListContainer) {
-      const lowStocks = stocks.filter((s) => s.quantity / s.maxQuantity <= 0.25);
+      const lowStocks = stocks.filter(
+        (s) => s.quantity <= (s.alertThreshold ?? Number(s.maxQuantity || 0) * 0.2)
+      );
       if (lowStocks.length === 0) {
         stockListContainer.innerHTML =
           '<p class="text-[11px] text-emerald-500 bg-emerald-500/5 px-2.5 py-1.5 rounded-lg font-bold">✅ Tous les stocks sont au-dessus du seuil critique.</p>';
@@ -145,7 +148,7 @@ export const DashboardModule = {
             (s) => `
           <div class="flex items-center justify-between text-xs py-1 border-b border-slate-50 dark:border-slate-800/20">
             <span class="font-bold text-slate-750 dark:text-slate-300">📦 ${s.name}</span>
-            <span class="text-[9px] text-rose-500 font-black">${s.quantity} / ${s.maxQuantity} ${s.unit}</span>
+            <span class="text-[9px] text-rose-500 font-black">${s.quantity} / ${s.maxQuantity} ${s.unit} · seuil ${s.alertThreshold ?? Number(s.maxQuantity || 0) * 0.2}</span>
           </div>
         `
           )
@@ -186,13 +189,17 @@ export const DashboardModule = {
           const isRevenu = f.type === "Revenu";
           const color = isRevenu ? "text-emerald-500" : "text-rose-500";
           const sign = isRevenu ? "+" : "-";
+          const hasPaymentTracking = Object.prototype.hasOwnProperty.call(f, "paidAmount");
+          const amount = hasPaymentTracking
+            ? `${(Number(f.paidAmount) || 0).toLocaleString("fr-FR")} / ${Number(f.amount).toLocaleString("fr-FR")}`
+            : `${sign}${Number(f.amount).toLocaleString("fr-FR")}`;
           return `
           <div class="flex items-center justify-between text-xs py-1 border-b border-slate-50 dark:border-slate-800/20">
             <div>
               <p class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[150px]">${f.description}</p>
-              <span class="text-[9px] text-slate-400">${f.date}</span>
+              <span class="text-[9px] text-slate-400">${f.date}${hasPaymentTracking ? " · encaissé / total" : ""}</span>
             </div>
-            <span class="font-extrabold font-mono ${color}">${sign}${f.amount.toLocaleString("fr-FR")} F</span>
+            <span class="font-extrabold font-mono ${color}">${amount} F</span>
           </div>
         `;
         })
@@ -369,7 +376,7 @@ export const DashboardModule = {
       if (searchBadge) searchBadge.classList.add("hidden");
 
       const parcelles = KAStorage.getParcelles() || [];
-      const stocks = KAStorage.getStocks() || [];
+      const stocks = StocksStorage.getStocks() || [];
       const cropLibrary = KAStorage.getCropLibrary() || [];
 
       // Filter parcelles

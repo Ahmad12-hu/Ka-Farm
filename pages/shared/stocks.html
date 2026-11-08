@@ -130,7 +130,7 @@
               class="p-5 bg-white dark:bg-[#0B2112] border border-slate-100 dark:border-[#143E23]/30 rounded-3xl text-left"
             >
               <p class="text-[9px] font-black text-[#819888] uppercase tracking-wider">
-                Alertes Stock Bas (&lt;20%)
+                Alertes sous leur seuil de stock
               </p>
               <p id="stocks-alert-count" class="text-2xl font-black text-rose-500 mt-1 font-mono">
                 0
@@ -334,6 +334,20 @@
 
           <div class="space-y-1">
             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+              >Seuil d'alerte (quantité)</label
+            >
+            <input
+              type="number"
+              id="adjust-alert-threshold"
+              min="0"
+              step="any"
+              required
+              class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider"
               >Note explicative (Facultative)</label
             >
             <input
@@ -358,8 +372,11 @@
             class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5"
           >
             <i data-lucide="history" class="h-3.5 w-3.5"></i>
-            Historique d'utilisation récente
+            Mouvements et utilisations récents
           </h4>
+          <div id="stock-movement-history" class="space-y-2 max-h-40 overflow-y-auto pr-2">
+            <!-- Movements are persisted locally by StocksStorage -->
+          </div>
           <div id="stock-usage-history" class="space-y-2 max-h-40 overflow-y-auto pr-2">
             <!-- History items will be injected here by stocks.js -->
           </div>
@@ -465,6 +482,20 @@
                 class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none"
               />
             </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+              >Seuil d'alerte (quantité)</label
+            >
+            <input
+              type="number"
+              id="new-stock-alert-threshold"
+              min="0"
+              step="any"
+              placeholder="Par défaut : 20% de la capacité"
+              class="w-full bg-[#0D2615]/10 dark:bg-[#0D2615] border border-slate-200 dark:border-[#1A4525] rounded-xl px-4 py-2.5 text-slate-850 dark:text-slate-200 outline-none"
+            />
           </div>
 
           <button
